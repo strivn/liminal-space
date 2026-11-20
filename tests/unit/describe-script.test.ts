@@ -370,12 +370,7 @@ test("security: A redirect that leads off the web, or loops, is named and nothin
 		"file:///etc/passwd",
 		"javascript:alert(1)",
 	]) {
-		assert.match(
-			ran.stderr,
-			new RegExp(
-				`redirect to ${target.replace(/[()/]/g, "\\$&")}: not http or https`,
-			),
-		);
+		assert.ok(ran.stderr.includes(`redirect to ${target}: not http or https`));
 	}
 	assert.match(
 		ran.stderr,
