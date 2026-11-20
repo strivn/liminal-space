@@ -278,7 +278,7 @@ function extensionOf(url: URL) {
 // the page can show.
 export function figureFromHtml(html: string, baseUrl: string): FoundFigure {
 	// Comments, scripts and styles are never figures, but could hold text that looks like one.
-	const withoutComments = withoutBlocks(html, /<!--/g, /-->/g);
+	const withoutComments = withoutBlocks(html, /<!--/g, /--!?>/g);
 	const withoutScripts = withoutBlocks(
 		withoutComments,
 		/<script\b/gi,

@@ -464,6 +464,15 @@ test("A paper without a Figure 1 image gets no figure", async () => {
 	}
 });
 
-test.todo(
-	"a comment closed with --!> hides only itself, so a Figure 1 after it is still found",
-);
+test("a comment closed with --!> hides only itself, so a Figure 1 after it is still found", async () => {
+	const { figureFromHtml }: typeof Figure = await import(SCRIPT.href);
+	const html = page(
+		`<!-- note --!>${figure(img("2609.35544v1/x1.png", SHOWN_SIZE), "Figure 1: ", "Overview.")}<!-- later -->`,
+	);
+	assert.deepEqual(figureFromHtml(html, BASE), {
+		imageUrl: "https://arxiv.org/html/2609.35544v1/x1.png",
+		caption: "Figure 1: Overview.",
+		width: 548,
+		height: 275,
+	});
+});
