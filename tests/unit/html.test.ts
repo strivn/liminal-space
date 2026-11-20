@@ -4,7 +4,7 @@
 // 2 MB pages of describe.ts, proceedings.ts and "<figure " are the cases).
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import { tagsNamed } from "../../scripts/lib/html.ts";
+import { htmlToText, tagsNamed } from "../../scripts/lib/html.ts";
 import { figureFromHtml } from "../../scripts/scout/arxiv/figure.ts";
 
 test("the tag reader finds every tag of a given name in any letter case, with its text and position", () => {
@@ -135,10 +135,16 @@ for (const [what, unit, wrap] of FIGURE_SHAPES) {
 	});
 }
 
-test.todo(
-	"text from HTML: a tag split around another tag, such as <scr<b>ipt>, leaves no tag behind",
-);
+test("text from HTML: a tag split around another tag, such as <scr<b>ipt>, leaves no tag behind", () => {
+	const text = htmlToText("a<scr<b>ipt>alert(1)</scr<b>ipt>b");
 
-test.todo(
-	"text from HTML: an encoded &lt;b&gt; stays visible as <b> instead of being removed as a tag",
-);
+	assert.equal(text, "aipt>alert(1)ipt>b");
+	assert.doesNotMatch(text, /<[^>]*>/);
+});
+
+test("text from HTML: an encoded &lt;b&gt; stays visible as <b> instead of being removed as a tag", () => {
+	assert.equal(
+		htmlToText("<p>&lt;b&gt; tags &amp; more</p>"),
+		"<b> tags & more",
+	);
+});

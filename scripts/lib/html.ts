@@ -1,4 +1,5 @@
 // Reading HTML tags, shared by describe.ts, figure.ts and proceedings.ts.
+import { decodeHTML } from "entities";
 
 // One opening or closing tag as it stands in a page: its name in lower case, whether it closes ("</figure>"), its
 // whole text from "<" to ">", and where that text starts and ends in the page.
@@ -81,6 +82,7 @@ export function attribute(tag: string, name: string) {
 	return match[1] || match[2] || match[3] || "";
 }
 
+// Strip tags, then decode once.
 export function htmlToText(html: string): string {
-	throw new Error(`htmlToText is not built yet: ${html.length}`);
+	return decodeHTML(html.replace(/<[^>]*>/g, ""));
 }
