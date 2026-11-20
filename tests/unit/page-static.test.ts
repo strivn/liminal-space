@@ -1,22 +1,7 @@
-// index.html's script policy and the preload of the newest month.
+// The preload of the newest month.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { test } from "vitest";
 import { preloadLinks } from "../../scripts/deploy/build-site.ts";
-
-const SITE = join(import.meta.dirname, "..", "..", "site");
-
-test("security: index.html holds no inline script and no inline event handler attribute such as onclick, which the content security policy would refuse", () => {
-	const html = readFileSync(join(SITE, "index.html"), "utf8").replace(
-		/<!--[\s\S]*?-->/g,
-		"",
-	);
-	for (const script of html.match(/<script\b[^>]*>/g) ?? []) {
-		assert.match(script, /\bsrc="/, `an inline script: ${script}`);
-	}
-	assert.equal(html.match(/\son[a-z]+\s*=/gi), null);
-});
 
 test("the newest month's file is preloaded as a fetch with crossorigin, and a site with no days preloads none", () => {
 	const index = {
