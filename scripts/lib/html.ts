@@ -80,3 +80,7 @@ export function attribute(tag: string, name: string) {
 	}
 	return match[1] || match[2] || match[3] || "";
 }
+
+export function htmlToText(html: string): string {
+	throw new Error(`htmlToText is not built yet: ${html.length}`);
+}

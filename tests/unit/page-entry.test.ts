@@ -823,3 +823,7 @@ test("a paper's line shows no host", () => {
 		"paper · arXiv Artificial Intelligence · arxiv:2601.00001",
 	);
 });
+
+test.todo(
+	"security: a data: or vbscript: URL never becomes a link, in the title or the links row",
+);

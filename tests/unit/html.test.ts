@@ -134,3 +134,11 @@ for (const [what, unit, wrap] of FIGURE_SHAPES) {
 		assert.ok(ms < LIMIT_MS, `took ${Math.round(ms)} ms`);
 	});
 }
+
+test.todo(
+	"text from HTML: a tag split around another tag, such as <scr<b>ipt>, leaves no tag behind",
+);
+
+test.todo(
+	"text from HTML: an encoded &lt;b&gt; stays visible as <b> instead of being removed as a tag",
+);

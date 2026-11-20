@@ -463,3 +463,7 @@ test("A paper without a Figure 1 image gets no figure", async () => {
 		);
 	}
 });
+
+test.todo(
+	"a comment closed with --!> hides only itself, so a Figure 1 after it is still found",
+);
