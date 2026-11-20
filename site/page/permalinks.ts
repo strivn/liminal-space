@@ -51,7 +51,7 @@ export function createPermalinks(model: PageModel, deps: PermalinkDeps) {
 			)
 			// The month loaded but couldn't be drawn: say so under the day's row, and open the day to show it.
 			.catch((error) => {
-				console.error(`${location.hash} not followed:`, error);
+				console.error("%s not followed:", location.hash, error);
 				deps.showDayError(pair);
 				pair.details.open = true;
 			});
