@@ -77,8 +77,9 @@ async function servePages(
 	const requests: string[] = [];
 	const base = await serve(
 		(incoming: IncomingMessage, response: ServerResponse) => {
-			requests.push(String(incoming.url));
-			const answer = pages[String(incoming.url)];
+			const path = String(incoming.url);
+			requests.push(path);
+			const answer = Object.hasOwn(pages, path) ? pages[path] : undefined;
 			if (answer === undefined) {
 				response.writeHead(404);
 				response.end();
