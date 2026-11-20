@@ -1,0 +1,141 @@
+// The Worker behind ivan.wiryadi.com/liminal-space: sync, owner and connector routes in front of D1.
+// Other paths on ivan.wiryadi.com belong to other apps, so the Worker attaches by path route, never a custom domain.
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "liminal",
+	"main": "worker/src/index.ts",
+	"compatibility_date": "2026-10-01",
+	// The account comes from CLOUDFLARE_ACCOUNT_ID; deploy.yml writes the D1 database_id in just before deploying.
+	// The page and its data, built by scripts/deploy/build-site.ts. A request that matches a file never runs the Worker, so
+	// visitors cost nothing and can't use up the free plan's daily requests. run_worker_first lists the Worker's routes
+	// (worker/src/index.ts's WORKER_PATHS, spelled exactly; tests/unit/worker-routes.test.ts compares the two), then
+	// sends every path with a dot or a trailing "/" to the files alone, which answer 404 for one they don't have:
+	// scanners' guesses such as wp-login.php, .env or admin/ never run it.
+	// Wrangler refuses a list of "!" patterns alone. Any other path the site doesn't have still runs the Worker, which
+	// answers 404: Cloudflare runs it for every request that matches no file and no "!" pattern, unless a browser is
+	// navigating to it.
+	"assets": {
+		"directory": "dist",
+		"not_found_handling": "404-page",
+		"run_worker_first": [
+			"/liminal-space/api/sync/push",
+			"/liminal-space/api/sync/requests",
+			"/liminal-space/api/sync/logs",
+			"/liminal-space/mcp",
+			"/liminal-space/api/owner/state",
+			"/liminal-space/api/owner/logs",
+			"/liminal-space/api/owner/takeaways",
+			"/liminal-space/api/owner/read",
+			"/liminal-space/api/owner/tags",
+			"/liminal-space/api/owner/feedback",
+			"/liminal-space/api/owner/comments",
+			"/liminal-space/api/owner/ask",
+			"/liminal-space/api/owner/push",
+			"!/liminal-space/*.*",
+			"!/liminal-space/*/"
+		]
+	},
+	// Reachable only at its routes: no workers.dev address, no preview addresses.
+	"workers_dev": false,
+	"preview_urls": false,
+	"routes": [
+		{ "pattern": "ivan.wiryadi.com/liminal-space", "zone_name": "wiryadi.com" },
+		{
+			"pattern": "ivan.wiryadi.com/liminal-space/*",
+			"zone_name": "wiryadi.com"
+		},
+		// dist/robots.txt, served as a file. It belongs to whatever later owns the root of ivan.wiryadi.com (a bio page
+		// is planned): that owner takes this route over and must keep the "Disallow: /liminal-space/..." lines.
+		{ "pattern": "ivan.wiryadi.com/robots.txt", "zone_name": "wiryadi.com" }
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "liminal",
+			"migrations_dir": "worker/migrations"
+		}
+	],
+	// SYNC_AUD and OWNER_AUD are the Application Audience tags of the Access apps "liminal sync" and "liminal owner".
+	// They stay here because Access publishes them itself, with the team domain, in its login redirects and refusal
+	// headers. The tag of "liminal mcp" appears nowhere public, so MCP_AUD is a Worker secret, like SYNC_CLIENT_ID.
+	"vars": {
+		"ACCESS_TEAM_DOMAIN": "https://still-garden.cloudflareaccess.com",
+		"SYNC_AUD": "7ab6302c007e7743dad5162777a3fbdf9e8ad9bf8f5b61809f74effe794af6fb",
+		"OWNER_AUD": "86cf0efbac92a6cdf17958e74b532963649881a53217afa5a9496df8b9b8aee6",
+		"SITE_ORIGIN": "https://ivan.wiryadi.com",
+		"GITHUB_REPOSITORY": "strivn/liminal-space",
+		"GITHUB_API": "https://api.github.com",
+		"ANTHROPIC_API": "https://api.anthropic.com"
+	},
+	// A deploy fails unless the Worker has each of these secrets, already set or uploaded with the deploy.
+	// ANTHROPIC_API_KEY is the key of the Console workspace that pays for Claude's replies to @Claude comments.
+	"secrets": {
+		"required": [
+			"MCP_AUD",
+			"OWNER_EMAIL",
+			"SYNC_CLIENT_ID",
+			"GITHUB_DISPATCH_TOKEN",
+			"ANTHROPIC_API_KEY"
+		]
+	},
+	// The cloud scout: 22:00 UTC is 05:00 in Jakarta, before arXiv's 20:00 New York announcement; the 23:00 run is a
+	// second chance if GitHub dropped the first.
+	// "*/15 * * * *" starts add.yml again for requests whose run couldn't start.
+	"triggers": { "crons": ["0 22 * * *", "0 23 * * *", "*/15 * * * *"] },
+	"observability": { "enabled": true },
+	// Staging: develop's page and Worker on its own host, deployed by staging.yml with `--env staging`, which also names
+	// the host (`--domain`) and SITE_ORIGIN (`--var`). Wrangler doesn't carry vars, D1 bindings, secrets or triggers into
+	// an environment, so each is written out here. The whole host is the Worker's, through a Custom Domain, and behind
+	// Access. Its own database, liminal-staging; no crons, so it starts no scout or add run; no MCP_AUD and no
+	// GITHUB_DISPATCH_TOKEN, so its connector answers 503 and it can't dispatch a workflow; no ANTHROPIC_API_KEY, so its
+	// ask route answers "notSetUp" and Anthropic is never asked. SYNC_AUD and OWNER_AUD are the
+	// audience tags of the Access apps "liminal-sync staging" and "liminal-owner staging".
+	"env": {
+		"staging": {
+			"name": "liminal-staging",
+			"workers_dev": false,
+			"preview_urls": false,
+			// Empty, so production's routes aren't inherited.
+			"routes": [],
+			"assets": {
+				"directory": "dist",
+				"not_found_handling": "404-page",
+				"run_worker_first": [
+					"/liminal-space/api/sync/push",
+					"/liminal-space/api/sync/requests",
+					"/liminal-space/api/sync/logs",
+					"/liminal-space/mcp",
+					"/liminal-space/api/owner/state",
+					"/liminal-space/api/owner/logs",
+					"/liminal-space/api/owner/takeaways",
+					"/liminal-space/api/owner/read",
+					"/liminal-space/api/owner/tags",
+					"/liminal-space/api/owner/feedback",
+					"/liminal-space/api/owner/comments",
+					"/liminal-space/api/owner/ask",
+					"/liminal-space/api/owner/push",
+					"!/liminal-space/*.*",
+					"!/liminal-space/*/"
+				]
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "liminal-staging",
+					"migrations_dir": "worker/migrations"
+				}
+			],
+			"vars": {
+				"ACCESS_TEAM_DOMAIN": "https://still-garden.cloudflareaccess.com",
+				"SYNC_AUD": "44f5d95033e5641358f1928b67ac835edc0f7ebf68c1954896ad0e7928bc045f",
+				"OWNER_AUD": "a257604c415cae6d7d7695cadff466dca44201932240027eecfac3807848e0eb",
+				"GITHUB_REPOSITORY": "strivn/liminal-space",
+				"GITHUB_API": "https://api.github.com",
+				"ANTHROPIC_API": "https://api.anthropic.com"
+			},
+			"secrets": { "required": ["OWNER_EMAIL", "SYNC_CLIENT_ID"] },
+			"triggers": { "crons": [] },
+			"observability": { "enabled": true }
+		}
+	}
+}

@@ -1,0 +1,27 @@
+{
+	"permissions": {
+		"defaultMode": "plan",
+		"allow": [
+			"Bash(node scripts/scout/arxiv/arxiv.ts --append site/digests.js *)",
+			"Bash(node scripts/scout/web/describe.ts site/digests.js *)",
+			"Bash(node scripts/digests/digests.ts status site/digests.js)",
+			"Bash(node scripts/digests/digests.ts status site/digests.js --date *)",
+			"Bash(node scripts/digests/digests.ts add site/digests.js *)",
+			"Bash(node scripts/digests/digests.ts check site/digests.js)",
+			"Bash(node scripts/scout/arxiv/figure.ts site/digests.js *)",
+			"Bash(node scripts/scout/arxiv/first-page.ts *)",
+			"Bash(node scripts/scout/proceedings/proceedings.ts --append site/digests.js *)",
+			"Bash(node scripts/scout/search.ts site/digests.js)",
+			"Bash(node scripts/scout/search.ts site/digests.js --cached)",
+			"Bash(node scripts/scout/search.ts site/digests.js --date *)",
+			"Bash(node scripts/scout/search.ts site/digests.js --query *)",
+			"Bash(node scripts/scout/search.ts site/digests.js --author *)",
+			"Bash(node scripts/scout/surprise.ts site/digests.js)",
+			"Bash(node scripts/scout/surprise.ts site/digests.js --date *)",
+			"Bash(scripts/scout/web/fulltext.sh *)",
+			"Bash(TZ=Asia/Jakarta date +%F)",
+			"WebFetch",
+			"WebSearch"
+		]
+	}
+}

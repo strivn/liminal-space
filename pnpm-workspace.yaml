@@ -1,0 +1,8 @@
+# Refuse any package version published less than a day ago; set explicitly so pnpm enforces it strictly
+minimumReleaseAge: 1440
+
+# Install scripts pnpm may run: esbuild's and workerd's (Cloudflare's local Worker runtime, through wrangler) checks
+# that their native binary for this machine is in place
+allowBuilds:
+  esbuild: true
+  workerd: true

@@ -1,0 +1,14 @@
+/* Reduced motion turns off what moves: the fold arrow's turn and the rail label's slide. A colour that fades on hover
+   isn't movement, so the buttons' and rows' fades stay. */
+@media (prefers-reduced-motion: reduce) {
+	.skipped__arrow {
+		transition: none;
+	}
+	/* The label appears and goes at once; as specific as the hover rule, so this wins. */
+	.rail-label,
+	.rail-button:hover .rail-label,
+	.rail-button:focus-visible .rail-label,
+	.filter-label {
+		transition: none;
+	}
+}

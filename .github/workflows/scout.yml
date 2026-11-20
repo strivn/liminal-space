@@ -1,0 +1,225 @@
+# The cloud scout: count today's papers in the database, and on a day that still needs the scout pull every entry,
+# run scripts/scout/scout.ts on the owner's subscription, push what it added, and deploy the site. The Worker's cron dispatches it
+# at 05:00 and 06:00 in Jakarta; it also runs by hand. The count comes first, so a skipped day installs and pulls
+# nothing.
+name: scout
+
+on:
+  workflow_dispatch:
+
+# One scout at a time. A newer run waits for the running one instead of cancelling it halfway through.
+concurrency:
+  group: scout
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+    environment: production
+    # A whole run takes 9 minutes. A busy arXiv can add 15 minutes of retry waits twice, in the fill step and in the
+    # scout's own search.
+    timeout-minutes: 90
+    outputs:
+      # "true" once a push was tried: a push that refused one entry still stored the others, and a rebuild from the
+      # database is always safe, so the deploy job shows whatever got in.
+      pushed: ${{ steps.push.outcome == 'success' || steps.push.outcome == 'failure' }}
+    steps:
+      # Production's workflows run only on main: a run started by hand on develop, the
+      # default branch, would write develop's unreleased code to production. GITHUB_REF is the ref the runner gives
+      # (the caller's, when another workflow calls this one), never an input.
+      - name: Run only on main
+        run: |
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "This workflow changes production, which runs main: start it on main, not ${GITHUB_REF}." >&2
+            exit 1
+          fi
+
+      # No token left in .git/config for the steps after this one.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The count needs the locked dependencies (the HTTP helper imports undici). No dependency cache: this job holds
+      # the subscription token, and a cache another run wrote could reach it.
+      - uses: ./.github/actions/setup
+
+      # A day's second dispatch costs no Claude session: with 10 papers today the scout has done today's run, and the
+      # job ends here with nothing pulled. One query against the database, through the same ids as the pull.
+      - name: Count today's papers
+        id: status
+        run: |
+          node scripts/deploy/sync.ts count --database > "$RUNNER_TEMP/status.txt"
+          cat "$RUNNER_TEMP/status.txt"
+          papers=$(sed -n 's/^papers today: \([0-9][0-9]*\)$/\1/p' "$RUNNER_TEMP/status.txt")
+          if [ -z "$papers" ]; then
+            echo "::error::sync.ts count printed no \"papers today\" line"
+            exit 1
+          fi
+          echo "papers=$papers" >> "$GITHUB_OUTPUT"
+          if [ "$papers" -ge 10 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+
+      # From here on, only a day the scout runs. pdftotext reads PDFs and w3m reads web pages for scripts/scout/web/fulltext.sh;
+      # Linux has no textutil. socat and bubblewrap run Claude Code's sandbox: with CLAUDE_CODE_SUBPROCESS_ENV_SCRUB on
+      # (scripts/scout/scout.ts) it refuses every command when either is missing. Only the scout uses them, so a skipped
+      # day doesn't install them.
+      - name: Install the scout's system packages
+        if: steps.status.outputs.skip == 'false'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends poppler-utils w3m socat bubblewrap
+
+      # search.ts's kept arXiv lookups, list copies and candidate pool (pool.json): without them the lookup backlog
+      # never shrinks and the pool holds only today's papers.
+      # Each run saves under its own key; the newest saved one is restored.
+      - name: Restore .cache/
+        if: steps.status.outputs.skip == 'false'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/
+          key: scout-cache-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: scout-cache-
+
+      # Every entry, including those added ad hoc since the last run.
+      - name: Pull the database
+        if: steps.status.outputs.skip == 'false'
+        run: node scripts/deploy/sync.ts pull --database site/digests.js
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+
+      # Two jobs at once, both before the scout, which then looks only for news it missed and finds a pool to pick from.
+      # The newsfeed (in the background): every new item from feeds.json's sources, copied as published, no model; a
+      # source that can't be read is a warning, not a failed run. The fill (in the foreground): search.ts can wait out
+      # a busy arXiv here, outside the 30-minute limit of the scout's Bash commands, and the lookups and lists it keeps
+      # make the scout's own search shorter; a source that fails still leaves a usable pool.
+      # They can't corrupt each other: search.ts only reads site/digests.js at its start and never writes it, and
+      # digests.ts add writes it by rename; the newsfeed's items don't affect the paper search.
+      # The shell runs with -e, so a search that fails must not end the step before the wait: the newsfeed would go on
+      # into the scoring and the scout, adding its items while the scout writes the same file. The step keeps the
+      # search's exit code and leaves with it once both are done.
+      - name: Collect the newsfeed and fill the candidate pool
+        if: steps.status.outputs.skip == 'false'
+        continue-on-error: true
+        run: |
+          ( node scripts/scout/newsfeed/newsfeed.ts feeds.json site/digests.js "$RUNNER_TEMP/newsfeed.json" || echo "::warning::a newsfeed source was not read; see this step's log"
+            if [ -f "$RUNNER_TEMP/newsfeed.json" ]; then
+              node scripts/digests/digests.ts add site/digests.js "$RUNNER_TEMP/newsfeed.json"
+              # A blog page gives only a post's link, title and date: describe.ts copies each new post's own description.
+              jq -r --slurpfile feeds feeds.json '($feeds[0].sources | map(select(.kind == "page") | .name)) as $pages | .[] | select(.source as $name | $pages | index($name)) | .url' "$RUNNER_TEMP/newsfeed.json" > "$RUNNER_TEMP/page-posts.txt"
+              if [ -s "$RUNNER_TEMP/page-posts.txt" ]; then
+                xargs -d "\n" node scripts/scout/web/describe.ts site/digests.js < "$RUNNER_TEMP/page-posts.txt" || echo "::warning::a blog post's description was not copied; see this step's log"
+              fi
+            fi ) &
+          newsfeed=$!
+          status=0
+          node scripts/scout/search.ts site/digests.js || status=$?
+          wait "$newsfeed" || status=$?
+          exit "$status"
+
+      # Jev scores each new candidate once, so the scout's search prints them best first. Only this step holds the
+      # TypeSafe key; a scoring that fails leaves those papers unscored, and the scout still runs.
+      - name: Score the candidate pool
+        if: steps.status.outputs.skip == 'false'
+        continue-on-error: true
+        run: node scripts/scout/score.ts
+        env:
+          TYPESAFE_AI_KEY: ${{ secrets.TYPESAFE_AI_KEY }}
+
+      # Claude Code ignores the project's allow list in a folder never trusted, and a fresh runner trusts none.
+      - name: Trust the checkout
+        if: steps.status.outputs.skip == 'false'
+        run: |
+          config="$HOME/.claude.json"
+          if [ ! -f "$config" ]; then
+            echo '{}' > "$config"
+          fi
+          jq --arg repo "$(pwd -P)" '.projects[$repo].hasTrustDialogAccepted = true' "$config" > "$config.new"
+          mv "$config.new" "$config"
+
+      # The session's final message goes to stdout, which is dropped: the job log is public once the repo is, so the
+      # message reaches the owner only in .scout-logs/<date>.md, sent to the owner's page below. What failed stays on stderr.
+      - name: Run the scout
+        id: scout
+        if: steps.status.outputs.skip == 'false'
+        run: node scripts/scout/scout.ts --foreground > /dev/null
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+      # Also after a session that failed or ran out of time: every line it wrote loads (the scripts write by rename),
+      # push checks each before sending, and the site only adds and fills, so nothing the session added is lost.
+      # skip is empty when the count failed, and then nothing is pushed.
+      - name: Push the scout's entries
+        id: push
+        if: always() && steps.status.outputs.skip == 'false'
+        run: node scripts/deploy/sync.ts push site/digests.js
+        env:
+          ACCESS_SYNC_ID: ${{ secrets.ACCESS_SYNC_ID }}
+          ACCESS_SYNC_SECRET: ${{ secrets.ACCESS_SYNC_SECRET }}
+
+      # The owner's likes and dislikes (titles and abstracts) stay out of the saved cache, which every branch and pull
+      # request of the repository can restore. The next run's pull writes feedback.json again before the scoring and
+      # the scout read it. Like the push: also after a step that failed, and not on a skipped day, which restored no
+      # cache.
+      - name: Remove feedback.json from .cache/
+        if: always() && steps.status.outputs.skip == 'false'
+        run: rm -f .cache/feedback.json
+
+      # Only after a scout step that succeeded, whatever the push and log steps did after it: the next run, which holds
+      # the token, reads the saved cache, so only a clean run's cache is kept, not a failed session's leftovers, and
+      # nothing from a day that skipped the scout, which changed nothing.
+      - name: Save .cache/
+        if: always() && steps.scout.outcome == 'success' && steps.status.outputs.skip == 'false'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/
+          key: scout-cache-${{ github.run_id }}-${{ github.run_attempt }}
+
+      # The day's log (the final message, cost, turns and refused tool calls) goes to the site, where only the owner's
+      # page reads it; the run's own id names it, so a second run the same day is a second log.
+      - name: Send the scout's log to the owner's page
+        id: log
+        if: always() && steps.status.outputs.skip == 'false'
+        run: node scripts/deploy/sync.ts log "${{ github.run_id }}-${{ github.run_attempt }}" ".scout-logs/$(TZ=Asia/Jakarta date +%F).md"
+        env:
+          ACCESS_SYNC_ID: ${{ secrets.ACCESS_SYNC_ID }}
+          ACCESS_SYNC_SECRET: ${{ secrets.ACCESS_SYNC_SECRET }}
+
+      # The summary says only where the log went, never what it holds.
+      - name: Write the job summary
+        if: always()
+        run: |
+          if [ "$SKIP" = "true" ]; then
+            echo "Today already has $PAPERS papers: the scout didn't run." >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$LOG" = "success" ]; then
+            echo "The scout's log is on the owner's page, under Scout logs." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "The scout's log didn't reach the owner's page: see the step logs." >> "$GITHUB_STEP_SUMMARY"
+          fi
+        env:
+          SKIP: ${{ steps.status.outputs.skip }}
+          PAPERS: ${{ steps.status.outputs.papers }}
+          LOG: ${{ steps.log.outcome }}
+
+  # The site shows the new entries once deploy.yml has built it from the database again.
+  deploy:
+    needs: scout
+    if: always() && needs.scout.outputs.pushed == 'true'
+    uses: ./.github/workflows/deploy.yml
+    # Values come from production.
+    secrets:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+      MCP_AUD: ${{ secrets.MCP_AUD }}

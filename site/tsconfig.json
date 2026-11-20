@@ -1,0 +1,10 @@
+{
+	// The page: browser code that tsc checks and esbuild bundles into site/app.js, so no Node types here
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"module": "preserve",
+		"lib": ["es2024", "dom", "dom.iterable"],
+		"types": []
+	},
+	"include": ["app.ts", "page/**/*.ts"]
+}

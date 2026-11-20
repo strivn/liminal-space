@@ -1,0 +1,146 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/j8alIihr3603Z6OQ5s5SJDRtyDI</id>
+  <title>arXiv Query: search_query=&amp;id_list=2507.11473&amp;start=0&amp;max_results=10</title>
+  <updated>2026-09-27T06:42:33Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=&amp;start=0&amp;max_results=10&amp;id_list=2507.11473" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>10</opensearch:itemsPerPage>
+  <opensearch:totalResults>1</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2507.11473v2</id>
+    <title>Chain of Thought Monitorability: A New and Fragile Opportunity for AI Safety</title>
+    <updated>2025-12-07T02:14:12Z</updated>
+    <link href="https://arxiv.org/abs/2507.11473v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2507.11473v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>AI systems that "think" in human language offer a unique opportunity for AI safety: we can monitor their chains of thought (CoT) for the intent to misbehave. Like all other known AI oversight methods, CoT monitoring is imperfect and allows some misbehavior to go unnoticed. Nevertheless, it shows promise and we recommend further research into CoT monitorability and investment in CoT monitoring alongside existing safety methods. Because CoT monitorability may be fragile, we recommend that frontier model developers consider the impact of development decisions on CoT monitorability.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-07-15T16:43:41Z</published>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Tomek Korbak</name>
+    </author>
+    <author>
+      <name>Mikita Balesni</name>
+    </author>
+    <author>
+      <name>Elizabeth Barnes</name>
+    </author>
+    <author>
+      <name>Yoshua Bengio</name>
+    </author>
+    <author>
+      <name>Joe Benton</name>
+    </author>
+    <author>
+      <name>Joseph Bloom</name>
+    </author>
+    <author>
+      <name>Mark Chen</name>
+    </author>
+    <author>
+      <name>Alan Cooney</name>
+    </author>
+    <author>
+      <name>Allan Dafoe</name>
+    </author>
+    <author>
+      <name>Anca Dragan</name>
+    </author>
+    <author>
+      <name>Scott Emmons</name>
+    </author>
+    <author>
+      <name>Owain Evans</name>
+    </author>
+    <author>
+      <name>David Farhi</name>
+    </author>
+    <author>
+      <name>Ryan Greenblatt</name>
+    </author>
+    <author>
+      <name>Dan Hendrycks</name>
+    </author>
+    <author>
+      <name>Marius Hobbhahn</name>
+    </author>
+    <author>
+      <name>Evan Hubinger</name>
+    </author>
+    <author>
+      <name>Geoffrey Irving</name>
+    </author>
+    <author>
+      <name>Erik Jenner</name>
+    </author>
+    <author>
+      <name>Daniel Kokotajlo</name>
+    </author>
+    <author>
+      <name>Victoria Krakovna</name>
+    </author>
+    <author>
+      <name>Shane Legg</name>
+    </author>
+    <author>
+      <name>David Lindner</name>
+    </author>
+    <author>
+      <name>David Luan</name>
+    </author>
+    <author>
+      <name>Aleksander Mądry</name>
+    </author>
+    <author>
+      <name>Julian Michael</name>
+    </author>
+    <author>
+      <name>Neel Nanda</name>
+    </author>
+    <author>
+      <name>Dave Orr</name>
+    </author>
+    <author>
+      <name>Jakub Pachocki</name>
+    </author>
+    <author>
+      <name>Ethan Perez</name>
+    </author>
+    <author>
+      <name>Mary Phuong</name>
+    </author>
+    <author>
+      <name>Fabien Roger</name>
+    </author>
+    <author>
+      <name>Joshua Saxe</name>
+    </author>
+    <author>
+      <name>Buck Shlegeris</name>
+    </author>
+    <author>
+      <name>Martín Soto</name>
+    </author>
+    <author>
+      <name>Eric Steinberger</name>
+    </author>
+    <author>
+      <name>Jasmine Wang</name>
+    </author>
+    <author>
+      <name>Wojciech Zaremba</name>
+    </author>
+    <author>
+      <name>Bowen Baker</name>
+    </author>
+    <author>
+      <name>Rohin Shah</name>
+    </author>
+    <author>
+      <name>Vlad Mikulik</name>
+    </author>
+  </entry>
+</feed>

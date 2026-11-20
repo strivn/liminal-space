@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Liminal Space</title>
+  <!-- Search engines show the title and this description only: robots.txt keeps them out of data/, and the entries
+       sit inside a div marked data-nosnippet (Google honours it only on div, span and section, not on main). -->
+  <meta name="description" content="A daily reading list.">
+  <!-- Icon: book spines, the tallest marked with a red square. The tab icons are the light art (navy on cream); the
+       Home Screen icon is the dark art (cream on navy) with a glass sheen. One Home Screen icon: on the iPhone, a light
+       and dark pair linked by prefers-color-scheme didn't follow dark mode. The owner's copy also links
+       manifest.webmanifest (scripts/deploy/build-site.ts), so it opens as its own app from a Home Screen. -->
+  <link rel="icon" type="image/png" sizes="32x32" href="app-icon/icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="app-icon/icon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="app-icon/apple-touch-icon.png">
+  <meta name="theme-color" content="#041534">
+  <!-- The page's data and font start downloading with the HTML, instead of after app.js runs (the index) or after the
+       index answers (the newest month, whose preload scripts/deploy/build-site.ts writes, since its name holds its hash).
+       crossorigin matches fetch()'s own mode (cors, same-origin credentials) and a font's, so each preload is used. -->
+  <link rel="preload" href="data/index.json" as="fetch" crossorigin>
+  <link rel="preload" href="fonts/Manrope-Variable-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- KaTeX 0.18.9, saved in site/katex so math renders offline -->
+  <link rel="stylesheet" href="katex/katex.min.css">
+  <link rel="stylesheet" href="style.css">
+  <!-- The entries as plain Markdown, one file a day, for an agent that reads the page without running its script. -->
+  <link rel="alternate" type="text/markdown" href="digests/index.md">
+</head>
+<body>
+  <!-- First in the tab order, past the sidebar's heatmap and contents; style.css shows it only while it has focus. -->
+  <a class="skip-link" href="#digests">Skip to the digests</a>
+  <!-- The sidebar layout from the first frame (style.css), so the page doesn't jump left once the data arrive; the
+       page drops it when there are no digests to list (render.ts). -->
+  <div id="page" class="page page--with-contents">
+    <!-- Header, reading heatmap and contents: one sidebar on wide windows, the top of the page on narrow ones,
+         where the heatmap is hidden. -->
+    <div class="sidebar">
+      <header class="masthead">
+        <span class="signal-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <h1>Liminal Space</h1>
+        <!-- The description as page text for search engines, which can't load the entries (robots.txt keeps them out
+             of data/ and digests/), and where an agent finds the entries as text. Shown to screen readers only, which
+             Google's spam policy allows when it helps them. -->
+        <p class="visually-hidden">A daily reading list. Plain-text digests: digests/index.md</p>
+        <div id="freshness" class="masthead__meta"></div>
+      </header>
+      <aside id="heatmap" class="heatmap" aria-label="Reading heatmap"></aside>
+      <!-- On a phone, the bar kept at the top: the last 7 days, Refresh and the contents; elsewhere no box (style.css). -->
+      <div class="phone-bar">
+        <aside id="heat-strip" class="phone-bar__strip" aria-label="Last 7 days"></aside>
+        <button type="button" class="phone-bar__refresh" aria-label="Refresh"></button>
+        <nav id="contents" class="contents" aria-label="Contents"></nav>
+        <div class="phone-bar__progress" aria-hidden="true"></div>
+      </div>
+    </div>
+    <div class="nosnippet" data-nosnippet>
+      <!-- tabindex="-1": the skip link moves focus here, so the next Tab carries on in the digests. -->
+      <main id="digests" tabindex="-1" aria-busy="true"></main>
+    </div>
+  </div>
+
+  <!-- Only script files, no inline script or on* handler: the content security policy allows scripts from the
+       page's own files alone. app.js reads data/index.json and the month files itself. -->
+  <script src="katex/katex.min.js"></script>
+  <script src="katex/auto-render.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

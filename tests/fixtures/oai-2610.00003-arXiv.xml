@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+    <responseDate>2026-10-02T03:01:14Z</responseDate>
+                <request verb="GetRecord" identifier="oai:arXiv.org:2610.00003" metadataPrefix="arXiv">http://oaipmh.arxiv.org/oai</request>
+
+
+    <GetRecord>
+                <record>
+                <header>
+        <identifier>oai:arXiv.org:2610.00003</identifier>
+        <datestamp>2026-10-02</datestamp>
+            <setSpec>cs:cs:CV</setSpec>
+            <setSpec>cs:cs:AI</setSpec>
+            <setSpec>cs:cs:LG</setSpec>
+            <setSpec>cs:cs:RO</setSpec>
+    </header>
+
+            <metadata>
+                        <arXiv xmlns="http://arxiv.org/OAI/arXiv/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXiv/ https://oaipmh.arxiv.org/OAI/arXiv.xsd">
+        <id>2610.00003</id>
+        <created>2026-05-21</created>
+            <updated>2026-10-02</updated>
+        <authors>
+                <author>
+                    <keyname>Varma</keyname>
+                        <forenames>Animesh</forenames>
+                </author>
+        </authors>
+        <title>STATERA: Hidden Mass Estimation via Zero-Shot Sim-to-Real Kinematics using Frozen Temporal Tubelets</title>
+            <categories>cs.CV cs.AI cs.LG cs.RO</categories>
+            <comments>17 pages, 7 figures, 3 tables. Preprint</comments>
+            <license>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</license>
+            <abstract>Vision models pretrained for frame-level appearance often struggle to infer hidden physical properties from motion. We study center-of-mass (CoM) localization for opaque, asymmetric rigid bodies from short monocular videos, where surface cues and point tracking are unreliable under self-occlusion. We propose STATERA, which adapts a pretrained video backbone (V-JEPA) with mostly frozen weights and a lightweight temporal tubelet mixer to predict per-frame CoM heatmaps and trajectories. To support this task, we introduce the HiddenMass Benchmark, comprising 50K MuJoCo trajectories and a 63-sequence real-world test set with physically calibrated CoM ground truth. In simulation, STATERA-50K-Sigma improves normalized CoM error from 41.7% (DINOv2) to 25.2%. In zero-shot sim-to-real transfer, we observe a fundamental trade-off in supervision: phase-aware targets can induce bimodal predictions, while phase-agnostic targets can collapse toward statistically safe centroids. Nevertheless, our phase-aware STATERA-50K-Crescent is the only evaluated method that demonstrates consistent movement toward the true hidden offset. While this leads to a monocular vector overshoot artifact that marginally increases absolute Euclidean error compared to a static geometric centroid, it improves physics capture from 2.6% to 41.0%. These results suggest that frozen temporal representations can better separate inertial dynamics from visual geometry for hidden-parameter estimation.</abstract>
+    </arXiv>
+
+            </metadata>
+        </record>
+
+    </GetRecord>
+</OAI-PMH>

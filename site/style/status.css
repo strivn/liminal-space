@@ -1,0 +1,91 @@
+/* The focus ring is a box shadow, and a transparent outline beside it: high contrast modes (Windows' forced colours)
+   drop shadows but draw an outline in the system's colour, so the ring still shows there. */
+:focus-visible {
+	outline: 2px solid transparent;
+	box-shadow: var(--focus-ring);
+	border-radius: 6px;
+}
+/* A text field in focus keeps its own corners; its outline turns the text colour (.comment-editor textarea:focus). */
+textarea:focus-visible {
+	border-radius: 8px;
+}
+
+/* Status: coloured icon plus a word in text colour. Never red: errors are burnt orange. */
+.status {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	color: var(--text);
+	font-size: 14px;
+	line-height: 20px;
+	font-weight: 500;
+}
+.status svg {
+	width: 16px;
+	height: 16px;
+	flex: none;
+	fill: none;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.status--warning svg {
+	stroke: var(--warning);
+}
+.status--danger svg {
+	stroke: var(--danger);
+}
+main > .status,
+.empty {
+	margin-top: 32px;
+}
+/* Entries the page left out: a warning status line that unfolds to what each one was and why, with no fill or bar of
+   its own (Salience: a status is its icon and its words). The disclosure marker stays, so it reads as something to
+   open; ids are long URLs, so they may break anywhere. */
+.skipped {
+	overflow-wrap: anywhere;
+	margin-top: 8px;
+}
+/* The summary is one row: the fold arrow, the warning sign and the text, which may wrap. On a 20px line the 16px sign
+   sits 2px down and the 10px arrow 5px down, so both are centred on the first line. */
+.skipped > summary {
+	cursor: pointer;
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	list-style: none;
+	line-height: 20px;
+}
+.skipped > summary::-webkit-details-marker {
+	display: none;
+}
+.skipped__arrow {
+	flex: none;
+	width: 0;
+	height: 0;
+	margin-top: 5px;
+	border-style: solid;
+	border-width: 5px 0 5px 7px;
+	border-color: transparent transparent transparent var(--text-secondary);
+	transition: transform 0.15s;
+}
+.skipped[open] .skipped__arrow {
+	transform: rotate(90deg);
+}
+.skipped > summary .status {
+	flex: 1;
+	min-width: 0;
+	margin: 0;
+	align-items: flex-start;
+}
+.skipped > summary .status svg {
+	margin-top: 2px;
+}
+.skipped ul {
+	margin: 4px 0 0;
+	padding-left: 20px;
+}
+.skipped p {
+	margin: 8px 0 0;
+}

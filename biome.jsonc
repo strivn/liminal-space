@@ -1,0 +1,82 @@
+{
+	// Lint and format rules, with two turned off
+	"$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
+	"vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+	"files": {
+		"ignoreUnknown": true,
+		// Generated data, vendored KaTeX, fixture pages and other worktrees are not ours to format
+		"includes": [
+			"**",
+			"!site/digests.js",
+			"!site/katex",
+			"!tests/fixtures/lists",
+			"!tests/fixtures/proceedings",
+			"!tests/fixtures/newsfeed",
+			"!.claude/worktrees"
+		]
+	},
+	"formatter": { "enabled": true },
+	// Markdown stays hand-wrapped
+	"markdown": { "formatter": { "enabled": false } },
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"nursery": {
+				"noFloatingPromises": "error",
+				"noMisusedPromises": "error"
+			},
+			"suspicious": { "noExplicitAny": "error" },
+			"style": {
+				"noEnum": "error",
+				"noNamespace": "error",
+				"useImportType": "error",
+				"useNodejsImportProtocol": "error",
+				"useThrowOnlyError": "error"
+			},
+			// Off: this repo writes plain if-checks instead of ?. so the code reads easily
+			"complexity": { "useOptionalChain": "off" },
+			"correctness": {
+				"noUnusedImports": "error",
+				"noUnusedVariables": "error"
+			},
+			"performance": { "noAwaitInLoops": "warn" }
+		}
+	},
+	"overrides": [
+		// index.html declares globals that digests.js and app.js read, so they only look unused here
+		{
+			"includes": ["site/index.html"],
+			"linter": {
+				"rules": { "correctness": { "noUnusedVariables": "off" } }
+			}
+		},
+		// arXiv's own logomark files, shown through <img> with alt text, stay as arXiv ships them
+		{
+			"includes": ["site/*.svg"],
+			"linter": { "rules": { "a11y": { "noSvgWithoutTitle": "off" } } }
+		},
+		// The !important margins beat element resets such as .contents p { margin: 0 }, and reordering rules
+		// by specificity would change how the page looks, which a lint fix should not do
+		{
+			"includes": ["site/style/*.css"],
+			"linter": {
+				"rules": {
+					"complexity": { "noImportantStyles": "off" },
+					"style": { "noDescendingSpecificity": "off" }
+				}
+			}
+		},
+		// Tests drive one script run after another, so their awaits must happen in order
+		{
+			"includes": ["tests/**"],
+			"linter": {
+				"rules": { "performance": { "noAwaitInLoops": "off" } }
+			}
+		}
+	],
+	"assist": {
+		"enabled": true,
+		"actions": { "source": { "organizeImports": "on" } }
+	}
+}

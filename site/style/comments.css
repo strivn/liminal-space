@@ -1,0 +1,392 @@
+/* ---- Comments ---- */
+
+/* A commented passage: a 2px underline in the data blue of its card's bar, below where a title link's own 1px
+   underline sits, so the two never merge. The passage whose thread is open sits on Salience's highlight ground. */
+.comment-mark {
+	background: transparent;
+	color: inherit;
+	border-bottom: 2px solid var(--data);
+	cursor: pointer;
+}
+.comment-mark--active {
+	background: var(--highlight);
+}
+
+/* The count of an entry's threads, in the rail only below 1386px where the cards aren't in a column. Its number is
+   text, which the ::before square would cover, so the square is the button's own background here. */
+.comment-count::before {
+	content: none;
+}
+.comment-count:hover,
+.comment-count:focus-visible {
+	background: var(--border);
+}
+.comment-count[hidden],
+.selection-float[hidden],
+.highlight-menu[hidden] {
+	display: none;
+}
+
+/* Highlight, then Comment, beside a selection. Highlight is outlined on the page's background, so text under it
+   doesn't show through; Comment, the main action, is Salience's primary button: a red fill on both themes. */
+.selection-float {
+	position: absolute;
+	z-index: var(--z-selection);
+	display: flex;
+	gap: 8px;
+}
+.highlight-float {
+	background: var(--bg);
+}
+.comment-float,
+.comment-float:hover {
+	background: var(--data);
+	border-color: var(--data);
+	color: var(--on-data);
+}
+/* Solid on hover: the button floats over the abstract, and a see-through fill let the words behind it show. */
+.comment-float:hover {
+	background: color-mix(in srgb, var(--data) 90%, var(--bg));
+	border-color: color-mix(in srgb, var(--data) 90%, var(--bg));
+}
+
+/* The menu a click on a highlight without comments opens: Comment and Remove highlight, one per line. */
+.highlight-menu {
+	position: absolute;
+	z-index: var(--z-selection);
+	display: flex;
+	flex-direction: column;
+	padding: 4px;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: var(--bg);
+}
+.highlight-menu button {
+	font: 500 14px / 20px var(--font-sans);
+	padding: 4px 12px;
+	border: none;
+	border-radius: 4px;
+	background: transparent;
+	color: var(--text);
+	text-align: left;
+	cursor: pointer;
+}
+.highlight-menu button:is(:hover, :focus-visible) {
+	background: var(--surface);
+}
+
+/* Cards: Salience callouts, a faint fill (sunken on dark) with a 4px data-blue bar on the left. */
+.comment-thread,
+.comment-draft,
+.takeaway-card {
+	padding: 12px 14px;
+	border-left: 4px solid var(--data);
+	border-radius: 0 6px 6px 0;
+	background: var(--surface);
+	font-size: 14px;
+	line-height: 20px;
+}
+/* A card brought into view by its highlight is focused, with the page's focus ring for keyboard focus only. */
+.comment-thread:focus-visible {
+	outline: 2px solid transparent;
+	box-shadow: var(--focus-ring);
+}
+:where(.comment-thread, .takeaway-card) p {
+	margin: 0;
+}
+/* A takeaway card: the owner's words, then the recall question, then when and where it was saved. */
+.takeaway-card__text {
+	font-weight: 600;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+.takeaway-card__question {
+	margin-top: 4px;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+.takeaway-card__meta,
+.takeaway-card__warning {
+	margin-top: 4px;
+	font-size: 12px;
+	line-height: 18px;
+}
+.takeaway-editor textarea + textarea {
+	margin-top: 8px;
+}
+/* "Add takeaway": a quiet text button at the top of the panel. */
+.takeaway-add {
+	align-self: flex-start;
+	padding: 4px 12px;
+	border: 1px solid var(--text-secondary);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--text);
+	font: 500 14px / 20px var(--font-sans);
+	cursor: pointer;
+}
+.takeaway-add:hover {
+	background: var(--surface);
+}
+/* The Takeaway button's count: a small number at the icon's lower right. */
+.takeaway-count {
+	position: absolute;
+	right: 1px;
+	bottom: 1px;
+	z-index: var(--z-above);
+	font: 600 10px / 12px var(--font-sans);
+	color: var(--text);
+}
+.comment + .comment {
+	margin-top: 12px;
+}
+/* Every comment after a thread's first, and Claude's answer being written, sit 14px in under a thin line. */
+.comment + .comment,
+.comment-ask {
+	margin-left: 2px;
+	padding-left: 12px;
+	border-left: 2px solid var(--border);
+}
+.comment__meta {
+	font-size: 12px;
+	line-height: 18px;
+	color: var(--text);
+} /* text-secondary on surface is 4.38:1 */
+/* Claude's name in its orange, after Anthropic's Sonnet icon: 10px wide on a 15px tile. */
+.comment__tile {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 15px;
+	height: 15px;
+	margin-right: 5px;
+	border-radius: 3px;
+	background: var(--claude);
+	vertical-align: -3px;
+}
+.comment__tile img {
+	width: 10px;
+}
+.comment__claude {
+	color: var(--claude);
+	font-weight: 600;
+}
+.comment__text {
+	margin-top: 2px;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+/* Claude's reply is HTML from Markdown: paragraphs, lists and quotes carry their own spacing, not the text's newlines. */
+.comment__text--markdown {
+	white-space: normal;
+}
+/* A long reply of Claude's shows its first 8 lines until "Show more" opens it. */
+.comment__text--folded {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 8;
+	line-clamp: 8;
+	overflow: hidden;
+}
+.comment__text--markdown > :first-child {
+	margin-top: 0;
+}
+.comment__text--markdown > :last-child {
+	margin-bottom: 0;
+}
+:where(.comment-thread)
+	.comment__text--markdown
+	:is(p, ul, ol, pre, blockquote) {
+	margin: 8px 0 0;
+}
+.comment__text--markdown :is(ul, ol) {
+	padding-left: 20px;
+}
+.comment__text--markdown pre {
+	overflow-x: auto;
+}
+.comment__text--markdown blockquote {
+	padding-left: 10px;
+	border-left: 2px solid var(--border);
+}
+.comment__warning {
+	margin-top: 4px;
+	font-size: 12px;
+	line-height: 18px;
+}
+/* Claude's answer being written, or why it can't be: under the thread's last comment, in the comments' own type. */
+.comment-ask {
+	margin-top: 12px;
+}
+.comment-ask__note {
+	font-size: 12px;
+	line-height: 18px;
+	color: var(--text);
+}
+.comment-ask__text {
+	margin-top: 2px;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+.comment__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 6px 0 0 -6px;
+}
+/* display above outranks the browser's own [hidden] rule: "Show more" is hidden while a reply fits. */
+.comment-action[hidden] {
+	display: none;
+}
+/* Reply, Edit and Delete, and the contents' Collapse all: quiet buttons, a Lucide icon before the word. */
+.comment-action,
+.contents__collapse {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 6px;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: var(--text);
+	font: 500 12px / 18px var(--font-sans);
+	cursor: pointer;
+}
+.comment-action svg,
+.comment-editor button svg,
+.contents__collapse svg {
+	width: 14px;
+	height: 14px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.comment-action:hover {
+	background: var(--bg);
+}
+/* Save and Cancel, with their icon before the word like Reply, Edit and Delete: Cancel is Salience's ghost button,
+   Save its primary button, filled in the comments' blue, once there is something to save. */
+.comment-editor button {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font: 500 12px / 18px var(--font-sans);
+	padding: 2px 8px;
+	border: 1px solid var(--text-secondary);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--text);
+	cursor: pointer;
+}
+.comment-editor button:hover {
+	background: var(--bg);
+}
+.comment-editor .comment-editor__save:enabled {
+	border-color: var(--data);
+	background: var(--data);
+	color: var(--on-data);
+}
+.comment-editor .comment-editor__save:enabled:hover {
+	background: color-mix(in srgb, var(--data) 90%, var(--bg));
+	border-color: color-mix(in srgb, var(--data) 90%, var(--bg));
+}
+.comment-editor button:disabled {
+	color: var(--text-secondary);
+	cursor: default;
+}
+/* The quoted passage, in the side panel or when it can no longer be found. */
+.comment-thread__quote {
+	margin: 0 0 8px;
+	color: var(--text);
+	font-style: italic;
+}
+.comment-thread__quote::before {
+	content: "\201C";
+}
+.comment-thread__quote::after {
+	content: "\201D";
+}
+.comment-thread__missing {
+	margin-bottom: 4px;
+	font-size: 12px;
+	line-height: 18px;
+	font-weight: 600;
+	color: var(--warning);
+}
+/* The field holds the box's background; the layer behind the textarea draws the text, with @Claude in Claude's orange
+   and the suggestion in grey, in the textarea's own box and font, so it wraps where the textarea's text does. The
+   textarea's text is see-through and its selection translucent, so the layer shows through both. */
+.comment-editor__field {
+	position: relative;
+	border-radius: 8px;
+	background: var(--bg);
+}
+.comment-editor textarea,
+.comment-editor__layer {
+	display: block;
+	width: 100%;
+	padding: 8px;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	font: 400 14px / 20px var(--font-sans);
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+	word-break: normal;
+}
+.comment-editor textarea {
+	min-height: 64px;
+	resize: vertical;
+	border-color: var(--text-secondary);
+	background: transparent;
+	color: transparent;
+	caret-color: var(--text);
+}
+.comment-editor textarea::selection {
+	background: color-mix(in srgb, var(--text) 25%, transparent);
+	color: transparent;
+}
+.comment-editor__layer {
+	position: absolute;
+	inset: 0;
+	overflow: auto;
+	scrollbar-color: transparent transparent;
+	color: var(--text);
+	pointer-events: none;
+	user-select: none;
+}
+.comment-editor__suggestion {
+	color: var(--text-secondary);
+}
+/* An "@Claude" that asks Claude, in the comment box and in a saved comment. */
+.claude-mention {
+	color: var(--claude);
+}
+/* In focus, the box's outline turns the text colour and its ring, the page's ring in the comments' blue (Salience Form). */
+.comment-editor textarea:focus {
+	border-color: var(--text);
+	box-shadow:
+		0 0 0 2px var(--bg),
+		0 0 0 4px var(--data);
+}
+.comment-thread .comment-editor,
+.comment .comment-editor {
+	margin-top: 8px;
+}
+.comment-editor__buttons {
+	display: flex;
+	gap: 8px;
+	margin-top: 8px;
+}
+/* The suggestion's tap target on a touch screen, in the colour of the mention it fills in. */
+.comment-editor__chip-slot {
+	display: flex;
+	margin-top: 8px;
+}
+.comment-editor__chip-slot:empty {
+	display: none;
+}
+.comment-editor .comment-editor__chip {
+	color: var(--claude);
+}

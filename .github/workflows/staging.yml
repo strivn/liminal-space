@@ -1,0 +1,78 @@
+# Deploy develop to staging on every push: production's entries, read from its public files, then develop's page and
+# Worker on staging's own database. Staging's host is the secret SITE_HOST.
+name: staging
+
+on:
+  push:
+    branches: [develop]
+
+# One staging deploy at a time; a newer one waits. Its own group, so it never waits on production's.
+concurrency:
+  group: staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 15
+    steps:
+      # No token left in .git/config for the steps after this one.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      # Production's entries as any visitor reads them, from its public files: entries only, never the owner's marks, tags,
+      # likes, highlights or comments, which live in production's database alone.
+      - name: Pull production's entries
+        run: node scripts/deploy/sync.ts pull site/digests.js
+
+      - name: Build the site
+        run: |
+          pnpm run build
+          node scripts/deploy/build-site.ts --staging "$GITHUB_SHA" site/digests.js dist
+
+      # As production's deploy does (deploy.yml), on staging's database: pending migrations before the Worker that
+      # needs them, the id pinned in env.staging. No Time Travel bookmark: staging's entries come back on every deploy.
+      - name: Migrate the database
+        run: |
+          node -e 'require("wrangler").experimental_patchConfig("wrangler.jsonc", { env: { staging: { d1_databases: [{ database_id: process.env.D1_DATABASE_ID }] } } }, false)'
+          if ! pnpm exec wrangler d1 migrations apply liminal-staging --env staging --remote; then
+            echo "A migration failed and nothing was deployed. The first migration still pending is the one that failed:" >&2
+            pnpm exec wrangler d1 migrations list liminal-staging --env staging --remote >&2
+            exit 1
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+
+      # The Worker's secrets (OWNER_EMAIL, SYNC_CLIENT_ID) stay on liminal-staging between deploys.
+      - name: Deploy
+        run: |
+          node -e 'require("wrangler").experimental_patchConfig("wrangler.jsonc", { env: { staging: { d1_databases: [{ database_id: process.env.D1_DATABASE_ID }] } } }, false)'
+          test -n "$SITE_HOST" || { echo "::error::SITE_HOST is not set"; exit 1; }
+          pnpm exec wrangler deploy --env staging --domain "$SITE_HOST" --var "SITE_ORIGIN:https://$SITE_HOST"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+          SITE_HOST: ${{ secrets.SITE_HOST }}
+
+      # Into staging's database, through staging's own sync route and service token, after the deploy so the first run
+      # has a Worker to push to. A push adds and fills entries and never touches marks, so what the owner did on staging stays.
+      # push sends only what changed since the pull, as digests.pulled.js records it; without that file it sends every
+      # entry, which staging's database needs, since the pull read production, not staging.
+      - name: Push the entries to staging
+        run: |
+          rm -f site/digests.pulled.js
+          node scripts/deploy/sync.ts push site/digests.js
+        env:
+          LIMINAL_URL: https://${{ secrets.SITE_HOST }}/liminal-space
+          ACCESS_SYNC_ID: ${{ secrets.ACCESS_SYNC_ID }}
+          ACCESS_SYNC_SECRET: ${{ secrets.ACCESS_SYNC_SECRET }}

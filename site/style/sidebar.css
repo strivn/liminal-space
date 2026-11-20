@@ -1,0 +1,177 @@
+/* Wide windows: the header and the contents become one sticky sidebar left of the reading column (Salience
+   Document layout: 220px sidebar, 56px gap; the column is 766px, 720px plus the rail's second column). The page's
+   own 16px gutters stay, so the width is 1074px. index.html sets the class, so the first frame already has the
+   sidebar; a page with no digests to list ("No digests yet", "Couldn't load digests") drops it and keeps the narrow
+   layout. */
+@media (min-width: 1080px) {
+	.page--with-contents {
+		max-width: 1028px;
+		display: grid;
+		grid-template-columns: 220px minmax(0, 720px);
+		grid-template-areas: "sidebar main";
+		column-gap: 56px;
+		align-items: start;
+	}
+	/* The sidebar stays in view; when the contents are taller than the window they scroll on their own. */
+	.page--with-contents .sidebar {
+		grid-area: sidebar;
+		position: sticky;
+		top: 0;
+		max-height: 100dvh;
+		padding-bottom: 32px;
+		display: flex;
+		flex-direction: column;
+	}
+	.page--with-contents .contents {
+		margin-top: 8px;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+	}
+	.contents__box[open] {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		padding-bottom: 0;
+	}
+	/* The native disclosure's content box must shrink too, so only the day list scrolls. */
+	.contents__box::details-content {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+	}
+	.contents__list {
+		max-height: none;
+	}
+	/* The heatmap between the header and the contents: 16px below the header (its 8px bottom padding plus 8px here)
+     and 8px above the contents (their own 8px top margin). Its last row holds the caption. Only as wide as its
+     squares. */
+	.page--with-contents .heatmap {
+		display: grid;
+		align-self: flex-start;
+		margin-top: 8px;
+	}
+	/* Today's date heading shares its baseline with "Liminal Space", 89px down: the header's 32px padding, the 12px
+     signal mark and the title's 16px top margin, plus 29px to the title's baseline. The heading's baseline sits 23px
+     into its box, after its 32px top margin, so 34px padding here (measured). */
+	.page--with-contents main {
+		grid-area: main;
+		padding-top: 34px;
+		/* A held day heading keeps that baseline too: 89px less its 23px to the baseline. */
+		--held-top: 66px;
+	}
+	.page--with-contents section.day > h2,
+	.page--with-contents details.day > summary {
+		top: var(--held-top);
+	}
+	/* The first day shown starts where the band ends, as today's heading does with its 32px top margin: a folded
+	   day that a month choice brings to the top would otherwise start under the band. */
+	.page--with-contents
+		main
+		> details.day:nth-child(1 of .day:not(.month-hidden)) {
+		margin-top: 32px;
+	}
+	.page--with-contents .entry {
+		scroll-margin-top: calc(var(--held-top) + var(--day-heading));
+	}
+	.page--with-contents .entry__title {
+		top: calc(var(--held-top) + var(--day-heading));
+	}
+	/* The band above a held heading, opaque over the text that scrolls past: a box that stays at the window's top
+     across the reading column, taking no room. It starts at main's top edge, above its 34px padding, and ends where
+     the first day's heading begins. */
+	.page--with-contents main::before {
+		content: "";
+		display: block;
+		position: sticky;
+		top: 0;
+		z-index: var(--z-chrome);
+		height: var(--held-top);
+		margin: -34px 0 calc(-1 * var(--held-top) + 34px);
+		background: var(--bg);
+	}
+	.contents__box {
+		border: 0;
+	}
+	.contents__summary {
+		display: none;
+	}
+	.read-filter {
+		margin-bottom: 8px;
+	}
+	.contents__date {
+		margin-top: 0;
+	}
+	.contents__collapse {
+		margin: 0 0 8px -6px;
+	}
+	/* One line per title, cut with "…": the marked title at 14px, the others at 12px. Both keep the list's 20px
+     line height, so the list doesn't move when the mark does. The surprise tag stays whole after a cut title. */
+	.contents li {
+		display: flex;
+		align-items: baseline;
+		gap: 4px;
+	}
+	.contents li a {
+		min-width: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		font-size: 12px;
+	}
+	.contents li a[aria-current="true"] {
+		font-size: 14px;
+	}
+	.contents__tag {
+		flex: none;
+	}
+	/* While the list scrolls, "Collapse all", the day being listed and its group's label stay at its top, each under
+	   the one before and opaque over the titles that pass beneath. The day (the date, or an older day's row) and the
+	   group label each stay while their own box is in view, and the next one takes their place. A sticky box is held
+	   inside the list's padding, so each top starts 4px up. The offsets are the heights above, measured in the page:
+	   30px for the button and its 8px margin, 20px for the date, 29px for a row (its 8px padding, 20px line and 1px
+	   hairline). */
+	.contents__list {
+		--stick-inset: -4px;
+		--stick-collapse: 0px;
+	}
+	.contents__list:has(.contents__collapse:not([hidden])) {
+		--stick-collapse: 30px;
+	}
+	.contents__top {
+		display: flow-root;
+		position: sticky;
+		top: var(--stick-inset);
+		z-index: var(--z-sticky);
+		background: var(--bg);
+	}
+	.contents__date,
+	.contents__day {
+		position: sticky;
+		top: calc(var(--stick-inset) + var(--stick-collapse));
+		z-index: var(--z-above);
+		background: var(--bg);
+	}
+	.contents__newest {
+		--stick-day: 20px;
+	}
+	.contents__older {
+		--stick-day: 29px;
+	}
+	.contents__group {
+		position: sticky;
+		top: calc(var(--stick-inset) + var(--stick-collapse) + var(--stick-day));
+		z-index: var(--z-raised);
+		background: var(--bg);
+	}
+}
+
+/* A short wide window: less room above the header and below the sidebar, so the contents list keeps more rows. */
+@media (min-width: 1080px) and (max-height: 650px) {
+	.page--with-contents .masthead {
+		padding-top: 16px;
+	}
+	.page--with-contents .sidebar {
+		padding-bottom: 16px;
+	}
+}

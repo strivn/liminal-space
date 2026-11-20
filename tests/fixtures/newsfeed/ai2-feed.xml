@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+  <rss version="2.0">
+    <channel>
+      <title>Ai2 Blog</title>
+      <link>https://allenai.org/blog</link>
+      <description>Latest updates</description>
+      
+      <item>
+        <guid isPermaLink="false">https://allenai.org/blog/theorizer-in-asta</guid>
+        <title>Theorizer comes to Asta</title>
+        <link>https://allenai.org/blog/theorizer-in-asta</link>
+        <pubDate>2026-11-19T00:00:00-08:00</pubDate>
+        <description>
+          <![CDATA[
+            <div style="display: flex; gap: 12px">
+              <div>Theorizer in Asta connects scientific literature to proposed explanations that researchers can examine and test.</div>
+              <img src="https://www.datocms-assets.com/64837/1795042518-theorizer-title-image-centered.png?w=200" width="200" alt="Theorizer comes to Asta" />
+            </div>
+          ]]>
+        </description>
+      </item>
+      
+      <item>
+        <guid isPermaLink="false">https://allenai.org/blog/taylor-geospatial-partnership</guid>
+        <title>Ai2 and Taylor Geospatial partner to make geospatial AI easier to compare, run, and build on</title>
+        <link>https://allenai.org/blog/taylor-geospatial-partnership</link>
+        <pubDate>2026-11-18T00:00:00-08:00</pubDate>
+        <description>
+          <![CDATA[
+            <div style="display: flex; gap: 12px">
+              <div>Ai2 and Taylor Geospatial are partnering to make geospatial AI more accessible and useful for the public good through open models, shared benchmarks, and improved satellite imagery datasets for applications in conservation, agriculture, and humanitarian work.</div>
+              <img src="https://www.datocms-assets.com/64837/1794929162-taylor-olmoearth-partnership-announcement-google-docs-image-1.png?w=200" width="200" alt="Ai2 and Taylor Geospatial partner to make geospatial AI easier to compare, run, and build on" />
+            </div>
+          ]]>
+        </description>
+      </item>
+</channel>
+</rss>

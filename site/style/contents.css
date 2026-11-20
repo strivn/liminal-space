@@ -1,0 +1,266 @@
+/* Contents, narrow windows: one hairline row under the header that unfolds, like an older day. */
+.contents {
+	margin-top: 16px;
+	font-size: 14px;
+	line-height: 20px;
+}
+.contents__box {
+	border-top: 1px solid var(--border);
+	border-bottom: 1px solid var(--border);
+}
+.contents__summary {
+	padding: 12px 0;
+	font-size: 16px;
+	line-height: 26px;
+	font-weight: 500;
+	cursor: pointer;
+}
+.contents__box[open] {
+	padding-bottom: 16px;
+}
+:where(.contents) p {
+	margin: 0;
+}
+.contents__date {
+	margin-top: 8px;
+	font-weight: 600;
+}
+/* Collapse all, above the date while an older day is open. Its icon lines up with the date's first letter. The
+   contents sit on the page background, so its hover is the surface fill. */
+.contents__collapse {
+	margin: 8px 0 0 -6px;
+}
+.contents__collapse:hover {
+	background: var(--surface);
+}
+.contents__collapse[hidden] {
+	display: none;
+}
+/* Filters stay in two rows with room for three-digit counts and comfortable targets. */
+.tag-filter,
+.read-filter {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 8px;
+	margin-bottom: 8px;
+}
+.tag-chip,
+.read-chip {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	min-width: 0;
+	min-height: 36px;
+	font: 500 12px / 18px var(--font-sans);
+	padding: 6px 4px;
+	border: 1px solid var(--text-secondary);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--text);
+	cursor: pointer;
+	transition: background 0.15s var(--ease);
+}
+.tag-chip svg,
+.read-chip svg {
+	width: 18px;
+	height: 18px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	flex-shrink: 0;
+}
+/* A filter's name, in a label above its button on hover or keyboard focus, its arrow pointing down at the button. It
+   starts at the button's left edge; the last button in a row ends it at its right edge, inside the sidebar. */
+.tag-chip,
+.read-chip {
+	position: relative;
+}
+.filter-label {
+	position: absolute;
+	bottom: calc(100% + 8px);
+	left: 0;
+	z-index: var(--z-above);
+	width: max-content;
+	max-width: 190px;
+	padding: 4px 8px;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: var(--surface);
+	color: var(--text);
+	font: 500 12px / 18px var(--font-sans);
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.15s var(--ease);
+}
+:is(.tag-chip, .read-chip):last-child .filter-label {
+	left: auto;
+	right: 0;
+}
+.filter-label::after {
+	content: "";
+	position: absolute;
+	left: 12px;
+	bottom: -4px;
+	width: 6px;
+	height: 6px;
+	transform: rotate(45deg);
+	background: var(--surface);
+	border-right: 1px solid var(--border);
+	border-bottom: 1px solid var(--border);
+}
+:is(.tag-chip, .read-chip):is(:hover, :focus-visible) .filter-label {
+	opacity: 1;
+	visibility: visible;
+}
+/* Clicked with the mouse: the name goes until the mouse leaves (site/page/tag-board.ts). */
+:is(.tag-chip, .read-chip).chip--clicked .filter-label {
+	opacity: 0;
+	visibility: hidden;
+}
+.contents__controls {
+	position: relative;
+	flex: none;
+	padding: 4px;
+	margin: 0 -4px;
+}
+.contents__list {
+	overflow-y: auto;
+	overscroll-behavior-y: contain;
+	min-height: 0;
+	max-height: 50dvh;
+	padding: 4px;
+	margin: 0 -4px;
+}
+/* What the tag filter hides. These set their own display, which would otherwise win over the hidden attribute. */
+.contents ul[hidden],
+.contents li[hidden],
+.contents__day[hidden] {
+	display: none;
+}
+/* Group labels: Salience metadata tags (12/16, 600, +2px, uppercase) in secondary text. */
+.contents__group {
+	margin: 12px 0 4px;
+	font-size: 12px;
+	line-height: 16px;
+	font-weight: 600;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--text-secondary);
+}
+.contents ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+/* Each title hangs off a 2px bar that turns text-coloured on the entry being read (Salience .doc__toc). */
+.contents li {
+	padding: 3px 0 3px 12px;
+	border-left: 2px solid transparent;
+}
+.contents li:has(> a[aria-current="true"]) {
+	border-left-color: var(--text);
+}
+.contents li a {
+	color: var(--text-secondary);
+	font-weight: 400;
+	text-decoration: none;
+}
+.contents li a:hover,
+.contents li a[aria-current="true"] {
+	color: var(--text);
+}
+.contents__tag {
+	margin-inline-start: 4px;
+	font-size: 12px;
+	line-height: 18px;
+	color: var(--text-secondary);
+}
+/* The ad hoc icon: 14px, centred on the title's line. */
+.contents__tag--icon {
+	display: inline-flex;
+	vertical-align: -2px;
+}
+.contents__tag--icon svg {
+	width: 14px;
+	height: 14px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+/* Older days: plain hairline rows, as in the page. */
+.contents__day {
+	display: block;
+	width: 100%;
+	margin-top: 8px;
+	padding: 8px 0 0;
+	border: 0;
+	border-top: 1px solid var(--border);
+	background: none;
+	color: var(--text);
+	font: 500 14px / 20px var(--font-sans);
+	text-align: left;
+	cursor: pointer;
+	transition:
+		background 0.15s cubic-bezier(0.2, 0, 0.2, 1),
+		box-shadow 0.15s cubic-bezier(0.2, 0, 0.2, 1);
+}
+/* The row has 8px above its text and none below, so the hover fill also runs 8px under it, as a shadow that takes
+   no room: nothing below moves. */
+.contents__day:hover {
+	box-shadow: 0 8px 0 var(--surface);
+}
+/* More room between the newest day's last list and the first older day. */
+.contents__newest + .contents__older > .contents__day {
+	margin-top: 16px;
+}
+/* The shelf: the unread papers that have waited longest, folded at the end of the newest day, on
+   the surface fill like a comment card. Its summary is a kicker, as the contents' group labels are. */
+.shelf {
+	margin-top: 24px;
+	padding: 16px;
+	background: var(--surface);
+}
+.shelf__title {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font-family: inherit;
+	text-align: left;
+	cursor: pointer;
+	font-size: 12px;
+	line-height: 16px;
+	font-weight: 600;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+}
+.shelf__body {
+	margin-top: 8px;
+}
+.shelf ul {
+	margin: 0;
+	padding-left: 20px;
+}
+.shelf__empty {
+	margin: 0;
+	color: var(--text-secondary);
+}
+
+/* The public page's entries have no icon rail: the text takes its room too. */
+.entry--plain {
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-areas:
+		"kicker"
+		"meta"
+		"body";
+}

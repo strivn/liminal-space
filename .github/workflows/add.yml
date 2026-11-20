@@ -1,0 +1,95 @@
+# Adds from any Claude app: the connector's tools queue add requests in the database and the Worker dispatches this
+# workflow. It pulls every entry, appends what the queued requests ask for with the scout's own scripts, pushes,
+# reports each request's result, and deploys the site. No model runs here.
+name: add
+
+on:
+  workflow_dispatch:
+
+# One add run at a time. A newer run waits for the running one, and reads whatever is still queued when it starts.
+concurrency:
+  group: adds
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  add:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+    outputs:
+      # "true" once a push was tried: a push that refused one entry still stored the others, so the site is rebuilt.
+      pushed: ${{ steps.push.outcome == 'success' || steps.push.outcome == 'failure' }}
+    steps:
+      # Production's workflows run only on main: a run started by hand on develop, the
+      # default branch, would write develop's unreleased code to production. GITHUB_REF is the ref the runner gives
+      # (the caller's, when another workflow calls this one), never an input.
+      - name: Run only on main
+        run: |
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "This workflow changes production, which runs main: start it on main, not ${GITHUB_REF}." >&2
+            exit 1
+          fi
+
+      # No token left in .git/config for the steps after this one.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      # Every entry, so an id or link already on the page is reported as already there.
+      - name: Pull the database
+        id: pull
+        run: node scripts/deploy/sync.ts pull --database site/digests.js
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+
+      # Reads the queue (with any request a run that died left running), marks each request running, and runs arxiv.ts
+      # --ad-hoc and figure.ts, or digests.ts add --ad-hoc and describe.ts, with each id as an argument of its own and
+      # links in a file: no request text reaches a shell, and the scripts get neither token. Each request's result goes
+      # to the results file as it is known; handled and added go to the outputs.
+      - name: Handle the queued requests
+        id: handle
+        run: node scripts/deploy/add-requests.ts run site/digests.js "$RUNNER_TEMP/add-results.json"
+        env:
+          ACCESS_SYNC_ID: ${{ secrets.ACCESS_SYNC_ID }}
+          ACCESS_SYNC_SECRET: ${{ secrets.ACCESS_SYNC_SECRET }}
+
+      # Also after a handle step that failed halfway: every line it appended loads (the scripts write by rename or a
+      # whole line), and the site only adds and fills. Nothing to push when no request was queued. What push prints
+      # also goes to a file the report reads; bash with pipefail keeps push's exit code.
+      - name: Push the added entries
+        id: push
+        if: always() && steps.pull.outcome == 'success' && steps.handle.outputs.handled != '0'
+        shell: bash
+        run: node scripts/deploy/sync.ts push site/digests.js | tee "$RUNNER_TEMP/push-output.txt"
+        env:
+          ACCESS_SYNC_ID: ${{ secrets.ACCESS_SYNC_ID }}
+          ACCESS_SYNC_SECRET: ${{ secrets.ACCESS_SYNC_SECRET }}
+
+      # Each handled request becomes done or failed. What was appended counts as added unless push's output names it
+      # refused; without that output, only after a successful push.
+      - name: Report each request's result
+        if: always() && steps.handle.outcome != 'skipped'
+        run: node scripts/deploy/add-requests.ts report "$RUNNER_TEMP/add-results.json" "$PUSH_OUTCOME" "$RUNNER_TEMP/push-output.txt"
+        env:
+          PUSH_OUTCOME: ${{ steps.push.outcome }}
+          ACCESS_SYNC_ID: ${{ secrets.ACCESS_SYNC_ID }}
+          ACCESS_SYNC_SECRET: ${{ secrets.ACCESS_SYNC_SECRET }}
+
+  # The site shows the new entries once deploy.yml has built it from the database again.
+  deploy:
+    needs: add
+    if: always() && needs.add.outputs.pushed == 'true'
+    uses: ./.github/workflows/deploy.yml
+    # Values come from production.
+    secrets:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+      MCP_AUD: ${{ secrets.MCP_AUD }}

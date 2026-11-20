@@ -1,0 +1,5 @@
+# Commits git blame skips: formatting only, no change in behaviour.
+# GitHub reads this file by itself; locally, run once: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# style: format with Biome defaults (#107)
+673d1b066774bc73fc27700df4474b311a600d68

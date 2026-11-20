@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>SEA-LION</title>
+	<atom:link href="https://sea-lion.ai/feed/" rel="self" type="application/rss+xml" />
+	<link>https://sea-lion.ai</link>
+	<description>Southeast Asian Languages in One Network</description>
+	<lastBuildDate>Wed, 18 Nov 2026 07:30:36 +0000</lastBuildDate>
+	<language>en-GB</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	
+
+<image>
+	<url>https://i0.wp.com/sea-lion.ai/wp-content/uploads/2024/08/purple_sealion-64x64-1.png?fit=32%2C32&#038;ssl=1</url>
+	<title>SEA-LION</title>
+	<link>https://sea-lion.ai</link>
+	<width>32</width>
+	<height>32</height>
+</image> 
+<site xmlns="com-wordpress:feed-additions:1">236333690</site>	<item>
+		<title>Announcing SEA-LION v5: Our Largest Model &#038; Frontier Level Performance &#8211; and Open!</title>
+		<link>https://sea-lion.ai/blog/announcing-sea-lion-v5-our-largest-model-frontier-level-performance-and-open/</link>
+		
+		<dc:creator><![CDATA[AISG &#124; AI Products]]></dc:creator>
+		<pubDate>Wed, 18 Nov 2026 04:32:24 +0000</pubDate>
+				<category><![CDATA[Announcements]]></category>
+		<category><![CDATA[SEA-LION v5]]></category>
+		<guid isPermaLink="false">https://sea-lion.ai/?p=5860</guid>
+
+					<description><![CDATA[Today, we are thrilled to announce SEA-LION v5, our most expansive model family yet, built on three leading open foundations: Qwen, Nemotron, and Gemma. To scale capability for SEA from resource-constrained edge devices to massive enterprise reasoning clusters, the full SEA-LION v5 family encompasses a diverse ensemble of models and sizes: Qwen (397B, 27B, 9B),...]]></description>
+										<content:encoded><![CDATA[
+<p class="wp-block-paragraph">Today, we are thrilled to announce SEA-LION v5, our most expansive model family yet, built on three leading open foundations: <strong>Qwen, Nemotron, and Gemma</strong>. To scale capability for SEA from resource-constrained edge devices to massive enterprise reasoning clusters, the full SEA-LION v5 family encompasses a diverse ensemble of models and sizes: Qwen (<a href="https://huggingface.co/aisingapore/Qwen-SEA-LION-v5-397B-A17B-Plus" data-type="link" data-id="https://huggingface.co/aisingapore/Qwen-SEA-LION-v5-397B-A17B-Plus" target="_blank" rel="noopener">397B</a>, <a href="https://huggingface.co/aisingapore/Qwen-SEA-LION-v5-27B" target="_blank" rel="noopener">27B</a>, <a href="https://huggingface.co/aisingapore/Qwen-SEA-LION-v5-9B" target="_blank" rel="noopener">9B</a>), <a href="https://huggingface.co/aisingapore/Nemotron-SEA-LION-v5-E4B" target="_blank" rel="noopener">Nemotron 3.5 Bolt E4B</a>, and <a href="https://huggingface.co/aisingapore/Gemma-SEA-LION-v5-E2B" target="_blank" rel="noopener">Gemma 4 E2B IT</a>. This multi-architecture approach allows us to push the boundaries of regional language understanding while offering unprecedented deployment flexibility.</p>
+
+
+
+<p class="wp-block-paragraph"></p>
+
+
+
+<p class="wp-block-paragraph">The family is anchored by the massive Qwen-SEA-LION-v5-397B-A17B-Plus Mixture of Experts (MoE) flagship model fine-tuned specifically for high-performance multilingual, multicultural and agentic tasks. Qwen-SEA-LION-v5-397B-A17B-Plus, our largest SEA-LION v5 model, is built on <a href="https://huggingface.co/Qwen/Qwen3.5-397B-A17B" target="_blank" rel="noopener">Qwen3.5-397B-A17B</a> and adds three components from <a href="https://huggingface.co/Qwen/Qwen3.8-Flash-Next" target="_blank" rel="noopener">Qwen3.8-Flash-Next</a>: Qwen Sparse Attention (faster long-context inference), Gated Residual (more flexible information flow between layers) and N-gram Embedding (extra capacity at little compute cost, kept in host memory).</p>
+
+
+
+<p class="wp-block-paragraph"></p>
+
+
+
+<h2 class="wp-block-heading">Unmatched Regional Performance Among Open-Source Models</h2>
+
+
+
+<p class="wp-block-paragraph">Our flagship SEA-LION v5 397B-Plus model sets a new standard for Southeast Asian linguistic and cultural reasoning. Evaluated across a diversity of tasks integrated into our comprehensive SEA-HELM evaluation suite, the v5 family demonstrates significant leaps in instruction following, local knowledge understanding, and multilingual generation compared to previous generations and commercial alternatives.</p>
+
+
+
+<div class="wp-block-uagb-image uagb-block-a49cac48 wp-block-uagb-image--layout-default wp-block-uagb-image--effect-static wp-block-uagb-image--align-none"><figure class="wp-block-uagb-image__figure"><img data-recalc-dims="1" decoding="async" src="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/11/image-20261117-052224.png?resize=1227%2C1051&#038;ssl=1" alt="" class="uag-image-5865" width="1227" height="1051" title="image-20261117-052224" loading="lazy" role="img" /><figcaption class="uagb-image-caption">Overall SEA-HELM average, with the SEA-LION v5 models (in orange)</figcaption></figure></div>
+
+
+
+<div class="wp-block-uagb-image uagb-block-9b72751e wp-block-uagb-image--layout-default wp-block-uagb-image--effect-static wp-block-uagb-image--align-none"><figure class="wp-block-uagb-image__figure"><img data-recalc-dims="1" decoding="async" src="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/11/pareto-1.png?resize=1106%2C602&#038;ssl=1" alt="" class="uag-image-5868" width="1106" height="602" title="pareto" loading="lazy" role="img" /><figcaption class="uagb-image-caption">Qwen-SEA-LION-v5-397B-A17B-Plus leads the Pareto frontier across open models of similar or larger sizes</figcaption></figure></div>
+
+
+
+<div class="wp-block-uagb-image uagb-block-90091454 wp-block-uagb-image--layout-default wp-block-uagb-image--effect-static wp-block-uagb-image--align-none"><figure class="wp-block-uagb-image__figure"><img data-recalc-dims="1" decoding="async" src="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/11/SEA-LION-v5-SEA-HELM.gif?resize=950%2C940&#038;ssl=1" alt="" class="uag-image-5871" width="950" height="940" title="SEA-LION v5 - SEA-HELM" loading="lazy" role="img" /><figcaption class="uagb-image-caption">SEA-HELM score per language: Comparing Qwen-SEA-LION-v5-397B-A17B-Plus (in orange) against Qwen 3.5 397B and other open and commercial models of similar or larger sizes</figcaption></figure></div>
+
+
+
+<h2 class="wp-block-heading">SEA-LION v5 397B-Plus Architecture Conversion</h2>
+
+
+
+<p class="wp-block-paragraph">For our SEA-LION v5 397B-Plus model, we built upon the Qwen architecture. Specifically, we converted <a href="https://huggingface.co/Qwen/Qwen3.5-397B-A17B" target="_blank" rel="noopener">Qwen3.5-397B-A17B</a> to <strong>Qwen4Exp</strong>, the architecture used by <a href="https://huggingface.co/Qwen/Qwen3.8-Flash-Next" target="_blank" rel="noopener">Qwen3.8-Flash-Next</a>. We used the same three core components and adapted their settings where needed:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>QSA Hybrid Attention:</strong> Qwen4Exp pairs Gated DeltaNet with Qwen Sparse Attention. In each QSA layer, a small indexer scores compressed four-token blocks of the context. For each query, attention uses up to 2,048 tokens from the highest-scoring complete blocks, plus any tokens in the incomplete trailing block. This reduces the work of full attention on long contexts. We kept Qwen3.5-397B&#8217;s 45 Gated DeltaNet layers and converted its 15 full-attention layers to QSA with Qwen4Exp&#8217;s indexer settings.</li>
+
+
+
+<li><strong>Gated Residual:</strong> Qwen4Exp widens the residual stream into four parallel branches. Each attention and feed-forward block reads an input-dependent blend of them and writes its output back with one weight per branch, so layers can route information more flexibly. We used the same four branches, with the bottleneck scaled to our wider model.</li>
+
+
+
+<li><strong>N-gram Embedding:</strong> Qwen4Exp adds a hashed bigram and trigram memory at layer 2. The tables use sparse lookups and can sit in host memory. We seeded our tables from Qwen3.8-Flash-Next&#8217;s trained ones, widened each head from 160 to 256 channels for our 4,096-wide backbone, and doubled the buckets to about 40M per head. That gives about 164B parameters in the n-gram tables.</li>
+</ul>
+
+
+
+<p class="wp-block-paragraph">We also added QSA and Gated Residual to the MTP draft layer and kept Qwen3.5-397B&#8217;s vision tower, tokenizer, and SiLU output gating in Gated DeltaNet (as opposed to the sigmoid in the Flash-Next).</p>
+
+
+
+<p class="wp-block-paragraph"></p>
+
+
+
+<h2 class="wp-block-heading">Improving SEA-LION v5 for SEA with Post-training</h2>
+
+
+
+<p class="wp-block-paragraph">We trained each student with a group-relative policy-gradient (PG) loss and an on-policy distillation (OPD) loss in the same update. For each prompt, the student generated eight rollouts (sampled responses). <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017" target="_blank" rel="noopener">DeepSeek V4.1 Flash</a> served as the judge, scoring each response’s reasoning and final answer against a shared rubric. The GRPO-style PG loss reinforced or discouraged the student’s choices according to how each response scored relative to the other attempts. When the scores were too close to distinguish the responses, we skipped the group’s PG contribution. In assisted rounds following eight failed attempts, the student received the start of a verified teacher solution and trained only on the continuation it generated.</p>
+
+
+
+<p class="wp-block-paragraph"><strong>Distillation from a larger teacher.</strong> OPD supplied the teacher’s next-token predictions along the student’s own response. <a href="https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B-FP8" target="_blank" rel="noopener">Qwen 3.8 2.4T</a> taught <a href="https://huggingface.co/aisingapore/Qwen-SEA-LION-v5-397B-A17B-Plus" target="_blank" rel="noopener">Qwen-SEA-LION-v5-397B-A17B-Plus</a>, <a href="https://huggingface.co/aisingapore/Qwen-SEA-LION-v5-27B" target="_blank" rel="noopener">Qwen-SEA-LION-v5-27B</a> and <a href="https://huggingface.co/aisingapore/Qwen-SEA-LION-v5-9B" target="_blank" rel="noopener">Qwen-SEA-LION-v5-9B</a>, while <a href="https://huggingface.co/google/gemma-4-31B-it" target="_blank" rel="noopener">Gemma 4 31B-IT</a> taught <a href="https://huggingface.co/aisingapore/Nemotron-SEA-LION-v5-E4B" target="_blank" rel="noopener">Nemotron-SEA-LION-v5-E4B</a> and <a href="https://huggingface.co/aisingapore/Gemma-SEA-LION-v4.5-E2B-IT" target="_blank" rel="noopener">Gemma-SEA-LION-v5-E2B</a>. At each scored position, we kept the probabilities of the teacher’s 32 most likely next tokens and a tail bucket (the combined probability of all other tokens).</p>
+
+
+
+<p class="wp-block-paragraph"><strong>The verdict constrained distillation.</strong> We adapted <a href="https://arxiv.org/abs/2608.24696" target="_blank" rel="noopener">OPDVR</a> (outcome-guided feedback on sampled tokens) to our top-32-plus-tail distillation loss. When a group contained both passes and failures, we removed only the component of the distillation gradient that would locally lower a sampled token’s probability on a passing response or raise it on a failed one.</p>
+
+
+
+<p class="wp-block-paragraph"><strong>Learning when to conclude.</strong> When the judge found that the student had reached a conclusion but kept reasoning, we branched at that point, closed the reasoning, and let the student answer. We also generated an answer when the student stopped with its reasoning still open. If the branch passed, we applied targeted SFT (supervised fine-tuning) to the closing tokens. Shared reasoning received credit once, and the original ending received its own update from the point where the paths diverged. A response that reached the token limit could still earn credit for useful progress. <em>We observed that by actively teaching SEA-LION-v5 when to conclude, the token output for its reasoning and final response was greatly reduced without affecting reasoning and response quality.</em></p>
+
+
+
+<p class="wp-block-paragraph"><strong>Breaking loops.</strong> For exact periodic loops (a token sequence repeating back-to-back), we followed Liquid AI’s <a href="https://www.liquid.ai/blog/antidoom" target="_blank" rel="noopener">Antidoom</a> approach. Once the judge confirmed that useful progress had stopped, we applied a margin loss at the start of the loop, training the student to score plausible alternatives above the token that began the repetition.</p>
+
+
+
+<p class="wp-block-paragraph"><strong>Asynchronous training.</strong> While the judge scored one group, Conductor (our workflow coordinator) could send another to <a href="https://github.com/NVIDIA-NeMo/Automodel" target="_blank" rel="noopener">NVIDIA NeMo AutoModel</a> (our training framework) for a weight update. The trainer computed shared prefixes once while preserving each branch’s targets. <a href="https://github.com/inclusionAI/Awex" target="_blank" rel="noopener">Awex</a> (weight transfer) published the updated weights to <a href="https://github.com/sgl-project/sglang" target="_blank" rel="noopener">SGLang</a> (model serving). Archipelago (our deployment manager) let us resize the student, teacher, and judge fleets independently as bottlenecks shifted.</p>
+
+
+
+<p class="wp-block-paragraph">Because the trainer could take several steps while the judge scored a response, we tracked which weight version generated each token and excluded tokens beyond a set version gap. For eligible tokens, an <a href="https://arxiv.org/abs/2607.22186" target="_blank" rel="noopener">entropy-aware filter</a> compared the token’s log probability under the current weights with its value at sampling time. It skipped the PG update when the difference was too large, with a tighter threshold where the generating student had been more confident.</p>
+
+
+
+<p class="wp-block-paragraph"><strong>SEA-LION v5 397B-Plus note.</strong> Following Qwen 3.8 Flash Next, we use the model’s own dense attention scores to train its Qwen Sparse Attention indexers (the components that select which blocks of earlier tokens to retrieve). <em>Training is still in progress.</em></p>
+
+
+
+<p class="wp-block-paragraph"></p>
+
+
+
+<h2 class="wp-block-heading">Lower Inference costs for Qwen-SEA-LION-v5-397B-A17B-Plus</h2>
+
+
+
+<p class="wp-block-paragraph">Post-training improved answer quality on Southeast Asian tasks while reducing how much text the model generated. On SEA-HELM, Qwen-SEA-LION-v5-397B-A17B-Plus used 1,889 tokens per prompt on average for reasoning and the final answer combined, 53.50% fewer than the base model.</p>
+
+
+
+<div class="wp-block-uagb-image uagb-block-b3b538b1 wp-block-uagb-image--layout-default wp-block-uagb-image--effect-static wp-block-uagb-image--align-none"><figure class="wp-block-uagb-image__figure"><img data-recalc-dims="1" decoding="async" src="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/11/image-20261116-101743.png?resize=1290%2C249&#038;ssl=1" alt="" class="uag-image-5878" width="1290" height="249" title="image-20261116-101743" loading="lazy" role="img" /><figcaption class="uagb-image-caption">The average number of tokens per prompt for reasoning and subsequently producing a response.</figcaption></figure></div>
+
+
+
+<p class="wp-block-paragraph">Serving the BF16 model (16-bit floating point) requires a full node of eight H200 GPUs. We also release two quantized versions, <strong>FP8 and NVFP4, each of which runs on four H200s</strong>. We serve both with <a href="https://github.com/vllm-project/vllm" target="_blank" rel="noopener">vLLM</a> and <a href="https://github.com/sgl-project/sglang" target="_blank" rel="noopener">SGLang</a>.</p>
+
+
+
+<p class="wp-block-paragraph">Almost all the model’s weights sit in its routed experts (the experts selected for each token) and its n-gram tables (lookups for token sequences). Both versions quantize the routed experts, and FP8 also quantizes the n-gram tables. Attention, Gated DeltaNet (the recurrent layers), shared experts, the router, and the vision encoder remain in BF16. Together, these components account for a small share of the model’s weights.</p>
+
+
+
+<p class="wp-block-paragraph"><strong>FP8</strong> uses the same block-wise 8-bit format as Qwen’s FP8 releases, so it runs with standard FP8 support in vLLM and SGLang. Storing the n-gram tables in FP8 halves their host memory requirement. The full model is about half the size of BF16.</p>
+
+
+
+<p class="wp-block-paragraph"><strong>NVFP4</strong> uses <a href="https://github.com/NVIDIA/Model-Optimizer" target="_blank" rel="noopener">NVIDIA Model Optimizer</a> to store the routed expert weights in 4 bits. Blackwell GPUs support NVFP4 natively. On four H200s, NVFP4 leaves <strong>more than twice as much GPU memory available as FP8</strong> for longer contexts and concurrent requests.</p>
+
+
+
+<p class="wp-block-paragraph">On SEA-HELM, both quantized versions showed little to no quality loss relative to BF16. In our H200 throughput tests, both began responding sooner and generated tokens faster than BF16.</p>
+
+
+
+<div class="wp-block-uagb-image uagb-block-85f46891 wp-block-uagb-image--layout-default wp-block-uagb-image--effect-static wp-block-uagb-image--align-none"><figure class="wp-block-uagb-image__figure"><img data-recalc-dims="1" decoding="async" src="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/11/image-20261116-102909-1.png?resize=1290%2C554&#038;ssl=1" alt="" class="uag-image-5884" width="1290" height="554" title="image-20261116-102909" loading="lazy" role="img" /><figcaption class="uagb-image-caption">Qwen-SEA-LION-v5-397B-A17B-Plus on BF16, quantized FP8, and NVFP4 performance across SEA-HELM tasks. Our quantization introduces little or no degradation, allowing developers to deploy high-efficiency 4-bit and 8-bit weights without sacrificing regional reasoning quality.</figcaption></figure></div>
+
+
+
+<h2 class="wp-block-heading">Inference: Run SEA-LION v5 in production with Adaption</h2>
+
+
+
+<p class="wp-block-paragraph">We&#8217;re partnering with <a href="https://adaptionlabs.ai/" target="_blank" rel="noopener"><strong>Adaption</strong></a> as an inference partner for SEA-LION. Our <strong>Qwen-SEA-LION-v5-397B-A17B-Plus</strong> and <strong>Nemotron-SEA-LION-v4.8-120B-A12B</strong> are available on <strong>Adaption&#8217;s platform</strong>. While most inference providers stay as efficient as they were on day one, Adaption&#8217;s system learns and improves from the traffic it serves.</p>
+
+
+
+<p class="wp-block-paragraph"><strong>Getting started</strong></p>
+
+
+
+<ol start="1" class="wp-block-list">
+<li>Try it with a <a href="https://playground.sea-lion.ai/key-manager">free trial key from the SEA-LION Playground</a>. Trial keys are rate-limited and not meant for production use.</li>
+
+
+
+<li><a href="https://adaptionlabs.ai/app/auth" target="_blank" rel="noopener">Take it to production with Adaption</a>. Get started on Adaption’s free tier, then move to the Builder tier as you grow. No large upfront contracts. Enterprise teams can run on dedicated instances, on the same terms.</li>
+
+
+
+<li>Read the docs in our <a href="https://docs.sea-lion.ai/guides/inferencing/adaption" target="_blank" rel="noreferrer noopener">Inferencing guide</a>, to find out about other inference providers and guidance for self-hosting our SEA-LION models.</li>
+</ol>
+
+
+
+<p class="wp-block-paragraph">More SEA-LION models are coming to Adaption, so stay tuned.</p>
+
+
+
+<h2 class="wp-block-heading">Get Started</h2>
+
+
+
+<p class="wp-block-paragraph">The SEA-LION v5 models are currently rolling out. We invite the community to test the weights, explore the architectures, and push the limits of AI for Southeast Asia.</p>
+
+
+
+<ul class="wp-block-list">
+<li><img src="https://s.w.org/images/core/emoji/17.0.2/72x72/1f4c1.png" alt="📁" class="wp-smiley" style="height: 1em; max-height: 1em;" /> <strong>Download Weights on Hugging Face:</strong> <a href="https://huggingface.co/collections/aisingapore/sea-lion-v5" target="_blank" rel="noopener">https://huggingface.co/collections/aisingapore/sea-lion-v5</a></li>
+
+
+
+<li><img src="https://s.w.org/images/core/emoji/17.0.2/72x72/1f4bb.png" alt="💻" class="wp-smiley" style="height: 1em; max-height: 1em;" /> <strong>Documentation &amp; Server Repositories:</strong> <a href="https://docs.sea-lion.ai/">https://docs.sea-lion.ai/</a></li>
+</ul>
+
+
+
+<p class="wp-block-paragraph"></p>
+]]></content:encoded>
+					
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">5860</post-id>	</item>
+		<item>
+		<title>Introducing SEA-GULL and SEA-CAST: Towards Better (Speech) Translation for SEA Languages</title>
+		<link>https://sea-lion.ai/blog/introducing-sea-gull-and-sea-cast-towards-better-speech-translation-for-sea-languages/</link>
+		
+		<dc:creator><![CDATA[AISG &#124; AI Products]]></dc:creator>
+		<pubDate>Tue, 27 Oct 2026 06:36:14 +0000</pubDate>
+				<category><![CDATA[Uncategorized]]></category>
+		<category><![CDATA[Announcements]]></category>
+		<guid isPermaLink="false">https://sea-lion.ai/?p=5805</guid>
+
+					<description><![CDATA[Machine Translation (MT) has come a long way in the era of Large Language Models (LLMs). Scores on translation benchmarks continue to rise and we are starting to see improvements even in the lower-resourced languages of our Southeast Asian (SEA) region. Despite this encouraging trend, we still observe specific issues, both in our own evaluations...]]></description>
+										<content:encoded><![CDATA[
+<p class="wp-block-paragraph">Machine Translation (MT) has come a long way in the era of Large Language Models (LLMs). Scores on translation benchmarks continue to rise and we are starting to see improvements even in the lower-resourced languages of our Southeast Asian (SEA) region.</p>
+
+
+
+<p class="wp-block-paragraph">Despite this encouraging trend, we still observe specific issues, both in our own evaluations as well as in the consistent feedback from industry partners. The most glaring of these is none other than the <strong>translation of named entities or domain-specific terminologies</strong>. While there are other issues such as grammatical inaccuracies or unnatural/literal translations of idiomatic expressions which affect fluency, <strong>mistranslation of entities and terminologies severely affect content accuracy</strong>.</p>
+
+
+
+<p class="wp-block-paragraph">In addition, given the rise in voice technology (especially in Southeast Asia), speech translation has also become increasingly important, for example for live captioning for speeches and conferences or for meetings. While there are existing commercial solutions, there are gaps that need to be closed:</p>
+
+
+
+<ol start="1" class="wp-block-list">
+<li>SEA languages, especially local languages and dialects, are not necessarily adequately handled by commercial solutions.</li>
+
+
+
+<li>Commercial solutions often couple automatic speech recognition (ASR), MT, terminology handling and text-to-speech (TTS) behind a single API, so there is less flexibility in customizing each component.</li>
+
+
+
+<li>Certain use cases may require more privacy or have resource constraints (such as limited Internet connection or having to use edge devices) and would not be able to use such commercial solutions.</li>
+</ol>
+
+
+
+<p class="wp-block-paragraph">In order to tackle these issues, we are happy to introduce <strong>SEA-GULL</strong> (<strong>S</strong>outh<strong>E</strong>ast <strong>A</strong>sian <strong>G</strong>lossary <strong>U</strong>tility for <strong>L</strong>exical <strong>L</strong>ookup), an open-source, fast, lightweight glossary retrieval system that supports MT for SEA languages, as well as <strong>SEA-CAST</strong> (<strong>S</strong>outh<strong>E</strong>ast <strong>A</strong>sian <strong>C</strong>onference <strong>A</strong>ssistant for <strong>S</strong>peech <strong>T</strong>ranslation), an open-source application for speech-to-text translation in SEA languages that can run locally and that allows the user to customize every component of the translation pipeline. SEA-GULL is also integrated into SEA-CAST to support more accurate translation of entities and terminologies in speech.</p>
+
+
+
+<h4 class="wp-block-heading">What is SEA-GULL?</h4>
+
+
+
+<p class="wp-block-paragraph">SEA-GULL is a glossary retrieval system that scans a source text for any terms that occur in a provided glossary, retrieves those glossary entries, and passes them downstream to give a translation system accurate mappings between source and target languages for those terms. In the context of an LLM-based translation solution, a prompt building stage would obtain glossary entries from SEA-GULL and pass them on to the LLM in an appropriate form to influence the LLM’s translation of these terms.</p>
+
+
+<div class="wp-block-image">
+<figure class="aligncenter size-large"><img data-recalc-dims="1" fetchpriority="high" decoding="async" width="1024" height="219" data-attachment-id="5821" data-permalink="https://sea-lion.ai/blog/introducing-sea-gull-and-sea-cast-towards-better-speech-translation-for-sea-languages/sea-gull-flow-big/" data-orig-file="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Flow-Big.png?fit=1442%2C309&amp;ssl=1" data-orig-size="1442,309" data-comments-opened="0" data-image-title="SEA-GULL Flow (Big)" data-image-description="" data-image-caption="" data-large-file="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Flow-Big.png?fit=1024%2C219&amp;ssl=1" src="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Flow-Big.png?resize=1024%2C219&#038;ssl=1" alt="A diagram illustrating a workflow involving a glossary, SEA-GULL, prompt builder, and translation model, with arrows indicating the flow of information and processes." class="wp-image-5821" srcset="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Flow-Big.png?resize=1024%2C219&amp;ssl=1 1024w, https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Flow-Big.png?resize=300%2C64&amp;ssl=1 300w, https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Flow-Big.png?resize=768%2C165&amp;ssl=1 768w, https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Flow-Big.png?w=1442&amp;ssl=1 1442w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+</div>
+
+
+<h4 class="wp-block-heading">How it works</h4>
+
+
+
+<p class="wp-block-paragraph">SEA-GULL uses the Aho-Corasick algorithm to perform exact matching (for the time being) of terms against a source text. This makes it fast and lightweight. It also has some additional features like a specific glossary schema and language/script-specific rules to help it do its job better.</p>
+
+
+
+<h4 class="wp-block-heading">Opinionated Glossary Schema</h4>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p class="wp-block-paragraph"><em>“Three people have been taken to the hospital after a fire broke out in <strong>Queenstown</strong>…”</em></p>
+</blockquote>
+
+
+
+<p class="wp-block-paragraph">How might one translate this sentence from a fictional news article into Chinese? Presumably, one would have to read on to find out more about the context. If this Queenstown was in Singapore, it would have to be translated as 女皇镇, while the one in New Zealand would have to be translated as 皇后镇. <strong>Homographs</strong> (words with the same spelling but have different meanings) like these are common, and pose a veritable challenge to translation systems.</p>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p class="wp-block-paragraph"><em>“Trade between Japan and <strong>ASEAN</strong> has increased…”</em></p>
+</blockquote>
+
+
+
+<p class="wp-block-paragraph">At the same time, the same entity might have different written representations. For example, ASEAN can be translated into Khmer as <strong>អាស៊ាន</strong> (ASEAN) <strong></strong>or <strong>សមាគមប្រជាជាតិអាស៊ីអាគ្នេយ៍</strong> (<em>lit.</em> Association of Southeast Asian Nations). Both are valid and legitimate translations, but one may prefer to use the latter (its full form) only when mentioned for the first time in a text.</p>
+
+
+
+<p class="wp-block-paragraph">There are many more of such situations in which a glossary reasonably has to carry words that can mean different things, and things that can be represented by many different words. For that reason, SEA-GULL specifies a certain glossary schema, designed to improve clarity and enrich the information available for downstream disambiguation. For example, the schema allows for the addition of information about the country or location where the entity is found (which can be used to differentiate between the two Queenstowns), and requires that every form is tagged by its length type (e.g. full form / acronym form / abbreviated form), which would help with deciding which Khmer form of ASEAN to use when translating.</p>
+
+
+
+<h4 class="wp-block-heading">Handles SEA Languages&#8217; Writing Systems</h4>
+
+
+
+<p class="wp-block-paragraph">Existing solutions work well on English, but trying to extend these solutions to other languages that work differently, have different writing systems and are encoded in different ways is no walk in the park.</p>
+
+
+
+<p class="wp-block-paragraph">In principle, a match does not only depend on the surface form matching a portion of the source text – it also depends on the match obeying certain morphological boundaries. For example, <code>Niger</code> can be found in <code>Nigeria</code>, but we would not consider <code>Niger</code> a match because the word does not end at the letter <code>r</code>. In English, it is largely sufficient to use whitespace as a heuristic for word boundaries, but many languages in SEA do not have spaces between words (e.g. Chinese, Thai, Lao, Khmer, and Burmese). For example, the following extract from the Universal Declaration of Human Rights in Lao does not separate its words with whitespaces.</p>
+
+
+
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p class="wp-block-paragraph">ມະນຸດທຸກຄົນ ລ້ວນແຕ່ມີເສລີພາບມາແຕ່ກາເນີດ ແລະ ມີຄວາມສະເໝີ ພາບຕ ໍໜ້າກົດໝາຍ.</p>
+</blockquote>
+
+
+
+<p class="wp-block-paragraph">In order to ensure that syllable/word boundaries are respected even when handling SEA languages, SEA-GULL applies certain language/script-specific rules that deal with orthographic elements such as preposed and postposed vowels in Thai and Lao.</p>
+
+
+
+<p class="wp-block-paragraph">Furthermore, a quirk of these scripts in encoding is that the same rendering on the screen may actually be represented by different Unicode code points underneath. In fact, the Vietnamese character <code>ộ</code> in <code>Hà Nội</code> can be represented in 5 different ways!</p>
+
+
+
+<figure class="wp-block-table"><table class="has-fixed-layout"><tbody><tr><th class="has-text-align-left" data-align="left"><strong>1st position</strong></th><th class="has-text-align-left" data-align="left"><strong>2nd position</strong></th><th class="has-text-align-left" data-align="left"><strong>3rd position</strong></th><th class="has-text-align-left" data-align="left"><strong>Character</strong></th></tr><tr><td class="has-text-align-left" data-align="left">U+1ED9</td><td class="has-text-align-left" data-align="left" style="background-color:#e6e6e6;"></td><td class="has-text-align-left" data-align="left" style="background-color:#e6e6e6;"></td><td class="has-text-align-left" data-align="left"><code>ộ</code></td></tr><tr><td class="has-text-align-left" data-align="left">U+00F4</td><td class="has-text-align-left" data-align="left">U+0323</td><td class="has-text-align-left" data-align="left" style="background-color:#e6e6e6;"></td><td class="has-text-align-left" data-align="left"><code>ộ</code></td></tr><tr><td class="has-text-align-left" data-align="left">U+1ECD</td><td class="has-text-align-left" data-align="left">U+0302</td><td class="has-text-align-left" data-align="left" style="background-color:#e6e6e6;"></td><td class="has-text-align-left" data-align="left"><code>ộ</code></td></tr><tr><td class="has-text-align-left" data-align="left">U+006F</td><td class="has-text-align-left" data-align="left">U+0323</td><td class="has-text-align-left" data-align="left">U+0302</td><td class="has-text-align-left" data-align="left"><code>ộ</code></td></tr><tr><td class="has-text-align-left" data-align="left">U+006F</td><td class="has-text-align-left" data-align="left">U+0302</td><td class="has-text-align-left" data-align="left">U+0323</td><td class="has-text-align-left" data-align="left"><code>ộ</code></td></tr></tbody></table></figure>
+
+
+
+<p class="wp-block-paragraph">We therefore take great care to ensure such cases are taken into consideration in SEA-GULL.</p>
+
+
+
+<h4 class="wp-block-heading">SEA-GULL in Action</h4>
+
+
+<div class="wp-block-image">
+<figure class="aligncenter size-large"><img data-recalc-dims="1" decoding="async" width="899" height="1024" data-attachment-id="5809" data-permalink="https://sea-lion.ai/blog/introducing-sea-gull-and-sea-cast-towards-better-speech-translation-for-sea-languages/sea-gull-demo/" data-orig-file="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Demo.png?fit=1103%2C1256&amp;ssl=1" data-orig-size="1103,1256" data-comments-opened="0" data-image-title="SEA-GULL Demo" data-image-description="" data-image-caption="" data-large-file="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Demo.png?fit=899%2C1024&amp;ssl=1" src="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Demo.png?resize=899%2C1024&#038;ssl=1" alt="Screenshot of the SEA-GULL glossary demo interface for translating text across Singapore's languages, showing the term 'Queenstown' with its glossary options." class="wp-image-5809" srcset="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Demo.png?resize=899%2C1024&amp;ssl=1 899w, https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Demo.png?resize=263%2C300&amp;ssl=1 263w, https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Demo.png?resize=768%2C875&amp;ssl=1 768w, https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-GULL-Demo.png?w=1103&amp;ssl=1 1103w" sizes="(max-width: 899px) 100vw, 899px" /></figure>
+</div>
+
+
+<p class="has-text-align-center wp-block-paragraph">SEA-GULL helps the translation model to choose the right translation for terms, using a specific schema that necessitates information for contextual disambiguation.</p>
+
+
+
+<p class="wp-block-paragraph">Start using SEA-GULL by cloning our <a href="https://github.com/aisingapore/seagull" target="_blank" rel="noopener">Github repository</a> or check it out at our <a href="https://sea-gull.sea-lion.ai/">demo</a> page!</p>
+
+
+
+<h4 class="wp-block-heading">Demo Features</h4>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Singaporean entity glossary:</strong> We provide an example glossary covering Singaporean entities in English, Chinese, Malay and Tamil, drawn from various existing sources such as <a href="https://www.translatedterms.gov.sg/" target="_blank" rel="noopener">Government Terms Translated</a>.</li>
+
+
+
+<li><strong>Evaluate glossary effectiveness:</strong> Compare between translations with and without the help of a glossary. Terms matched in the source text and correctly translated entities are underlined to make it easier to observe differences. You can also see whether a translation failed to get a term correct due to glossary coverage or due to the LLM not utilizing the retrieved entries.</li>
+</ul>
+
+
+
+<h4 class="wp-block-heading">SEA-CAST: A Customizable Pipeline for Live Speech-to-text Translation across SEA Languages</h4>
+
+
+
+<p class="wp-block-paragraph">As its name suggests, <strong>SEA-CAST</strong> (<strong>S</strong>outh<strong>E</strong>ast <strong>A</strong>sian <strong>C</strong>onference <strong>A</strong>ssistant for <strong>S</strong>peech <strong>T</strong>ranslation) is an application that currently supports <strong>speech-to-text translation</strong> for <strong>conference settings</strong>, with a <strong>single speaker speaking to a multilingual audience</strong>. It is a fully customizable pipeline that allows the user to choose from a variety of open-source and proprietary models to suit their needs.</p>
+
+
+<div class="wp-block-image">
+<figure class="aligncenter size-full"><img data-recalc-dims="1" decoding="async" width="1001" height="724" data-attachment-id="5822" data-permalink="https://sea-lion.ai/blog/introducing-sea-gull-and-sea-cast-towards-better-speech-translation-for-sea-languages/sea-cast-architecture-big/" data-orig-file="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-CAST-Architecture-Big.png?fit=1001%2C724&amp;ssl=1" data-orig-size="1001,724" data-comments-opened="0" data-image-title="SEA-CAST Architecture (Big)" data-image-description="" data-image-caption="" data-large-file="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-CAST-Architecture-Big.png?fit=1001%2C724&amp;ssl=1" src="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-CAST-Architecture-Big.png?resize=1001%2C724&#038;ssl=1" alt="A flowchart illustrating the process of converting speaker input into translated captions using a noise filter, voice activity detection, automatic speech recognition, a translation engine, a prompt builder, and a glossary." class="wp-image-5822" srcset="https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-CAST-Architecture-Big.png?w=1001&amp;ssl=1 1001w, https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-CAST-Architecture-Big.png?resize=300%2C217&amp;ssl=1 300w, https://i0.wp.com/sea-lion.ai/wp-content/uploads/2026/10/SEA-CAST-Architecture-Big.png?resize=768%2C555&amp;ssl=1 768w" sizes="(max-width: 1001px) 100vw, 1001px" /></figure>
+</div>
+
+
+<p class="has-text-align-center wp-block-paragraph">SEA-CAST’s customizable pipeline</p>
+
+
+
+<h4 class="wp-block-heading">Try SEA-CAST live!</h4>
+
+
+
+<figure class="wp-block-video"><video height="1288" style="aspect-ratio: 1910 / 1288;" width="1910" controls src="https://sea-lion.ai/wp-content/uploads/2026/10/SEA-CAST-Demo-Video.mov"></video><figcaption class="wp-element-caption">SEA-CAST being used to translate a presentation on ASEAN in Thai into Indonesian (Whisper Large v3 Turbo as transcriber and Qwen-SEA-LION-v4.5-27B-IT as translator). Notice that even though the transcription contained errors (e.g. จุดมุ่งหมาย (goal) is transcribed as จุดหรุ่งหมาย), the translator is still able to translate accurately using the context.</figcaption></figure>
+
+
+
+<p class="wp-block-paragraph"></p>
+
+
+
+<h4 class="wp-block-heading">SEA-CAST Features</h4>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Mix and Match:</strong> Use SEA-CAST with any combination of ASR models (e.g. Whisper, Qwen-ASR, MERaLiON, ElevenLabs Scribe) and LLMs for translation (any OpenAI-compatible endpoint), both open-source and commercial.</li>
+
+
+
+<li><strong>Glossary Integration:</strong> SEA-GULL is integrated into SEA-CAST and supports more accurate translation of named entities and terminologies in transcripts.</li>
+
+
+
+<li><strong>Realtime Latency Metrics:</strong> SEA-CAST reports metrics like Time to First Byte (TTFB) and Processing Time for both the ASR and Translation components.</li>
+
+
+
+<li><strong>Audience Rooms:</strong> Audiences are able to scan a QR code to enter rooms to follow live captions from any of the selected target languages.</li>
+</ul>
+
+
+
+<h4 class="wp-block-heading">Help us improve translation for SEA!</h4>
+
+
+
+<p class="wp-block-paragraph">SEA-GULL and SEA-CAST are both early in their development and have many limitations. For example, while we started out building SEA-CAST to support single-speaker-to-audience contexts, we have since received industry feedback that there is demand for meeting support (multiple speaker streams or single device with speaker diarization). As such, there is still a long road ahead of us in our journey to improve translation technology for the region.</p>
+
+
+
+<p class="wp-block-paragraph">However, we cannot do this alone. SEA-LION has always been and will continue to be a community effort – let us work together to close the gaps:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Translation data:</strong> Any parallel data involving SEA languages will be helpful in improving our translation systems. Corrections or comments on flawed translations are also very valuable.</li>
+
+
+
+<li><strong>Glossaries:</strong> Getting authoritative and expert-curated glossaries is difficult. If you have any glossaries that you would be willing to share with the community, it would be very helpful.</li>
+
+
+
+<li><strong>Native speakers/Translators:</strong> Your expertise will be crucial in evaluating and providing feedback for translation models and translation judges.</li>
+</ul>
+
+
+
+<p class="wp-block-paragraph">If you are interested and willing to contribute, please reach out to us at <a href="mailto:sealion@aisingapore.org">sealion@aisingapore.org</a> and let us figure out how we can work with you!</p>
+
+
+
+<h4 class="wp-block-heading">Links</h4>
+
+
+
+<ul class="wp-block-list">
+<li><strong>SEA-CAST Demo:</strong> <a href="https://sea-cast.sea-lion.ai/">SEA-CAST — live translate</a></li>
+
+
+
+<li><strong>SEA-CAST Github Repository:</strong> <a href="https://github.com/aisingapore/sea-cast" target="_blank" rel="noopener">GitHub &#8211; aisingapore/sea-cast</a></li>
+
+
+
+<li><strong>SEA-GULL Demo:</strong> <a href="https://sea-gull.sea-lion.ai/">SEA-GULL Glossary Demo</a></li>
+
+
+
+<li><strong>SEA-GULL Github Repository:</strong> <a href="https://github.com/aisingapore/seagull" target="_blank" rel="noopener">GitHub &#8211; aisingapore/seagull</a></li>
+</ul>
+
+
+
+<p class="wp-block-paragraph"></p>
+]]></content:encoded>
+					
+		
+		<enclosure url="https://sea-lion.ai/wp-content/uploads/2026/10/SEA-CAST-Demo-Video.mov" length="10316711" type="video/quicktime" />
+
+		<post-id xmlns="com-wordpress:feed-additions:1">5805</post-id>	</item>
+</channel>
+</rss>

@@ -1,0 +1,33 @@
+<!doctype html><html lang=en-us><head><meta charset=utf-8><title>Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) - ACL Anthology</title></head>
+<!-- Excerpt of https://aclanthology.org/volumes/2026.acl-long/ (saved 2026-10-27): papers 99 and 100 only, in the page's own markup. -->
+<body><section id=main><div id=2026acl-long>
+<div class="d-sm-flex align-items-stretch mb-3"><div class="d-block me-2 list-button-row"><span class="d-inline d-sm-block text-nowrap"><a class="badge text-bg-primary align-middle me-1" href=https://aclanthology.org/2026.acl-long.99.pdf data-bs-toggle=tooltip data-bs-placement=top title="Open PDF" aria-label="Open PDF">pdf
+</a><a class="badge text-bg-secondary align-middle me-1" href=/2026.acl-long.99.bib data-bs-toggle=tooltip data-bs-placement=top title="Export to BibTeX" aria-label="Export to BibTeX">bib
+</a><a class="badge text-bg-info align-middle me-1" role=button data-bs-toggle=collapse data-bs-target=#abstract-2026--acl-long--99 aria-expanded=false aria-controls=abstract-2026--acl-long--99 title="Show Abstract" aria-label="Show Abstract">abs</a></span>
+<span class="d-inline d-sm-block text-nowrap"><a class="badge text-bg-attachment align-middle me-1" href=https://aclanthology.org/attachments/2026.acl-long.99.checklist.pdf data-bs-toggle=tooltip data-bs-placement=top title=Checklist aria-label="Open Checklist"><i class="fas fa-file"></i></a></span></div><span class=d-block><strong><a class=align-middle href=/2026.acl-long.99/>Mechanistic Interpretability Should Prioritize Feature Consistency in Sparse Autoencoders</a></strong><br><a href=/people/xiangchen-song/unverified/>Xiangchen Song</a>
+|
+<a href=/people/aashiq-muhamed/>Aashiq Muhamed</a>
+|
+<a href=/people/yujia-zheng/>Yujia Zheng</a>
+|
+<a href=/people/lingjing-kong/unverified/>Lingjing Kong</a>
+|
+<a href=/people/zeyu-tang/>Zeyu Tang</a>
+|
+<a href=/people/mona-diab/>Mona T. Diab</a>
+|
+<a href=/people/virginia-smith/>Virginia Smith</a>
+|
+<a href=/people/kun-zhang-9958/>Kun Zhang</a></span></div><div class="card bg-light mb-2 mb-lg-3 collapse abstract-collapse" id=abstract-2026--acl-long--99><div class="card-body p-3 small">Sparse Autoencoders (SAEs) are a prominent tool in mechanistic interpretability (MI) for decomposing neural network activations into interpretable features. However, the aspiration to identify a canonical set of features is challenged by the observed inconsistency of learned SAE features across different training runs, undermining reproducibility and complicating model comparison. We study run-to-run feature consistency in SAEs and argue that it should be reported as a standard evaluation axis alongside reconstruction and sparsity. We propose the Pairwise Dictionary Mean Correlation Coefficient (PW-MCC) as an assignment-based metric to quantify consistency and demonstrate that high levels are achievable (PW-MCC ≈ 0.80 for TopK SAEs on LLM activations) with appropriate architectural choices.Our contributions include: (i) theoretical grounding for strong consistency in the idealized setting of TopK SAEs; (ii) synthetic validation using a model organism, which verifies PW-MCC as a reliable proxy for ground-truth recovery; and (iii) empirical analysis on LLM activations, where PW-MCC correlates with the similarity of automatically generated natural-language feature explanations.</div></div><div class="d-sm-flex align-items-stretch mb-3"><div class="d-block me-2 list-button-row"><span class="d-inline d-sm-block text-nowrap"><a class="badge text-bg-primary align-middle me-1" href=https://aclanthology.org/2026.acl-long.100.pdf data-bs-toggle=tooltip data-bs-placement=top title="Open PDF" aria-label="Open PDF">pdf
+</a><a class="badge text-bg-secondary align-middle me-1" href=/2026.acl-long.100.bib data-bs-toggle=tooltip data-bs-placement=top title="Export to BibTeX" aria-label="Export to BibTeX">bib
+</a><a class="badge text-bg-info align-middle me-1" role=button data-bs-toggle=collapse data-bs-target=#abstract-2026--acl-long--100 aria-expanded=false aria-controls=abstract-2026--acl-long--100 title="Show Abstract" aria-label="Show Abstract">abs</a></span>
+<span class="d-inline d-sm-block text-nowrap"><a class="badge text-bg-attachment align-middle me-1" href=https://aclanthology.org/attachments/2026.acl-long.100.checklist.pdf data-bs-toggle=tooltip data-bs-placement=top title=Checklist aria-label="Open Checklist"><i class="fas fa-file"></i></a></span></div><span class=d-block><strong><a class=align-middle href=/2026.acl-long.100/><span class=acl-fixed-case>E</span>quiv<span class=acl-fixed-case>P</span>runer: Boosting Efficiency and Quality in <span class=acl-fixed-case>LLM</span>-Based Search via Action Pruning</a></strong><br><a href=/people/jiawei-liu-645x/>Jiawei Liu</a>
+|
+<a href=/people/qisi-chen/unverified/>Qisi Chen</a>
+|
+<a href=/people/jianshu-zhang-ustc/>Jianshu Zhang</a>
+|
+<a href=/people/quan-liu/>Quan Liu</a>
+|
+<a href=/people/defu-lian/>Defu Lian</a></span></div><div class="card bg-light mb-2 mb-lg-3 collapse abstract-collapse" id=abstract-2026--acl-long--100><div class="card-body p-3 small">Large Language Models (LLMs) excel at complex reasoning through search algorithms, yet current strategies often suffer from massive token consumption due to redundant exploration of semantically equivalent steps. Existing semantic similarity methods struggle to accurately identify such equivalence in domain-specific contexts like mathematical reasoning. To address this, we propose <i>EquivPruner</i>, a simple yet effective approach that identifies and prunes semantically equivalent actions during LLM reasoning search. We also introduce MathEquiv, the first dataset we created for mathematical statement equivalence, which enables the training of a lightweight equivalence detector. Extensive experiments across various models and tasks demonstrate that <i>EquivPruner</i> significantly reduces token consumption, improving searching efficiency and often bolstering reasoning accuracy. For instance, when applied to Qwen2.5-Math-7B-Instruct on GSM8K, <i>EquivPruner</i> reduced token consumption by 48.1% while also improving accuracy. Our code is available at <a href=https://github.com/Lolo1222/EquivPruner class=acl-markup-url>https://github.com/Lolo1222/EquivPruner</a>.</div></div>
+</div></section></body></html>

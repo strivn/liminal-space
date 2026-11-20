@@ -1,0 +1,103 @@
+/* Older days: hairline rows that unfold. */
+details.day {
+	border-top: 1px solid var(--border);
+}
+details.day:first-of-type {
+	margin-top: 48px;
+}
+details.day:last-of-type {
+	border-bottom: 1px solid var(--border);
+}
+details.day > summary {
+	padding: 16px 0;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background 0.15s cubic-bezier(0.2, 0, 0.2, 1);
+}
+/* The row's date is a heading (site/page/render.ts dayRow), for screen readers' list of days; it looks like the rest of
+   the row. */
+details.day > summary .day__date {
+	display: inline;
+	margin: 0;
+	font: inherit;
+}
+/* An older day's row, here and in the contents, shows it can be clicked: the surface fill, as buttons get. Not bold,
+   which would widen the text, and not underlined, which on this page means a link. */
+details.day > summary:hover,
+.contents__day:hover {
+	background: var(--surface);
+}
+
+/* Outside a phone (the phone's bar keeps the top of the screen, its media query below): the day being read and the
+   title of the entry being read stay at the top of the window, the title under the day's heading, opaque over the
+   text that passes beneath. Each stays while its own box is in view, the day's heading for the day, the title for its
+   entry's text, and the next one takes its place. --day-heading is the day heading's height, measured. */
+@media not ((max-width: 599px) and (pointer: coarse)) {
+	section.day {
+		--day-heading: 30px;
+	}
+	details.day {
+		--day-heading: 58px;
+	}
+	section.day > h2,
+	details.day > summary {
+		position: sticky;
+		top: 0;
+		z-index: var(--z-sticky);
+		background: var(--bg);
+	}
+	/* A jump to an entry stops below the day's heading, so its first line isn't under it. */
+	.entry {
+		scroll-margin-top: var(--day-heading);
+	}
+	.entry__title {
+		position: sticky;
+		top: var(--day-heading);
+		z-index: var(--z-above);
+		background: var(--bg);
+		/* The space below the title is part of its opaque box, so no line of text shows in it as it passes. */
+		margin-bottom: 0;
+		padding-bottom: 4px;
+	}
+}
+
+/* The owner's scout logs: one folded row below the days, each run's log as plain text that wraps. On wide windows it
+   is the grid's second item after main: column 2 puts it under the reading column, never in the comments' track. */
+.scout-logs {
+	grid-column: 2;
+	margin-bottom: 64px;
+}
+.scout-logs > details {
+	border-top: 1px solid var(--border);
+	border-bottom: 1px solid var(--border);
+}
+.scout-logs summary {
+	padding: 16px 0;
+	font-weight: 500;
+	cursor: pointer;
+}
+.scout-logs summary:hover {
+	background: var(--surface);
+}
+.scout-log {
+	padding: 16px 0;
+	border-top: 1px solid var(--border);
+}
+.scout-log__date {
+	margin: 0 0 8px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--text-secondary);
+}
+.scout-log__text {
+	margin: 0;
+	font-family: var(--font-sans);
+	font-size: 13px;
+	line-height: 20px;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+.scout-logs__none {
+	margin: 0 0 16px;
+	color: var(--text-secondary);
+}

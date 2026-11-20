@@ -1,0 +1,192 @@
+{
+	"sources": [
+		{
+			"name": "Alignment Forum",
+			"kind": "feed",
+			"type": "article",
+			"url": "https://www.alignmentforum.org/feed.xml"
+		},
+		{
+			"name": "LessWrong",
+			"kind": "lesswrong",
+			"type": "article",
+			"url": "https://www.lesswrong.com/graphql",
+			"view": "frontpage",
+			"minKarma": 30,
+			"max": 5
+		},
+		{
+			"name": "LessWrong",
+			"kind": "lesswrong",
+			"type": "article",
+			"url": "https://www.lesswrong.com/graphql",
+			"view": "offFrontpage",
+			"tags": ["Language Models (LLMs)", "Interpretability (ML & AI)", "AI"],
+			"minKarma": 30,
+			"max": 5
+		},
+		{
+			"name": "Transformer Circuits",
+			"kind": "feed",
+			"type": "article",
+			"url": "https://transformer-circuits.pub/feed.xml"
+		},
+		{
+			"name": "OpenAI Alignment",
+			"kind": "feed",
+			"type": "article",
+			"url": "https://alignment.openai.com/rss.xml"
+		},
+		{
+			"name": "Google DeepMind Safety Research",
+			"kind": "feed",
+			"type": "article",
+			"url": "https://deepmindsafetyresearch.medium.com/feed"
+		},
+		{
+			"name": "Redwood Research",
+			"kind": "feed",
+			"type": "article",
+			"url": "https://blog.redwoodresearch.org/feed"
+		},
+		{
+			"name": "METR",
+			"kind": "feed",
+			"type": "article",
+			"url": "https://metr.org/feed.xml"
+		},
+		{
+			"name": "OpenAI",
+			"kind": "feed",
+			"type": "news",
+			"url": "https://openai.com/news/rss.xml",
+			"categories": ["Research", "Safety", "Publication"]
+		},
+		{
+			"name": "Google DeepMind",
+			"kind": "feed",
+			"type": "news",
+			"url": "https://deepmind.google/blog/rss.xml",
+			"icon": "https://cdn-images-1.medium.com/fit/c/150/150/2*y3lgushvo5U-VptVQbSX9Q.png"
+		},
+		{
+			"name": "Mistral",
+			"kind": "feed",
+			"type": "news",
+			"url": "https://mistral.ai/rss.xml"
+		},
+		{
+			"name": "New York Times",
+			"kind": "feed",
+			"type": "news",
+			"url": "https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/spotlight/artificial-intelligence/rss.xml",
+			"max": 2,
+			"icon": "https://static01.nyt.com/images/icons/t_logo_150_black.png"
+		},
+		{
+			"name": "Financial Times",
+			"kind": "feed",
+			"type": "news",
+			"url": "https://www.ft.com/technology?format=rss",
+			"max": 2,
+			"icon": "https://www.ft.com/__origami/service/image/v2/images/raw/ftlogo-v1%3Abrand-ft-logo-square-coloured?source=update-logos&format=png&width=64&height=64"
+		},
+		{
+			"name": "Financial Times",
+			"kind": "feed",
+			"type": "news",
+			"url": "https://www.ft.com/world?format=rss",
+			"max": 2,
+			"icon": "https://www.ft.com/__origami/service/image/v2/images/raw/ftlogo-v1%3Abrand-ft-logo-square-coloured?source=update-logos&format=png&width=64&height=64"
+		},
+		{
+			"name": "MIT Technology Review",
+			"kind": "feed",
+			"type": "news",
+			"url": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
+			"excludeCategories": ["sponsored"],
+			"max": 2
+		},
+		{
+			"name": "South China Morning Post",
+			"kind": "feed",
+			"type": "news",
+			"url": "https://www.scmp.com/rss/320663/feed",
+			"max": 2
+		},
+		{
+			"name": "Sakana AI",
+			"kind": "feed",
+			"type": "news",
+			"url": "https://sakana.ai/feed.xml"
+		},
+		{
+			"name": "SEA-LION",
+			"kind": "feed",
+			"type": "news",
+			"url": "https://sea-lion.ai/feed/"
+		},
+		{
+			"name": "Sarvam AI",
+			"kind": "feed",
+			"type": "news",
+			"url": "https://www.sarvam.ai/rss.xml"
+		},
+		{
+			"name": "Ai2",
+			"kind": "feed",
+			"type": "news",
+			"url": "https://allenai.org/rss.xml"
+		},
+		{
+			"name": "Epoch AI",
+			"kind": "feed",
+			"type": "report",
+			"url": "https://epoch.ai/atom.xml",
+			"icon": "https://epoch.ai/favicon.svg"
+		},
+		{
+			"name": "GeekPark",
+			"kind": "feed",
+			"type": "news",
+			"url": "https://www.geekpark.net/rss",
+			"max": 2
+		},
+		{
+			"name": "Thinking Machines",
+			"kind": "page",
+			"type": "article",
+			"url": "https://thinkingmachines.ai/blog/",
+			"links": "^https://thinkingmachines\\.ai/blog/[^/]+/$",
+			"icon": "https://thinkingmachines.ai/images/favicon-32x32.png"
+		},
+		{
+			"name": "Goodfire",
+			"kind": "page",
+			"type": "article",
+			"url": "https://www.goodfire.com/research",
+			"links": "^https://www\\.goodfire\\.com/research/[^/]+$",
+			"icon": "https://www.goodfire.com/favicon-32.png"
+		},
+		{
+			"name": "OpenRouter",
+			"kind": "openrouter",
+			"type": "news",
+			"url": "https://openrouter.ai/api/v1/models",
+			"providers": [
+				"deepseek",
+				"qwen",
+				"moonshotai",
+				"z-ai",
+				"minimax",
+				"baidu",
+				"tencent",
+				"bytedance-seed",
+				"stepfun",
+				"xiaomi",
+				"meituan",
+				"inclusionai"
+			]
+		}
+	]
+}

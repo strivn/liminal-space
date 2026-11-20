@@ -1,0 +1,43 @@
+/* The owner's line under the day: a thin track filled in one colour by the share of the newest digest's papers read,
+   and its words under it (site/page/progress.ts). */
+.progress:not(:empty) {
+	margin-top: 8px;
+}
+.progress__bar {
+	height: 4px;
+	border-radius: 2px;
+	background: var(--border);
+	overflow: hidden;
+}
+.progress__bar i {
+	display: block;
+	height: 100%;
+	background: var(--heat-most);
+}
+.progress__text {
+	margin: 4px 0 0;
+	font-size: 13px;
+	line-height: 16px;
+}
+/* "Turn on notifications", under the progress line while this browser hasn't been asked (site/page/notifications.ts):
+   a quiet text button. */
+.notify-button {
+	margin: 8px 0 0 -6px;
+	padding: 2px 6px;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: var(--text);
+	font: 500 12px / 18px var(--font-sans);
+	cursor: pointer;
+}
+.notify-button:hover {
+	color: var(--link-hover);
+}
+
+h2 {
+	margin: 32px 0 0;
+	font-size: 22px;
+	line-height: 30px;
+	font-weight: 600;
+}

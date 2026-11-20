@@ -1,0 +1,17 @@
+{
+	"userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+	"timeZone": "Asia/Jakarta",
+	"arxivApi": "https://export.arxiv.org/api/query",
+	"arxivOai": "https://oaipmh.arxiv.org/oai",
+	"arxivPdf": "https://export.arxiv.org/pdf",
+	"arxivHtml": "https://arxiv.org/html",
+	"doiBase": "https://doi.org",
+	"arxivPauseMs": 3000,
+	"crawlDelayMs": 15000,
+	"burstSize": 4,
+	"burstDelayMs": 1000,
+	"requestTimeoutMs": 30000,
+	"maxBodyBytes": 20971520,
+	"curlTimeoutSeconds": 90,
+	"converterTimeoutSeconds": 60
+}

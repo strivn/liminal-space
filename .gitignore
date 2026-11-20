@@ -1,0 +1,33 @@
+node_modules/
+site/digests.js
+# a script's temporary copy of it, which it renames over the file; left only when a run is killed before the rename
+site/.digests.js.*.tmp
+.remember/
+.cache/
+.scout-logs/
+# site/app.js and site/sw.js are built from site/app.ts and site/sw.ts by `pnpm build`, site/style.css from site/styles.css
+site/app.js
+site/style.css
+site/claude-markdown.js
+site/sw.js
+# sync.ts's copy of the digests as last pulled or pushed, and the read marks pull --database read
+site/digests.pulled.js
+site/digests.read.json
+# wrangler's local state: the local D1, bundles
+.wrangler/
+# what bddgen generates from features/ and what Playwright leaves after a run
+.features-gen/
+test-results/
+playwright-report/
+# the folder scripts/deploy/build-site.ts builds for Cloudflare
+dist/
+# its temporary folders beside dist/, left only when a build is killed mid-way
+.dist.*
+# local secrets, such as the TypeSafe key
+.env
+
+# Local secrets for wrangler dev, never committed
+.dev.vars
+# the architecture page and the cloud setup guide stay on the owner's machine
+docs/architecture.html
+docs/cloud-setup.md

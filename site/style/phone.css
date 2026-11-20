@@ -1,0 +1,544 @@
+/* ---- Phone ---- */
+
+/* The phone bar holds the 7-day strip and the contents. Outside a phone it makes no box of its own, so the contents
+   sit in the sidebar as before, and the strip is hidden. */
+.phone-bar {
+	display: contents;
+}
+.phone-bar__strip,
+.phone-bar__refresh,
+.phone-bar__progress,
+.contents__icon {
+	display: none;
+}
+/* The handles of the sheet and the contents show only on a phone or touch screen. */
+.comment-panel__handle,
+.contents__grip {
+	display: none;
+}
+/* Highlight and Comment on a touch screen: a bar with Salience's 12px card corners, never pill-shaped, floating
+   along the bottom of the window, 12px above an iPhone's
+   home indicator, clear of the browser's own menu by the selection (site/page/comment-board.ts sets the class). */
+.selection-float--bar {
+	position: fixed;
+	left: 16px;
+	right: 16px;
+	bottom: calc(12px + env(safe-area-inset-bottom));
+	justify-content: center;
+	padding: 8px;
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	background: var(--bg);
+}
+.selection-float--bar button {
+	flex: 1;
+	height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	border-radius: 6px;
+	font: 600 16px / 1 var(--font-sans);
+}
+.selection-float--bar svg {
+	display: block;
+	width: 20px;
+	height: 20px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+/* A phone: a touch screen narrower than 600px (PHONE_QUERY in site/page/phone.ts). */
+@media (max-width: 599px) and (pointer: coarse) {
+	/* The header scrolls away; the bar under it stays at the top. The sidebar makes no box, so the bar's containing
+	   block is the whole page and it sticks all the way down. */
+	.sidebar {
+		display: contents;
+	}
+	/* With viewport-fit=cover (index.html) the page runs under an iPhone's status bar: the heading starts below it, the
+	   bar sticks below it, and a strip of the page's background covers it, so text scrolled up doesn't show through.
+	   The insets are 0 on a screen without a status bar over the page. */
+	.page {
+		padding-top: env(safe-area-inset-top);
+	}
+	.phone-bar {
+		position: sticky;
+		top: env(safe-area-inset-top);
+		z-index: var(--z-phone-bar);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		height: 56px;
+		margin: 0 -16px;
+		padding: 0 16px;
+		box-sizing: border-box;
+		border-bottom: 1px solid var(--border);
+		background: var(--bg);
+	}
+	.phone-bar::before {
+		content: "";
+		position: fixed;
+		top: 0;
+		right: 0;
+		left: 0;
+		height: env(safe-area-inset-top);
+		background: var(--bg);
+	}
+	/* The share of the newest day's papers read: a 2px line over the bar's bottom border, none for a day without. */
+	.phone-bar__progress {
+		position: absolute;
+		right: 0;
+		bottom: -1px;
+		left: 0;
+		display: block;
+		height: 2px;
+		background: var(--border);
+	}
+	.phone-bar__progress:empty {
+		display: none;
+	}
+	.phone-bar__progress i {
+		display: block;
+		height: 100%;
+		background: var(--heat-most);
+	}
+	/* The last 7 days: 32px squares, 7px corners, the day's number or a crown, the day being read outlined. */
+	.phone-bar__strip {
+		display: flex;
+		flex: none;
+		gap: 4px;
+	}
+	.phone-bar__strip .heatmap__day {
+		box-sizing: border-box;
+		width: 32px;
+		height: 32px;
+		display: grid;
+		place-items: center;
+		border-radius: 7px;
+		font: 600 11px / 1 var(--font-sans);
+		color: var(--text-secondary);
+	}
+	/* A day with nothing read: the number in text colour, as the grey was 3.89:1 on its square (4.47:1 on dark). */
+	.phone-bar__strip .heatmap__day--none {
+		color: var(--text);
+	}
+	.phone-bar__strip .heatmap__day--some,
+	.phone-bar__strip .heatmap__day--most {
+		color: #141414;
+	}
+	.phone-bar__strip .heatmap__day--all {
+		color: #faf7f5;
+	}
+	.phone-bar__strip .heatmap__day[aria-current="true"] {
+		outline: 2px solid var(--text);
+		outline-offset: 1px;
+	}
+	/* The crown takes the colour of the number it replaces, which is chosen for the square's shade. */
+	.phone-bar__crown {
+		width: 18px;
+		height: 18px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		pointer-events: none;
+	}
+	/* Small controls keep their look and take a tap about 44px across: an invisible box around each, drawn over what
+	   is next to it. The arXiv mark's covers the title's last letters; a square's reaches 8px above and below, inside
+	   the 56px bar, and stops halfway into the 4px gap beside it. */
+	.entry__arxiv,
+	.comment-action,
+	.comment-panel__close,
+	.phone-bar__strip .heatmap__day,
+	.phone-bar__refresh,
+	.phone-bar .contents__summary {
+		position: relative;
+	}
+	.entry__arxiv::after,
+	.comment-action::after,
+	.comment-panel__close::after,
+	.phone-bar__strip .heatmap__day::after,
+	.phone-bar__refresh::after,
+	.phone-bar .contents__summary::after {
+		content: "";
+		position: absolute;
+	}
+	.entry__arxiv::after {
+		inset: -14px -16px;
+	}
+	.comment-action::after {
+		inset: -11px 0;
+	}
+	.comment-panel__close::after,
+	.phone-bar__refresh::after,
+	.phone-bar .contents__summary::after {
+		inset: -6px;
+	}
+	.phone-bar__strip .heatmap__day::after {
+		inset: -8px -2px;
+	}
+	/* 12px from Refresh, so their 44px taps meet without overlapping. */
+	.phone-bar .contents {
+		min-width: 0;
+		margin: 0 0 0 4px;
+	}
+	.phone-bar .contents__box {
+		border: 0;
+	}
+	.phone-bar .contents__box[open] {
+		padding-bottom: 0;
+	}
+	/* Refresh and Contents are 32px tiles with 7px corners, like the day squares. */
+	.phone-bar__refresh,
+	.phone-bar .contents__summary {
+		box-sizing: border-box;
+		display: grid;
+		place-items: center;
+		width: 32px;
+		height: 32px;
+		padding: 0;
+		border: 1px solid var(--border);
+		border-radius: 7px;
+		background: var(--surface);
+		color: var(--text);
+		list-style: none;
+		cursor: pointer;
+	}
+	.phone-bar__refresh {
+		margin-left: auto;
+	}
+	.phone-bar .contents__summary::-webkit-details-marker {
+		display: none;
+	}
+	.phone-bar__refresh svg,
+	.phone-bar .contents__icon {
+		display: block;
+		width: 18px;
+		height: 18px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+	.phone-bar .contents__count {
+		display: none;
+	}
+	.phone-bar .contents__name {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+	/* The tile is pressed while the contents are open. */
+	.phone-bar .contents__box[open] .contents__summary {
+		border-color: var(--pressed);
+		background: var(--pressed);
+		color: var(--on-pressed);
+	}
+	/* The unfolded contents hang over the page from the bar's bottom (noted in --phone-bar-bottom when they unfold) to
+	   the bottom of the screen, their grip above an iPhone's home indicator; only their list scrolls, and the page
+	   behind stays still. Only while open: folded, the content box is still laid out (hidden by content-visibility),
+	   and fixed it would cover the page and take its taps (measured). */
+	.phone-bar .contents__box[open]::details-content {
+		position: fixed;
+		top: var(--phone-bar-bottom, 56px);
+		right: 0;
+		bottom: 0;
+		left: 0;
+		display: flex;
+		flex-direction: column;
+		padding: 8px 16px env(safe-area-inset-bottom);
+		background: var(--bg);
+	}
+	.phone-bar .contents__list {
+		flex: 1;
+		max-height: none;
+		margin: 0 -4px;
+		padding: 4px 4px 32px;
+	}
+	/* The open contents lock the page as an open sheet does (the rule for both panels, above). */
+	html:has(.phone-bar .contents__box[open]) {
+		overflow: hidden;
+	}
+	/* The grabber along the contents' bottom edge: dragged up, it folds them. */
+	.contents__grip {
+		display: block;
+		position: absolute;
+		right: 0;
+		bottom: env(safe-area-inset-bottom);
+		left: 0;
+		height: 28px;
+		background: var(--bg);
+		touch-action: none;
+	}
+	.contents__grip::before,
+	.comment-panel__handle::before {
+		content: "";
+		display: block;
+		width: 36px;
+		height: 5px;
+		margin: 12px auto 0;
+		border-radius: 3px;
+		background: var(--mark-muted);
+	}
+	/* The title of the post being read, on one line under the bar (site/page/pinning.ts). */
+	.pinned-title {
+		position: fixed;
+		will-change: transform;
+		top: 0;
+		right: 0;
+		left: 0;
+		z-index: var(--z-chrome);
+		padding: 0 16px;
+		border-bottom: 1px solid var(--border);
+		background: var(--bg);
+	}
+	.pinned-title[hidden] {
+		display: none;
+	}
+	.pinned-title__text {
+		display: block;
+		overflow: hidden;
+		padding: 4px 0;
+		font: 600 16px / 24px var(--font-sans);
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+	.pinned-title a {
+		color: inherit;
+		text-decoration: none;
+	}
+	/* A copy of the post's button row along the bottom, which pinning.ts measures; the selection bar replaces it. */
+	.pinned-row {
+		position: fixed;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		z-index: var(--z-chrome);
+		box-sizing: border-box;
+		height: calc(61px + env(safe-area-inset-bottom));
+		padding-bottom: env(safe-area-inset-bottom);
+		border-top: 1px solid var(--border);
+		background: var(--bg);
+	}
+	.pinned-row[hidden],
+	body:has(.selection-float--bar:not([hidden])) .pinned-row {
+		display: none;
+	}
+	.pinned-row .entry__rail {
+		box-sizing: border-box;
+		height: 100%;
+		margin: 0;
+		padding: 0 16px;
+	}
+	/* A jump to a day or an entry stops below the bar. */
+	.entry,
+	.day {
+		scroll-margin-top: calc(56px + env(safe-area-inset-top));
+	}
+
+	/* An entry's text takes the column's whole width; its rail is a row of 44px buttons under it, each group on its
+	   own pill band 8px from the next, scrolling sideways on its own when it doesn't fit. The two columns make no box
+	   of their own here, and the groups take their order from the column and place they sit in: Comment and Copy,
+	   Discuss to Takeaway, the read toggles, the tags, Like and Dislike. The text pans only up and down, so a swipe
+	   left reaches the page, and still zooms with two fingers. */
+	.entry {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas: "kicker" "meta" "body" "rail";
+	}
+	.entry__body {
+		touch-action: pan-y pinch-zoom;
+	}
+	.entry__rail {
+		position: static;
+		flex-direction: row;
+		align-items: center;
+		gap: 8px;
+		margin: 12px 0 0;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+	.entry__rail-col {
+		display: contents;
+	}
+	.entry__rail-col:first-child > :nth-child(1) {
+		order: 1;
+	}
+	.entry__rail-col:last-child > :nth-child(1) {
+		order: 2;
+	}
+	.entry__rail-col:first-child > :nth-child(2) {
+		order: 3;
+	}
+	.entry__rail-col:last-child > :nth-child(2) {
+		order: 4;
+	}
+	.entry__rail-col:first-child > :nth-child(3) {
+		order: 5;
+	}
+	.entry__rail-group {
+		flex: none;
+		flex-direction: row;
+		align-items: center;
+		gap: 0;
+		padding: 0 6px;
+	}
+	.entry__rail-group--divided > .rail-button:nth-child(2)::after {
+		top: 12px;
+		left: -0.5px;
+		width: 1px;
+		height: 20px;
+	}
+	.rail-button {
+		width: 44px;
+		height: 44px;
+		min-width: 44px;
+		min-height: 44px;
+		border-radius: 999px;
+		-webkit-touch-callout: none;
+		user-select: none;
+		-webkit-user-select: none;
+	}
+	.rail-button::before {
+		border-radius: 999px;
+	}
+	/* A touch has no hover: a button's name shows only while a finger rests on it (site/page/phone.ts), in a dark pill
+	   above the button, outside the row's scrolling box. */
+	.rail-label,
+	.rail-button:hover .rail-label,
+	.rail-button:focus-visible .rail-label {
+		visibility: hidden;
+		opacity: 0;
+		transition: none;
+	}
+	.rail-button--held::before {
+		background: var(--border);
+	}
+	.rail-button--held .rail-label,
+	.rail-button--held:hover .rail-label {
+		position: fixed;
+		top: var(--held-y);
+		left: var(--held-x);
+		right: auto;
+		z-index: var(--z-raised);
+		translate: -50% -100%;
+		padding: 6px 10px;
+		border-radius: 6px;
+		background: var(--text);
+		color: var(--bg);
+		font: 600 14px / 18px var(--font-sans);
+		clip-path: none;
+		visibility: visible;
+		opacity: 1;
+	}
+
+	/* A swipe left: the entry follows the finger (--swipe-x), and behind it the read colour shows the toggle it will
+	   press, filling the gap from the entry's right edge to the screen's. */
+	.entry--swiping {
+		position: relative;
+	}
+	.entry--swiping > :not(.entry__swipe) {
+		translate: var(--swipe-x) 0;
+	}
+	/* The icon and name sit level with the finger (--swipe-y, from the entry's top), so a tall entry shows them on
+	   screen. */
+	.entry__swipe {
+		position: absolute;
+		top: 0;
+		right: -16px;
+		bottom: 0;
+		width: calc(16px - var(--swipe-x));
+		box-sizing: border-box;
+		display: flex;
+		align-items: flex-start;
+		padding-top: calc(var(--swipe-y, 50%) - 12px);
+		justify-content: flex-end;
+		gap: 8px;
+		padding-right: 24px;
+		overflow: hidden;
+		white-space: nowrap;
+		background: var(--pressed);
+		color: var(--on-pressed);
+		font: 600 16px / 1 var(--font-sans);
+	}
+	.entry__swipe svg {
+		flex: none;
+		width: 24px;
+		height: 24px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	/* The comment panel is a sheet along the bottom of the screen with a grabber, its top corners rounded 12px,
+	   Salience's card corners. It stays on the screen's bottom with the keyboard up and runs on behind it, so no dimmed page
+	   shows between them; its padding keeps the box and Save above the keyboard (--keyboard-inset, set from the visual
+	   viewport by site/page/comment-board.ts) or, with the keyboard down, above the home indicator. */
+	.comment-panel--sheet {
+		--sheet-bottom: calc(
+			max(var(--keyboard-inset, 0px), env(safe-area-inset-bottom)) +
+			12px
+		);
+		inset: auto 0 0 0;
+		box-sizing: border-box;
+		width: 100%;
+		height: auto;
+		max-height: 85dvh;
+		padding-bottom: var(--sheet-bottom);
+		border-left: 0;
+		border-radius: 12px 12px 0 0;
+	}
+	.comment-panel--sheet .comment-panel__inner {
+		max-height: calc(85dvh - var(--sheet-bottom));
+	}
+	.comment-panel--sheet .comment-panel__handle {
+		display: block;
+		height: 21px;
+		touch-action: none;
+	}
+	.comment-panel--sheet .comment-panel__handle::before {
+		margin-top: 8px;
+	}
+	.comment-panel--sheet .comment-panel__head {
+		padding: 0 16px 12px;
+		border-bottom: 0;
+		touch-action: none;
+	}
+	.comment-panel--sheet .comment-panel__body {
+		padding-top: 0;
+		overscroll-behavior: contain;
+	}
+	/* 16px text, so iOS doesn't zoom the page when the box takes focus; Cancel and Save are 44px targets. */
+	.comment-panel--sheet .comment-editor textarea,
+	.comment-panel--sheet .comment-editor__layer {
+		min-height: 72px;
+		padding: 10px 12px;
+		font-size: 16px;
+		line-height: 24px;
+	}
+	.comment-panel--sheet .comment-editor__buttons {
+		flex-direction: row-reverse;
+	}
+	.comment-panel--sheet .comment-editor button {
+		flex: 1;
+		height: 44px;
+		justify-content: center;
+		border-radius: 8px;
+		font: 600 16px / 1 var(--font-sans);
+	}
+	.comment-panel--sheet .comment-editor__save:enabled {
+		border-color: var(--data);
+		background: var(--data);
+		color: var(--on-data);
+	}
+}

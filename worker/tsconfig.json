@@ -1,0 +1,10 @@
+{
+	// The Worker: workerd code that wrangler bundles, with Cloudflare's runtime types instead of Node's
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"module": "preserve",
+		"lib": ["es2024"],
+		"types": ["@cloudflare/workers-types"]
+	},
+	"include": ["src"]
+}

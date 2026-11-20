@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://epoch.ai/</id>
+    <title>Epoch AI — Latest</title>
+    <updated>2026-11-18T00:00:00.000Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <author>
+        <name>Epoch AI</name>
+        <uri>https://epoch.ai/</uri>
+    </author>
+    <link rel="alternate" href="https://epoch.ai/"/>
+    <link rel="self" href="https://epoch.ai/atom.xml"/>
+    <subtitle>The latest work from Epoch AI: research papers, reports, data insights, newsletter issues, and podcast episodes.</subtitle>
+    <entry>
+        <title type="html"><![CDATA[Agentic inference capacity grew 4.6× in a year, versus 2.6× for compute capacity]]></title>
+        <id>https://epoch.ai/data-insights/agentic-inference-capacity-growth</id>
+        <link href="https://epoch.ai/data-insights/agentic-inference-capacity-growth"/>
+        <updated>2026-11-18T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Our Inference Performance Index and chip sales data show agentic inference capacity grew nearly twice as much as 8-bit compute.]]></summary>
+        <author>
+            <name>Jason Li</name>
+        </author>
+        <category term="Chips"/>
+        <category term="Scaling"/>
+        <published>2026-11-18T00:00:00.000Z</published>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Anthropic’s compute spending is increasing by 4x per year, outpacing OpenAI’s 3x]]></title>
+        <id>https://epoch.ai/data-insights/anthropic-openai-compute-spend-growth</id>
+        <link href="https://epoch.ai/data-insights/anthropic-openai-compute-spend-growth"/>
+        <updated>2026-11-18T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Anthropic spent nearly $10 billion on compute and infrastructure in the third quarter of 2026, or close to $40 billion on an annualized basis, up from just $433 million in 2023.]]></summary>
+        <author>
+            <name>Josh You</name>
+        </author>
+        <category term="Leading companies"/>
+        <category term="Finances"/>
+        <category term="Scaling"/>
+        <published>2026-11-18T00:00:00.000Z</published>
+    </entry>
+</feed>

@@ -1,0 +1,104 @@
+# Deploy ivan.wiryadi.com/liminal-space: pull every entry from the database, build the static site from it, and
+# deploy the Worker with the site as its assets, on every push to main: main is production, and develop reaches it
+# only through the owner's pull request from develop into main.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  # Another workflow (such as one that adds entries) can deploy right after it changes the database.
+  workflow_call:
+    secrets:
+      CLOUDFLARE_API_TOKEN:
+        required: true
+      CLOUDFLARE_ACCOUNT_ID:
+        required: true
+      D1_DATABASE_ID:
+        required: true
+      MCP_AUD:
+        required: true
+
+# One deploy at a time. A newer one waits for the running one instead of cancelling it halfway through.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      # Production's workflows run only on main: a run started by hand on develop, the
+      # default branch, would write develop's unreleased code to production. GITHUB_REF is the ref the runner gives
+      # (the caller's, when another workflow calls this one), never an input.
+      - name: Run only on main
+        run: |
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "This workflow changes production, which runs main: start it on main, not ${GITHUB_REF}." >&2
+            exit 1
+          fi
+
+      # No token left in .git/config for the steps after this one.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      # Every entry, including those pushed since the last deploy.
+      - name: Pull the database
+        run: node scripts/deploy/sync.ts pull --database site/digests.js
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+
+      - name: Build the site
+        run: |
+          pnpm run build
+          node scripts/deploy/build-site.ts site/digests.js dist
+
+      # Pending migrations reach the database before the Worker that needs them. The id is
+      # pinned as in the deploy step, so the migrations run on the database the pull step read. The bookmark is the
+      # point to restore the database to if a migration has to be undone: `wrangler d1 time-travel restore liminal
+      # --bookmark=<it>`. Wrangler stops at a failed migration and exits non-zero, which stops the job before the
+      # deploy, but it names only the migrations it was about to apply: the list after it shows the first still
+      # pending, which is the one that failed.
+      - name: Migrate the database
+        run: |
+          node -e 'require("wrangler").experimental_patchConfig("wrangler.jsonc", { d1_databases: [{ database_id: process.env.D1_DATABASE_ID }] }, false)'
+          pnpm exec wrangler d1 time-travel info liminal
+          if ! pnpm exec wrangler d1 migrations apply liminal --remote; then
+            echo "A migration failed and nothing was deployed. The first migration still pending is the one that failed:" >&2
+            pnpm exec wrangler d1 migrations list liminal --remote >&2
+            exit 1
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+
+      # wrangler.jsonc holds no database id, and Wrangler has no environment variable for one. Without it, Wrangler
+      # keeps the Worker's current DB binding or looks the database up by database_name, and creates a new one when
+      # neither finds it. Writing the id in, with Wrangler's own JSONC editor, pins the deploy to the database the pull
+      # step read instead of depending on that lookup; it is never committed (the pull step has already failed if it
+      # is empty). MCP_AUD is uploaded as a Worker secret with this version. Wrangler reads the account from
+      # CLOUDFLARE_ACCOUNT_ID.
+      - name: Deploy
+        run: |
+          # An empty MCP_AUD would replace the Worker's real one and lock the connector out.
+          if [ -z "$MCP_AUD" ]; then echo "MCP_AUD must be set" >&2; exit 1; fi
+          node -e 'require("wrangler").experimental_patchConfig("wrangler.jsonc", { d1_databases: [{ database_id: process.env.D1_DATABASE_ID }] }, false)'
+          secrets_file="$RUNNER_TEMP/worker-secrets.env"
+          trap 'rm -f "$secrets_file"' EXIT
+          (umask 077 && printf 'MCP_AUD=%s\n' "$MCP_AUD" > "$secrets_file")
+          pnpm exec wrangler deploy --secrets-file "$secrets_file"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+          MCP_AUD: ${{ secrets.MCP_AUD }}

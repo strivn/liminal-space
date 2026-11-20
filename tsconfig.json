@@ -1,0 +1,31 @@
+{
+	// Node service or script, type-checked by tsc 7, run by Node directly
+	"compilerOptions": {
+		// Language level and module system Node actually runs
+		"target": "es2024",
+		"lib": ["es2024"],
+		"module": "nodenext",
+		"types": ["node"],
+
+		// Strictness: stated even where TS 7 defaults them, so TS 6-based tools agree
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"exactOptionalPropertyTypes": true,
+		"noImplicitOverride": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+
+		// Only syntax Node can strip: no enum, namespace, parameter properties
+		"verbatimModuleSyntax": true,
+		"erasableSyntaxOnly": true,
+		"isolatedModules": true,
+		"noUncheckedSideEffectImports": true,
+		"moduleDetection": "force",
+
+		// Node runs .ts files directly, so imports name the .ts file; tsc only checks
+		"allowImportingTsExtensions": true,
+		"skipLibCheck": true,
+		"noEmit": true
+	},
+	"include": ["scripts", "shared"]
+}

@@ -1,0 +1,382 @@
+/* An entry: the kicker and the meta line, then the text with the icon rail to its right. */
+.entry {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 78px;
+	grid-template-areas:
+		"kicker ."
+		"meta ."
+		"body rail";
+	column-gap: 16px;
+	padding: 24px 0;
+	border-top: 1px solid var(--border);
+	overflow-wrap: break-word;
+}
+
+/* display: grid above outranks the browser's own [hidden] rule, so a filtered-out entry needs its own. */
+.entry[hidden] {
+	display: none;
+}
+.entry__kicker {
+	grid-area: kicker;
+}
+.entry__meta {
+	grid-area: meta;
+}
+.entry__body {
+	grid-area: body;
+	min-width: 0;
+}
+section.day > h2 + .entry {
+	border-top: 0;
+}
+/* While the tag filter hides entries and days, the first entry shown under today's heading still has no hairline,
+   the first older day shown keeps the space above it and the last one its hairline below. */
+section.day > .entry:nth-child(1 of .entry:not([hidden])) {
+	border-top: 0;
+}
+details.day:nth-child(1 of details.day:not([hidden])) {
+	margin-top: 48px;
+}
+details.day:nth-last-child(1 of details.day:not([hidden])) {
+	border-bottom: 1px solid var(--border);
+}
+/* The paragraphs' default margins go; :where() gives the reset no weight, so a class's own margin wins over it. */
+:where(.entry) p {
+	margin: 0;
+}
+.entry__meta {
+	font-size: 12px;
+	line-height: 18px;
+	color: var(--text-secondary);
+}
+.entry__title {
+	margin: 4px 0;
+	font-size: 18px;
+	line-height: 26px;
+	font-weight: 600;
+}
+.entry__byline,
+.entry__date {
+	font-size: 14px;
+	line-height: 20px;
+	color: var(--text-secondary);
+}
+.entry__abstract {
+	margin-top: 8px;
+}
+/* A paper's other links (Code, ...) and a news item's links, after the figure. */
+.entry__links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin-top: 8px;
+	font-size: 14px;
+	line-height: 20px;
+}
+/* The icon rail: two columns 6px apart, centred on each other. Each group sits on a pill band in the surface colour,
+   reaching 6px past its first and last button;
+   buttons 2px apart in a band, bands 8px apart in a column.
+   While its entry is in view the rail stays centred on the window's middle (sticky at both edges, centred in its
+   cell), but never leaves its grid cell, the row of the entry's text: no higher than the text's top, no lower than
+   its bottom. An entry whose text is shorter than the rail is as tall as the rail.
+   Sticky can't centre on its own height, so the height is written out from the taller, left column: a band of n
+   buttons is 34px * n + 10px, three bands with two 8px gaps make 34px * n + 46px. Its n is 5 for a news item, article
+   or report, 6 for a paper, and the comment count adds one below 1386px when it shows.
+   z-index 1 keeps it above the comment cards, which come later in the page, so a label sliding right isn't hidden
+   under them. */
+.entry__rail {
+	--rail-left: 5;
+	--rail-count: 0;
+	--rail-height: calc(34px * (var(--rail-left) + var(--rail-count)) + 46px);
+	position: sticky;
+	top: calc(50dvh - var(--rail-height) / 2);
+	bottom: calc(50dvh - var(--rail-height) / 2);
+	z-index: var(--z-raised);
+	grid-area: rail;
+	align-self: center;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.entry__rail--paper {
+	--rail-left: 7;
+}
+@media (max-width: 1385px) {
+	.entry__rail:has(.comment-count:not([hidden])) {
+		--rail-count: 1;
+	}
+}
+.entry__rail-col {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+.entry__rail-group {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 6px 2px;
+	border-radius: 999px;
+	background: var(--surface);
+}
+/* The hairline between OK and Like: 16px long, centred in the 2px gap above Like, so it takes no room; half-way between
+   the grey text and the band, so it shows on the band in both themes. */
+.entry__rail-group--divided > .rail-button:nth-child(2)::after {
+	content: "";
+	position: absolute;
+	top: -1.5px;
+	left: 8px;
+	width: 16px;
+	height: 1px;
+	background: color-mix(in srgb, var(--text-secondary) 50%, var(--surface));
+	pointer-events: none;
+}
+
+/* Surprise: a kicker (Salience: 12/16, 600, +2px, uppercase, grey). A label, not emphasis. */
+.entry__kicker {
+	margin-bottom: 4px;
+	font-size: 12px;
+	line-height: 16px;
+	font-weight: 600;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--text-secondary);
+}
+/* Journal reference and comments: arXiv's own words, quiet. */
+.entry__venue {
+	font-size: 14px;
+	line-height: 20px;
+	color: var(--text-secondary);
+}
+.entry__description {
+	margin-top: 8px;
+}
+/* A paper's Figure 1 after its abstract. The browser's default figure margin is 40px each side; here the figure
+   takes the column's full width, and its caption is quiet like the byline. */
+.entry__figure {
+	margin: 16px 0 0;
+}
+/* Every figure is as wide as the text, whatever its own size; its width and height attributes keep its proportions
+   and reserve its space before it loads. */
+.entry__figure img {
+	display: block;
+	width: 100%;
+	height: auto;
+	background: var(--figure-bg);
+}
+.entry__figure figcaption {
+	margin-top: 8px;
+	font-size: 14px;
+	line-height: 20px;
+	color: var(--text-secondary);
+}
+.entry__figure-link {
+	display: block;
+}
+/* A news item's source icon before its title: as tall as a capital letter, a little apart from the first word. */
+.entry__icon {
+	height: 0.9em;
+	width: 0.9em;
+	margin-right: 6px;
+	vertical-align: -0.1em;
+	object-fit: contain;
+}
+/* In the dark theme an icon sits on a light tile: some are black marks on a transparent background (LessWrong's star,
+   OpenAI's knot) and would vanish on the dark page. */
+@media (prefers-color-scheme: dark) {
+	.entry__icon {
+		background: #faf7f5;
+		border-radius: 2px;
+		padding: 1px;
+		box-sizing: content-box;
+	}
+}
+/* arXiv's logomark after a paper's title: as tall as a capital letter, a little apart from the last word. */
+/* The arXiv mark is about 12 by 16px; its padding makes the link a 24px target (WCAG 2.5.8). The left padding is the
+   6px after the title's last letter, and the other sides' negative margins take their padding back, so the mark sits
+   where it did. */
+.entry__arxiv {
+	display: inline-block;
+	padding: 4px 7px 4px 6px;
+	margin: -4px -7px -4px 0;
+	line-height: 0;
+	vertical-align: -0.1em;
+}
+.entry__arxiv-mark {
+	height: 0.9em;
+	width: auto;
+}
+
+/* Display math scrolls inside its own box rather than widening the page. */
+.katex-display {
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
+/* Links are always underlined; titles stay in text colour so a list of them doesn't shout. */
+a {
+	color: var(--link);
+	font-weight: 500;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 3px;
+}
+a:hover {
+	color: var(--link-hover);
+}
+/* A title's underline is red; its words stay ink. */
+.entry__title a {
+	color: var(--text);
+	font-weight: 600;
+	text-decoration-color: var(--accent);
+}
+/* A title's words, and an address linked in the text, can be selected for a comment. A mouse drag in a link selects nothing in Chrome unless the link
+   has both draggable="false" (set in site/page/) and user-select: text (measured: either alone selects nothing). */
+.entry__title a,
+.text-link {
+	user-select: text;
+}
+
+/* The Highlight and Comment buttons beside a selection, each word with its 16px Lucide icon before it, as in the
+   touch screen's bar: Salience's ghost button (a grey outline, 3:1 or more on the page) and, for Comment, its primary
+   button (below). The rail's Discuss link has the .discuss class too; .rail-button below overrides its look. */
+.discuss,
+.highlight-float,
+.comment-float {
+	font: 500 14px / 20px var(--font-sans);
+	padding: 4px 12px;
+	border: 1px solid var(--text-secondary);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--text);
+	cursor: pointer;
+	transition: background 0.15s var(--ease);
+}
+.highlight-float,
+.comment-float {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+.selection-float svg {
+	width: 16px;
+	height: 16px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.discuss:hover,
+.highlight-float:hover,
+.tag-chip:hover,
+.read-chip:hover {
+	background: var(--surface);
+}
+/* Discuss is a link: no underline, and the text's colour. */
+.discuss {
+	color: var(--text);
+	text-decoration: none;
+}
+.discuss:hover {
+	color: var(--text);
+}
+/* A tag or read chip that is on: filled in the text colour. After the hover rules, so it keeps its colour under the
+   pointer. */
+.tag-chip[aria-pressed="true"],
+.read-chip[aria-pressed="true"] {
+	border-color: var(--pressed);
+	background: var(--pressed);
+	color: var(--on-pressed);
+}
+/* The icon rail's buttons: a round 32px target around a 20px Lucide icon, quiet until hovered. After .discuss, so
+   Discuss in the rail drops the outlined look. Three layers, kept inside the button by isolation: the word's label
+   (z-index -1), the square's own background (::before, 0), the icon (1), so the label slides out from behind the
+   square. The comment count shows its number in the square and has no label. */
+.rail-button {
+	position: relative;
+	isolation: isolate;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--text);
+	font: 600 13px / 1 var(--font-sans);
+	text-decoration: none;
+	cursor: pointer;
+}
+.rail-button::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: var(--z-flat);
+	border-radius: 999px;
+	transition: background 0.15s var(--ease);
+}
+.rail-button svg {
+	position: relative;
+	z-index: var(--z-raised);
+	width: 20px;
+	height: 20px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.rail-button:hover {
+	color: var(--text);
+}
+/* On its band, which is the surface colour, a hovered button takes the border grey. */
+.rail-button:hover::before,
+.rail-button:focus-visible::before {
+	background: var(--border);
+}
+/* A pressed toggle is filled like a chip that is on, hovered or not: the text colour, its icon in the page's colour.
+   The fill is on the button and on its square, which lies over the label, so the label slides out from behind a
+   whole square. */
+.toggle[aria-pressed="true"],
+.toggle[aria-pressed="true"]::before,
+.toggle[aria-pressed="true"]:hover::before {
+	background: var(--pressed);
+	color: var(--on-pressed);
+}
+/* A rail button's word, shown while it is hovered or focused: it slides out from behind the icon, starting at the
+   button's centre, to the left: from the left column over the text, and from the right column below 1386px, where
+   the rail is near the window's edge. From the right column at 1386px and wider it slides right (below). Hidden, it
+   takes no part in what shows: visibility switches off once the slide back has run. */
+.rail-label {
+	position: absolute;
+	top: 50%;
+	right: 16px;
+	z-index: var(--z-behind);
+	translate: 0 -50%;
+	padding: 4px 22px 4px 10px;
+	border-radius: 6px 0 0 6px;
+	background: var(--surface);
+	color: var(--text);
+	font: 600 12px / 16px var(--font-sans);
+	white-space: nowrap;
+	pointer-events: none;
+	clip-path: inset(0 0 0 100%);
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		clip-path 0.15s var(--ease),
+		opacity 0.15s var(--ease),
+		visibility 0s linear 0.15s;
+}
+.rail-button:hover .rail-label,
+.rail-button:focus-visible .rail-label {
+	clip-path: inset(0);
+	opacity: 1;
+	visibility: visible;
+	transition:
+		clip-path 0.15s var(--ease),
+		opacity 0.15s var(--ease),
+		visibility 0s;
+}

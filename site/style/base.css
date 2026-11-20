@@ -1,0 +1,101 @@
+@font-face {
+	font-family: Manrope;
+	src: url("fonts/Manrope-Variable-latin.woff2") format("woff2");
+	font-weight: 200 800;
+	font-display: swap;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font: 400 16px / 26px var(--font-sans);
+	-webkit-text-size-adjust: 100%;
+}
+
+/* One 720px reading column with 16px gutters, so a 393px iPhone never scrolls sideways. The owner's page
+   (page--owner, set on its copy by scripts/deploy/build-site.ts) is 766px: the 672px text, a 16px gap and the 78px
+   two-column rail. */
+.page {
+	max-width: 720px;
+	margin: 0 auto;
+	padding: 0 16px;
+}
+.page--owner {
+	max-width: 766px;
+}
+.masthead {
+	padding-top: 32px;
+	padding-bottom: 8px;
+}
+main {
+	padding-bottom: 64px;
+}
+/* The data-nosnippet div around main makes no box of its own, so main stays the page's grid item. */
+.nosnippet {
+	display: contents;
+}
+
+/* Signal mark: four squares, the third one warm. A flex row of its own, not on a text line, so its top is the
+   header's top padding and the title sits 16px under it. */
+.signal-mark {
+	display: flex;
+	gap: 6px;
+}
+.signal-mark i {
+	width: 12px;
+	height: 12px;
+	background: var(--mark-muted);
+}
+.signal-mark i:nth-child(3) {
+	background: var(--red);
+}
+
+h1 {
+	margin: 16px 0 4px;
+	font-size: 28px;
+	line-height: 36px;
+	font-weight: 600;
+}
+/* Read by screen readers, drawn as nothing: a 1px clipped box out of the flow, so the layout doesn't move. */
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+/* "Skip to the digests": the first tab stop, out of sight above the window until it has keyboard focus, then drawn
+   at the top left over the page. */
+.skip-link {
+	position: fixed;
+	top: calc(8px + env(safe-area-inset-top));
+	left: 16px;
+	z-index: var(--z-chrome);
+	padding: 8px 12px;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: var(--bg);
+	color: var(--link);
+	font-size: 14px;
+	line-height: 20px;
+	transform: translateY(-200%);
+}
+.skip-link:focus {
+	transform: none;
+}
+.masthead__meta {
+	min-height: 20px;
+	font-size: 14px;
+	line-height: 20px;
+	color: var(--text-secondary);
+}

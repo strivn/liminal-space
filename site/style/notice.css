@@ -1,0 +1,29 @@
+/* A short message at the foot of the window, such as a press the site didn't save, above an iPhone's home indicator
+   (the inset is 0 elsewhere). */
+.notice {
+	position: fixed;
+	left: 16px;
+	bottom: calc(16px + env(safe-area-inset-bottom));
+	z-index: var(--z-sticky);
+	max-width: calc(100% - 32px);
+	padding: 8px 12px;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: var(--bg);
+	font-size: 14px;
+	line-height: 20px;
+}
+/* The notice is the page's status region (site/page/dom.ts announce): always in the page, so a screen reader hears
+   what is written into it, and out of sight while it is empty or holds a message for screen readers only. Not
+   display: none or visibility: hidden, which would take it out of the accessibility tree. */
+.notice:empty,
+.notice--quiet {
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	border: 0;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}

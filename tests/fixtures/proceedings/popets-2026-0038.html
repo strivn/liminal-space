@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- Saved from https://petsymposium.org/popets/2026/popets-2026-0038.php on 2026-10-27, whole. -->
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <title>PoPETs Proceedings — Clicking into Exposure: Uncovering Privacy Risks of Google Click Identifier in YouTube Ads</title>
+  <style>
+  @import url(../../common/respstyle.css);
+  </style>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="citation_title" content="Clicking into Exposure: Uncovering Privacy Risks of Google Click Identifier in YouTube Ads" />
+<meta name="citation_author" content="Ha Dao" />
+<meta name="citation_author" content="Abhishek Shinde" />
+<meta name="citation_author" content="Sana Athar" />
+<meta name="citation_author" content="Devashish Gosain" />
+<meta name="citation_journal_title" content="Proceedings on Privacy Enhancing Technologies" />
+<meta name="citation_issn" content="2299-0984" />
+<meta name="citation_publication_date" content="2026" />
+<meta name="citation_publication_volume" content="2026" />
+<meta name="citation_publication_issue" content="2" />
+<meta name="citation_publication_firstpage" content="92" />
+<meta name="citation_publication_lastpage" content="107" />
+<meta name="citation_pdf_url" content="https://petsymposium.org/popets/2026/popets-2026-0038.pdf" /></head>
+
+<body>
+
+<div class="container">
+
+
+  <img class="banner" src="/images/banner/banner_popets.png">
+
+
+<div class="nav-main">
+<label for="show-menu" class="show-menu">Menu</label>
+    <input type="checkbox" id="show-menu" role="button">
+  <ul id="menu">
+    <li><a  href="/">Home</a></li>
+    <li><a  href="/popets/">Proceedings</a></li>
+            <li><a href=".">Volume 2026</a></li>
+            <li><a href="popets-2026-0037.php">Previous</a></li>
+            <li><a href="popets-2026-0039.php">Next</a></li>
+      </ul>
+</div>
+
+
+<div class="content">
+
+<h2>Clicking into Exposure: Uncovering Privacy Risks of Google Click Identifier in YouTube Ads</h2>
+
+<p><b>Authors:</b> Ha Dao (Max Planck Institute for Informatics), Abhishek Shinde (Saarland University), Sana Athar (Max Planck Institute for Informatics), Devashish Gosain (Indian Institute of Technology Bombay)</p>
+
+<p><b>Volume:</b> 2026<br />
+<b>Issue:</b> 2<br />
+<b>Pages:</b> 92&ndash;107<br />
+<b>DOI:</b> <a href="https://doi.org/10.56553/popets-2026-0038">https://doi.org/10.56553/popets-2026-0038</a></p>
+<p><a href="https://doi.org/10.17617/3.H5T0W4" target="_blank" class="artifact-available artifact-functional artifact-reproduced">Artifact: Available, Functional, Reproduced</a></p>
+
+<p><b><a href="popets-2026-0038.pdf">Download PDF</a></b></p>
+
+<p><b>Abstract:</b> YouTube is one of the largest video platforms on the web, with Google Ads deeply integrated into the viewing experience. While users may expect some level of tracking during ad delivery, the extent and mechanics of Google Ads tracking on YouTube, particularly the tracking behaviors triggered by user interactions with ads, remain underexplored. To address this gap, for the first time, we develop YT-AdTrack, a fully automated framework that measures tracking initiated by YouTube ads across 430 top-trending videos, three widely used browsers, and six geographic locations. In our baseline measurement campaign, YT-AdTrack strategically accepts cookie banners on YouTube, interacts with displayed ads, and subsequently accepts cookie banners on advertiser landing pages to capture downstream tracking behavior. Our findings show that every ad click consistently carries a unique Google Click Identifier, gclid, which is propagated through redirection chains and ultimately embedded in the advertiser’s landing page. We further observe that 64 (out of 76) advertisers persist this identifier as a first-party cookie, thereby transforming a short-lived click token into a durable user identifier. In addition, gclid values frequently leak across parties from advertisers, exposing them to both Google-controlled services and external third-party ad networks, which exacerbates the tracking nexus by extending well beyond standard conversion measurement. Strikingly, even when cookie banners are rejected, ad interactions remain consistently tagged: 55.4% of advertisers store gclidas a cookie, and 18.9% enable auto-tagging, which allows Google to directly persist the identifier. This demonstrates that banner allows Googleto directly persist the identifier. This demonstrates that banner rejection does not safeguard users from gclid-based tracking. We find these behaviors to be consistent across browsers, with advertisers persisting the identifier in 76.4–84.2% of cases and Google directly storing it in over two-thirds of interactions. Similarly, across six geographic locations, gclid-based tracking persists, with advertisers storing it in 72.5–88.5% of cases and Google’s auto-tagging active in all locations. Overall, our analysis reveals that a single ad click can initiate durable cross-site tracking that persists across various banner choices, browser environments, and regional contexts.</p>
+<p><b>Keywords:</b> google click identifier, gclid, tracking cookies, web tracking, cookie banner, navigational tracking, cross-site tracking</p>
+
+<p>Copyright in PoPETs articles are held by their authors.  This article
+is published under a <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0</a> license.</p>
+
+<a href="popets-2026-0038.pdf"><img src="/2026/files/papers/issue2/popets-2026-0038.png" /></a>
+
+</div>
+
+
+<div class="footer">
+    <div class="nav-footer">
+        <a href="/contact.php">Contact Us</a>
+    </div>
+    <div class="sns-footer">
+        <a href="https://youtube.com/channel/UC-m6oi7a-8LffTk64J3tq-w" target="_blank"><img class="sns-icon" src="/images/icons/yt_icon_mono_dark.png"></a>
+        <a href="https://twitter.com/pet_symposium" target="_blank"><img class="sns-icon" src="/images/icons/twitter.png"></a>
+        <a href="https://infosec.exchange/@PET_Symposium" target="_blank"><img class="sns-icon" src="/images/icons/mastodon-logo-white.png"></a>
+         <a href="https://www.linkedin.com/company/pet-symposium" target="_blank"><img class="sns-icon" src="/images/icons/InBug-White.png"></a>
+</div>
+</div>
+
+
+</body>
+</html>

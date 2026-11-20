@@ -1,0 +1,92 @@
+/* Salience tokens: paper by default, dark when the system asks for it. Values from the design system's tokens.css. */
+:root {
+	--bg: #faf7f5;
+	--surface: #f1edea;
+	--border: #e5e0dc;
+	/* Claude's orange: its name in a thread, and the tile behind its icon. */
+	--claude: #a6492a;
+	--text: #141414;
+	--text-secondary: #6e6e6e;
+	--highlight: #f1edea;
+	--accent: #a32020;
+	--red: #a32020;
+	--on-red: #faf7f5;
+	/* Links are the text colour, always underlined; red is emphasis, never a link. A hovered link turns the accent red
+     on paper only: red text on dark is 14px bold or larger, which a link in running text is not. */
+	--link: #141414;
+	--link-hover: #a32020;
+	--mark-muted: #d8d2cc;
+	--danger: #c2410c;
+	--warning: #8a6100;
+	/* Navy is data: the comments (a 2px underline under a commented passage, and the bar of its card, a Salience
+     callout) and the heatmap. */
+	--data: #00243d;
+	/* The words on a --data fill: the Comment button and Save. */
+	--on-data: #faf7f5;
+	/* A pressed rail toggle, and a tag or read chip that is on, is filled in the text colour with the page's colour on
+     it (Salience: ticked and selected controls are the text colour, never red or blue). */
+	--pressed: #141414;
+	--on-pressed: #faf7f5;
+	/* Heatmap shades for some, most and all of a day read: navy-400, navy-500, navy-700. navy-900 reads as black. */
+	--heat-some: #4da3e0;
+	--heat-most: #1a73e8;
+	--heat-all: #0a4a78;
+	--backdrop: rgba(20, 20, 20, 0.4);
+	--shadow-hover: 0 6px 20px #14141414;
+	--focus-ring: 0 0 0 2px #faf7f5, 0 0 0 4px #a32020;
+	/* Behind a paper's figure, in both themes: arXiv's SVG figures have no background and draw their text in black,
+     which the dark background would hide. */
+	--figure-bg: #faf7f5;
+	--font-sans: Manrope, "Segoe UI", -apple-system, Arial, sans-serif;
+	--ease: cubic-bezier(0.2, 0, 0.2, 1);
+	/* Stacking levels, low to high. Equal levels share one name; its comment lists what sits on it. */
+	/* Behind its own button: the rail label that slides out from under the icon's square. */
+	--z-behind: -1;
+	/* A control's own background square. */
+	--z-flat: 0;
+	/* The icon rail and its icons, the sidebar's group labels, a held rail label on a phone. */
+	--z-raised: 1;
+	/* The entry title stuck under the day heading, the sidebar's day rows, a filter's name, the Takeaway count. */
+	--z-above: 2;
+	/* The day heading stuck at the top, the sidebar's top row, the notice. */
+	--z-sticky: 3;
+	/* The skip link, the sidebar's cover over the header, a phone's pinned title and row. */
+	--z-chrome: 4;
+	/* A phone's bar with the last 7 days. */
+	--z-phone-bar: 5;
+	/* The Highlight and Comment buttons beside a selection, and the menu on a highlight. */
+	--z-selection: 10;
+	/* The month selector's menu. */
+	--z-menu: 20;
+}
+/* Dark: cards and fills are sunken, a step darker than the page, never lighter. */
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #2e2e2e;
+		--surface: #262626;
+		--border: #4a4a4a;
+		--claude: #d97757;
+		--text: #f5f2ef;
+		--text-secondary: #b8b8b8;
+		--highlight: #1f1f1f;
+		--accent: #fe1e29;
+		--link: #f5f2ef;
+		--link-hover: #f5f2ef;
+		--mark-muted: #4a4a4a;
+		--danger: #fb923c;
+		--warning: #ffe14d;
+		--data: #1a73e8;
+		/* #faf7f5 on #1a73e8 is 4.22:1; white is 4.51:1. */
+		--on-data: #ffffff;
+		--pressed: #f5f2ef;
+		--on-pressed: #2e2e2e;
+		/* On dark the same order from a lighter set, navy-200, navy-400, navy-500: navy-700 would be 1.05:1 against
+       the nothing-read grey. */
+		--heat-some: #8fc5ec;
+		--heat-most: #4da3e0;
+		--heat-all: #1a73e8;
+		--backdrop: rgba(0, 0, 0, 0.55);
+		--shadow-hover: 0 6px 20px #00000059;
+		--focus-ring: 0 0 0 2px #2e2e2e, 0 0 0 4px #fe1e29;
+	}
+}

@@ -1,0 +1,240 @@
+/* Heatmap: one 14px square per day, 3px apart, each week a column from Monday down, then a row of week crowns and the
+   caption. 13 columns at most (a week that starts mid-column), 218px, inside the 220px sidebar. Shown only in the
+   sidebar (above). */
+.heatmap {
+	flex: none;
+	display: none;
+	grid-template-rows: 52px repeat(7, 14px) 14px 18px;
+	grid-auto-columns: 14px;
+	grid-auto-flow: column;
+	gap: 3px;
+}
+.heatmap__day {
+	width: 14px;
+	height: 14px;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+}
+/* The heatmap's squares have soft corners; the phone's strip squares (outside .heatmap) keep theirs. */
+.heatmap .heatmap__day {
+	display: grid;
+	place-items: center;
+	border-radius: 3px;
+}
+/* A crown on a day's square: Lucide's outline in cream with a navy halo, so it reads on every shade. */
+.heatmap__crown {
+	width: 11px;
+	height: 11px;
+	fill: none;
+	stroke: #faf7f5;
+	stroke-width: 2.5;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	filter: drop-shadow(0 0 0.75px #041534);
+	pointer-events: none;
+}
+/* A crown under a week's column: the heatmap's darkest shade, which both themes define. */
+.heatmap__week-crown {
+	display: grid;
+	place-items: center;
+	width: 14px;
+	height: 14px;
+}
+.heatmap__week-crown svg {
+	width: 14px;
+	height: 14px;
+	fill: none;
+	stroke: var(--heat-all);
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+button.heatmap__day {
+	cursor: pointer;
+}
+.heatmap__week {
+	align-self: start;
+	height: 44px;
+	writing-mode: vertical-rl;
+	transform: rotate(180deg);
+	font-size: 10px;
+	color: var(--text-secondary);
+	justify-self: center;
+	white-space: nowrap;
+}
+.heatmap__feedback {
+	grid-row: 10;
+	height: 18px;
+	margin-top: 0;
+}
+.heatmap__caption {
+	color: var(--text-secondary);
+	font-size: 12px;
+	line-height: 18px;
+	overflow-wrap: anywhere;
+	pointer-events: none;
+}
+/* A day outside the month the selector shows, in the page and in the contents. The ids give the rule the weight to
+   win over a part's own display, such as .contents li's. */
+:is(#digests, #contents) .month-hidden {
+	display: none;
+}
+.month-control {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+.month-all {
+	min-height: 36px;
+	font: 500 12px / 20px var(--font-sans);
+	color: inherit;
+	background: var(--bg);
+	border: 1px solid var(--text-secondary);
+	border-radius: 6px;
+	padding: 6px 8px;
+	cursor: pointer;
+}
+.month-all:hover {
+	border-color: var(--text);
+}
+.month-all[aria-pressed="true"] {
+	border-color: var(--pressed);
+	background: var(--pressed);
+	color: var(--on-pressed);
+}
+/* The month selector: Salience's dropdown (site/page/month-menu.ts), a boxed button with Lucide's chevron-down and a
+   list the page draws below it. 36px tall, as the filter chips, to fit the sidebar. */
+.month-select {
+	position: relative;
+	flex: 1;
+	min-width: 0;
+}
+.select {
+	position: relative;
+	display: block;
+	width: 100%;
+	height: 36px;
+	padding: 0 34px 0 10px;
+	border: 1px solid var(--text-secondary);
+	border-radius: 8px;
+	background: var(--bg);
+	color: var(--text);
+	font: 500 12px / 20px var(--font-sans);
+	text-align: left;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	cursor: pointer;
+	transition: border-color 0.15s var(--ease);
+}
+.select:hover,
+.select[aria-expanded="true"] {
+	border-color: var(--text);
+}
+.select::after {
+	content: "";
+	position: absolute;
+	right: 10px;
+	top: 50%;
+	width: 16px;
+	height: 16px;
+	margin-top: -8px;
+	background: var(--text-secondary);
+	mask:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6' /%3E%3C/svg%3E")
+		center / contain no-repeat;
+}
+.menu {
+	position: absolute;
+	z-index: var(--z-menu);
+	top: calc(100% + 4px);
+	left: 0;
+	min-width: 100%;
+	max-height: 280px;
+	margin: 0;
+	padding: 4px;
+	overflow-y: auto;
+	list-style: none;
+	border: 1px solid var(--text-secondary);
+	border-radius: 8px;
+	background: var(--bg);
+	box-shadow: var(--shadow-hover);
+}
+.menu[hidden] {
+	display: none;
+}
+.menu__option {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 6px 8px;
+	border-radius: 6px;
+	color: var(--text);
+	font: 400 12px / 20px var(--font-sans);
+	white-space: nowrap;
+	cursor: pointer;
+}
+.menu__option:hover,
+.menu__option.is-active {
+	background: var(--surface);
+}
+@media (prefers-color-scheme: dark) {
+	.menu__option:hover,
+	.menu__option.is-active {
+		background: var(--border);
+	}
+}
+/* The month shown: bold, with Lucide's check after it. */
+.menu__option[aria-selected="true"] {
+	font-weight: 600;
+}
+.menu__option[aria-selected="true"]::after {
+	content: "";
+	flex: none;
+	width: 14px;
+	height: 14px;
+	background: var(--text);
+	mask:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5' /%3E%3C/svg%3E")
+		center / contain no-repeat;
+}
+
+/* "Ad hoc": a Salience tag, a 10px grey square before an uppercase label in the text colour. */
+.entry__origin {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-inline-start: 8px;
+	vertical-align: 1px;
+	color: var(--text);
+	font-size: 11px;
+	line-height: 16px;
+	font-weight: 700;
+	letter-spacing: 1.4px;
+	text-transform: uppercase;
+}
+.entry__origin::before {
+	content: "";
+	flex: none;
+	width: 10px;
+	height: 10px;
+	border-radius: 2px;
+	background: var(--text-secondary);
+}
+.heatmap__day--no-digest {
+	border: 1px solid var(--border);
+}
+.heatmap__day--none {
+	background: var(--border);
+}
+.heatmap__day--some {
+	background: var(--heat-some);
+}
+.heatmap__day--most {
+	background: var(--heat-most);
+}
+.heatmap__day--all {
+	background: var(--heat-all);
+}

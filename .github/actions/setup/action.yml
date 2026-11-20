@@ -1,0 +1,37 @@
+# What every job runs after actions/checkout: pnpm, the Node version in .nvmrc, optional system packages, and the
+# locked dependencies. It holds no secret. There is no dependency cache on purpose: a job that holds a token must not
+# restore a cache another run wrote.
+name: Set up the repository
+description: Install pnpm, Node and the locked dependencies, and optionally some apt packages.
+
+inputs:
+  system-packages:
+    description: Space-separated apt packages to install before the dependencies. Empty installs none.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    # pnpm's version comes from package.json's packageManager.
+    - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: .nvmrc
+        package-manager-cache: false
+
+    # The list reaches the shell as an environment variable, never inside the script text.
+    - name: Install system packages
+      if: inputs.system-packages != ''
+      shell: bash
+      run: |
+        read -ra packages <<< "$PACKAGES"
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq --no-install-recommends "${packages[@]}"
+      env:
+        PACKAGES: ${{ inputs.system-packages }}
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile

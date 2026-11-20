@@ -1,0 +1,140 @@
+/* The column right of each entry: only at 1386px and wider (16 + 220 + 56 + 766 + 32 + 280 + 16). The reading
+   column stays 766px; the cards overflow into a third grid track (the grid's 56px gap plus 256px is the 32px gap
+   and 280px column), placed by site/page/comment-board.ts level with their passages. */
+.entry__comments {
+	display: none;
+}
+/* The owner's sidebar layout: the 766px column, so 1074px wide. */
+@media (min-width: 1080px) {
+	.page--owner.page--with-contents {
+		max-width: 1074px;
+		grid-template-columns: 220px minmax(0, 766px);
+	}
+}
+/* The public page keeps the third track from 1340px, as before the rail took two columns. */
+@media (min-width: 1340px) {
+	.page--with-contents:not(.page--owner) {
+		max-width: 1340px;
+		grid-template-columns: 220px minmax(0, 720px) 256px;
+		grid-template-areas: "sidebar main .";
+	}
+}
+@media (min-width: 1386px) {
+	.page--owner.page--with-contents {
+		max-width: 1386px;
+		grid-template-columns: 220px minmax(0, 766px) 256px;
+		grid-template-areas: "sidebar main .";
+	}
+	.entry {
+		position: relative;
+	}
+	.entry__comments {
+		display: block;
+		position: absolute;
+		top: 0;
+		left: calc(100% + 32px);
+		width: 280px;
+	}
+	.entry__comments > * {
+		position: absolute;
+		left: 0;
+		right: 0;
+	}
+	.comment-count {
+		display: none;
+	}
+	/* Here the gap before the comments column has room: the right column's labels slide out to the right. As specific
+	   as the hover rule, so that one is repeated here to win again. */
+	.entry__rail-col + .entry__rail-col .rail-label {
+		right: auto;
+		left: 16px;
+		padding: 4px 10px 4px 22px;
+		border-radius: 0 6px 6px 0;
+		clip-path: inset(0 100% 0 0);
+	}
+	.entry__rail-col
+		+ .entry__rail-col
+		.rail-button:is(:hover, :focus-visible)
+		.rail-label {
+		clip-path: inset(0);
+	}
+}
+
+/* The side panel below 1386px: a modal dialog down the right edge, the page dimmed behind it. The takeaway panel
+   (site/page/takeaway-board.ts) has the same look at every width, and the same sheet on a phone. */
+.comment-panel,
+.takeaway-panel {
+	margin: 0;
+	inset: 0 0 0 auto;
+	width: 360px;
+	max-width: none;
+	height: 100%;
+	max-height: none;
+	padding: 0;
+	border: 0;
+	border-left: 1px solid var(--border);
+	background: var(--bg);
+	color: var(--text);
+}
+/* While a panel is open the page behind it doesn't scroll, under the wheel or a finger: overscroll-behavior on the
+   dialog doesn't stop a wheel over the dimmed page (measured in Chrome 157), overflow on the page does. */
+html:has(:is(dialog.comment-panel, dialog.takeaway-panel)[open]) {
+	overflow: hidden;
+}
+/* The sheet, its wrapper and main hold focus without being controls, so no ring shows round them. */
+main:focus-visible,
+.comment-panel:focus-visible,
+.comment-panel__inner:focus-visible {
+	outline: none;
+	box-shadow: none;
+}
+.comment-panel::backdrop,
+.takeaway-panel::backdrop {
+	background: var(--backdrop);
+}
+@media (max-width: 599px) {
+	.comment-panel,
+	.takeaway-panel {
+		width: 100%;
+		border-left: 0;
+	}
+}
+.comment-panel__inner {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+.comment-panel__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px;
+	border-bottom: 1px solid var(--border);
+}
+.comment-panel__head h2 {
+	margin: 0;
+	font-size: 18px;
+	line-height: 26px;
+}
+.comment-panel__close {
+	width: 32px;
+	height: 32px;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: var(--text);
+	font-size: 22px;
+	line-height: 1;
+	cursor: pointer;
+}
+.comment-panel__close:hover {
+	background: var(--surface);
+}
+.comment-panel__body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}

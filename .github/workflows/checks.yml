@@ -1,0 +1,70 @@
+# The checks every pull request runs, each as a job of its own so the pull request lists each result: the type check,
+# Biome and the unit tests, and on a pull request into develop or main the end-to-end scenarios. The unit job also runs
+# scripts/scout/web/fulltext.sh's tests, with poppler and w3m installed.
+# No job holds a secret.
+name: checks
+
+on:
+  pull_request:
+
+# A newer push to the same pull request replaces the checks still running for the older one.
+concurrency:
+  group: checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # No token left in .git/config for the steps after this one.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm run typecheck
+
+  biome:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      # biome ci checks without writing, and fails on any error; warnings show without failing it.
+      - run: pnpm exec biome ci
+
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # What scout.yml installs for scripts/scout/web/fulltext.sh, which the fulltext unit tests run: pdftotext and w3m.
+      - uses: ./.github/actions/setup
+        with:
+          system-packages: poppler-utils w3m
+      # build-site.ts's tests build the page, which needs site/app.js.
+      - run: pnpm run build
+      - run: pnpm run test:unit
+
+  # The end-to-end scenarios on a pull request into develop or main, not on a stack's own pull requests.
+  scenarios:
+    if: github.base_ref == 'main' || github.base_ref == 'develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      # The phone scenarios run in Playwright's WebKit, with the system libraries it needs.
+      - run: pnpm exec playwright install --with-deps webkit
+      # Every scenario but @live, the phone ones in WebKit and the rest in the runner's Google Chrome; the line
+      # reporter names each failure as it happens.
+      - run: pnpm run test:e2e --reporter=line

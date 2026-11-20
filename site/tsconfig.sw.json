@@ -1,0 +1,10 @@
+{
+	// The owner's service worker: browser worker code that tsc checks and esbuild bundles into site/sw.js
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"module": "preserve",
+		"lib": ["es2024", "webworker"],
+		"types": []
+	},
+	"include": ["sw.ts"]
+}

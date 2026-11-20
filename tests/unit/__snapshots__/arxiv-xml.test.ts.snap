@@ -1,0 +1,444 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`The Atom answer arxiv-1706.03762.xml parses to these papers 1`] = `
+[
+  {
+    "abstract": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks in an encoder-decoder configuration. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature. We show that the Transformer generalizes well to other tasks by applying it successfully to English constituency parsing both with large and limited training data.",
+    "authors": [
+      "Ashish Vaswani",
+      "Noam Shazeer",
+      "Niki Parmar",
+      "Jakob Uszkoreit",
+      "Llion Jones",
+      "Aidan N. Gomez",
+      "Lukasz Kaiser",
+      "Illia Polosukhin",
+    ],
+    "category": "cs.CL",
+    "comment": "15 pages, 5 figures",
+    "id": "arxiv:1706.03762",
+    "links": [
+      {
+        "label": "PDF",
+        "url": "https://arxiv.org/pdf/1706.03762",
+      },
+    ],
+    "published": "2017-06-12",
+    "source": "arXiv Computation and Language",
+    "title": "Attention Is All You Need",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/1706.03762",
+  },
+]
+`;
+
+exports[`The Atom answer arxiv-2507.11473.xml parses to these papers 1`] = `
+[
+  {
+    "abstract": "AI systems that "think" in human language offer a unique opportunity for AI safety: we can monitor their chains of thought (CoT) for the intent to misbehave. Like all other known AI oversight methods, CoT monitoring is imperfect and allows some misbehavior to go unnoticed. Nevertheless, it shows promise and we recommend further research into CoT monitorability and investment in CoT monitoring alongside existing safety methods. Because CoT monitorability may be fragile, we recommend that frontier model developers consider the impact of development decisions on CoT monitorability.",
+    "authors": [
+      "Tomek Korbak",
+      "Mikita Balesni",
+      "Elizabeth Barnes",
+      "Yoshua Bengio",
+      "Joe Benton",
+      "Joseph Bloom",
+      "Mark Chen",
+      "Alan Cooney",
+      "Allan Dafoe",
+      "Anca Dragan",
+      "Scott Emmons",
+      "Owain Evans",
+      "David Farhi",
+      "Ryan Greenblatt",
+      "Dan Hendrycks",
+      "Marius Hobbhahn",
+      "Evan Hubinger",
+      "Geoffrey Irving",
+      "Erik Jenner",
+      "Daniel Kokotajlo",
+      "Victoria Krakovna",
+      "Shane Legg",
+      "David Lindner",
+      "David Luan",
+      "Aleksander Mądry",
+      "Julian Michael",
+      "Neel Nanda",
+      "Dave Orr",
+      "Jakub Pachocki",
+      "Ethan Perez",
+      "Mary Phuong",
+      "Fabien Roger",
+      "Joshua Saxe",
+      "Buck Shlegeris",
+      "Martín Soto",
+      "Eric Steinberger",
+      "Jasmine Wang",
+      "Wojciech Zaremba",
+      "Bowen Baker",
+      "Rohin Shah",
+      "Vlad Mikulik",
+    ],
+    "category": "cs.AI",
+    "id": "arxiv:2507.11473",
+    "links": [
+      {
+        "label": "PDF",
+        "url": "https://arxiv.org/pdf/2507.11473",
+      },
+    ],
+    "published": "2025-07-15",
+    "source": "arXiv Artificial Intelligence",
+    "title": "Chain of Thought Monitorability: A New and Fragile Opportunity for AI Safety",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2507.11473",
+  },
+]
+`;
+
+exports[`The Atom answer arxiv-api-2507.11473-fresh.xml parses to these papers 1`] = `
+[
+  {
+    "abstract": "AI systems that "think" in human language offer a unique opportunity for AI safety: we can monitor their chains of thought (CoT) for the intent to misbehave. Like all other known AI oversight methods, CoT monitoring is imperfect and allows some misbehavior to go unnoticed. Nevertheless, it shows promise and we recommend further research into CoT monitorability and investment in CoT monitoring alongside existing safety methods. Because CoT monitorability may be fragile, we recommend that frontier model developers consider the impact of development decisions on CoT monitorability.",
+    "authors": [
+      "Tomek Korbak",
+      "Mikita Balesni",
+      "Elizabeth Barnes",
+      "Yoshua Bengio",
+      "Joe Benton",
+      "Joseph Bloom",
+      "Mark Chen",
+      "Alan Cooney",
+      "Allan Dafoe",
+      "Anca Dragan",
+      "Scott Emmons",
+      "Owain Evans",
+      "David Farhi",
+      "Ryan Greenblatt",
+      "Dan Hendrycks",
+      "Marius Hobbhahn",
+      "Evan Hubinger",
+      "Geoffrey Irving",
+      "Erik Jenner",
+      "Daniel Kokotajlo",
+      "Victoria Krakovna",
+      "Shane Legg",
+      "David Lindner",
+      "David Luan",
+      "Aleksander Mądry",
+      "Julian Michael",
+      "Neel Nanda",
+      "Dave Orr",
+      "Jakub Pachocki",
+      "Ethan Perez",
+      "Mary Phuong",
+      "Fabien Roger",
+      "Joshua Saxe",
+      "Buck Shlegeris",
+      "Martín Soto",
+      "Eric Steinberger",
+      "Jasmine Wang",
+      "Wojciech Zaremba",
+      "Bowen Baker",
+      "Rohin Shah",
+      "Vlad Mikulik",
+    ],
+    "category": "cs.AI",
+    "id": "arxiv:2507.11473",
+    "links": [
+      {
+        "label": "PDF",
+        "url": "https://arxiv.org/pdf/2507.11473",
+      },
+    ],
+    "published": "2025-07-15",
+    "source": "arXiv Artificial Intelligence",
+    "title": "Chain of Thought Monitorability: A New and Fragile Opportunity for AI Safety",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2507.11473",
+  },
+]
+`;
+
+exports[`The Atom answer arxiv-entities.xml parses to these papers 1`] = `
+[
+  {
+    "abstract": "We study agents that exploit "loopholes" when reward < intent. Our method flags such behaviour & corrects it.",
+    "authors": [
+      "Ada Example",
+      "Bo Sample",
+    ],
+    "category": "cs.LG",
+    "id": "arxiv:2401.01234",
+    "links": [
+      {
+        "label": "PDF",
+        "url": "https://arxiv.org/pdf/2401.01234",
+      },
+    ],
+    "published": "2024-01-03",
+    "source": "arXiv Machine Learning",
+    "title": "Reward Hacking & Specification Gaming: Detection & Mitigation",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2401.01234",
+  },
+]
+`;
+
+exports[`The Atom answer arxiv-hep-th-9901001.xml parses to these papers 1`] = `
+[
+  {
+    "abstract": "We explicitly give the correspondence between spectra of heterotic string theory compactified on $T^2$ and string junctions in type IIB theory compactified on $S^2$.",
+    "authors": [
+      "Yosuke Imamura",
+    ],
+    "category": "hep-th",
+    "comment": "13 pages + 4 eps figures, PTPTeX, typographical errors corrected",
+    "id": "arxiv:hep-th/9901001",
+    "journal_ref": "Prog.Theor.Phys.101:1155-1164,1999",
+    "links": [
+      {
+        "label": "PDF",
+        "url": "https://arxiv.org/pdf/hep-th/9901001",
+      },
+    ],
+    "published": "1999-01-01",
+    "source": "arXiv High Energy Physics - Theory",
+    "title": "String Junctions and Their Duals in Heterotic String Theory",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/hep-th/9901001",
+  },
+]
+`;
+
+exports[`The Atom answer arxiv-venue-entities.xml parses to these papers 1`] = `
+[
+  {
+    "abstract": "A crafted entry whose comment and journal reference hold entities and line breaks.",
+    "authors": [
+      "Ada Example",
+    ],
+    "category": "cs.LG",
+    "comment": "12 pages, 3 figures; accepted at the <Agents> workshop & "SafeML"",
+    "id": "arxiv:2402.05678",
+    "journal_ref": "A&A 600, A1 (2017)",
+    "links": [
+      {
+        "label": "PDF",
+        "url": "https://arxiv.org/pdf/2402.05678",
+      },
+    ],
+    "published": "2024-02-08",
+    "source": "arXiv Machine Learning",
+    "title": "Venue Fields With Entities",
+    "type": "paper",
+    "url": "https://arxiv.org/abs/2402.05678",
+  },
+]
+`;
+
+exports[`The OAI-PMH answers are read as these errors 1`] = `
+[
+  {
+    "error": {
+      "code": "idDoesNotExist",
+      "reason": "The value of the identifier argument is unknown or illegal in this repository. Reason: Nothing found for this ID",
+    },
+    "name": "oai-2507.99999-idDoesNotExist.xml",
+  },
+  {
+    "error": null,
+    "name": "oai-2507.11473-arXiv.xml",
+  },
+  {
+    "error": null,
+    "name": "oai-2507.11473-arXivRaw.xml",
+  },
+]
+`;
+
+exports[`The OAI-PMH pair for 1706.03762 parses to this paper 1`] = `
+{
+  "abstract": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks in an encoder-decoder configuration. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature. We show that the Transformer generalizes well to other tasks by applying it successfully to English constituency parsing both with large and limited training data.",
+  "authors": [
+    "Ashish Vaswani",
+    "Noam Shazeer",
+    "Niki Parmar",
+    "Jakob Uszkoreit",
+    "Llion Jones",
+    "Aidan N. Gomez",
+    "Lukasz Kaiser",
+    "Illia Polosukhin",
+  ],
+  "category": "cs.CL",
+  "comment": "15 pages, 5 figures",
+  "id": "arxiv:1706.03762",
+  "links": [
+    {
+      "label": "PDF",
+      "url": "https://arxiv.org/pdf/1706.03762",
+    },
+  ],
+  "published": "2017-06-12",
+  "source": "arXiv Computation and Language",
+  "title": "Attention Is All You Need",
+  "type": "paper",
+  "url": "https://arxiv.org/abs/1706.03762",
+}
+`;
+
+exports[`The OAI-PMH pair for 2507.11473 parses to this paper 1`] = `
+{
+  "abstract": "AI systems that "think" in human language offer a unique opportunity for AI safety: we can monitor their chains of thought (CoT) for the intent to misbehave. Like all other known AI oversight methods, CoT monitoring is imperfect and allows some misbehavior to go unnoticed. Nevertheless, it shows promise and we recommend further research into CoT monitorability and investment in CoT monitoring alongside existing safety methods. Because CoT monitorability may be fragile, we recommend that frontier model developers consider the impact of development decisions on CoT monitorability.",
+  "authors": [
+    "Tomek Korbak",
+    "Mikita Balesni",
+    "Elizabeth Barnes",
+    "Yoshua Bengio",
+    "Joe Benton",
+    "Joseph Bloom",
+    "Mark Chen",
+    "Alan Cooney",
+    "Allan Dafoe",
+    "Anca Dragan",
+    "Scott Emmons",
+    "Owain Evans",
+    "David Farhi",
+    "Ryan Greenblatt",
+    "Dan Hendrycks",
+    "Marius Hobbhahn",
+    "Evan Hubinger",
+    "Geoffrey Irving",
+    "Erik Jenner",
+    "Daniel Kokotajlo",
+    "Victoria Krakovna",
+    "Shane Legg",
+    "David Lindner",
+    "David Luan",
+    "Aleksander Mądry",
+    "Julian Michael",
+    "Neel Nanda",
+    "Dave Orr",
+    "Jakub Pachocki",
+    "Ethan Perez",
+    "Mary Phuong",
+    "Fabien Roger",
+    "Joshua Saxe",
+    "Buck Shlegeris",
+    "Martín Soto",
+    "Eric Steinberger",
+    "Jasmine Wang",
+    "Wojciech Zaremba",
+    "Bowen Baker",
+    "Rohin Shah",
+    "Vlad Mikulik",
+  ],
+  "category": "cs.AI",
+  "id": "arxiv:2507.11473",
+  "links": [
+    {
+      "label": "PDF",
+      "url": "https://arxiv.org/pdf/2507.11473",
+    },
+  ],
+  "published": "2025-07-15",
+  "source": "arXiv Artificial Intelligence",
+  "title": "Chain of Thought Monitorability: A New and Fragile Opportunity for AI Safety",
+  "type": "paper",
+  "url": "https://arxiv.org/abs/2507.11473",
+}
+`;
+
+exports[`The OAI-PMH pair for 2610.00003 parses to this paper 1`] = `
+{
+  "abstract": "Vision models pretrained for frame-level appearance often struggle to infer hidden physical properties from motion. We study center-of-mass (CoM) localization for opaque, asymmetric rigid bodies from short monocular videos, where surface cues and point tracking are unreliable under self-occlusion. We propose STATERA, which adapts a pretrained video backbone (V-JEPA) with mostly frozen weights and a lightweight temporal tubelet mixer to predict per-frame CoM heatmaps and trajectories. To support this task, we introduce the HiddenMass Benchmark, comprising 50K MuJoCo trajectories and a 63-sequence real-world test set with physically calibrated CoM ground truth. In simulation, STATERA-50K-Sigma improves normalized CoM error from 41.7% (DINOv2) to 25.2%. In zero-shot sim-to-real transfer, we observe a fundamental trade-off in supervision: phase-aware targets can induce bimodal predictions, while phase-agnostic targets can collapse toward statistically safe centroids. Nevertheless, our phase-aware STATERA-50K-Crescent is the only evaluated method that demonstrates consistent movement toward the true hidden offset. While this leads to a monocular vector overshoot artifact that marginally increases absolute Euclidean error compared to a static geometric centroid, it improves physics capture from 2.6% to 41.0%. These results suggest that frozen temporal representations can better separate inertial dynamics from visual geometry for hidden-parameter estimation.",
+  "authors": [
+    "Animesh Varma",
+  ],
+  "category": "cs.CV",
+  "comment": "17 pages, 7 figures, 3 tables. Preprint",
+  "id": "arxiv:2610.00003",
+  "links": [
+    {
+      "label": "PDF",
+      "url": "https://arxiv.org/pdf/2610.00003",
+    },
+  ],
+  "published": "2026-05-21",
+  "source": "arXiv Computer Vision and Pattern Recognition",
+  "title": "STATERA: Hidden Mass Estimation via Zero-Shot Sim-to-Real Kinematics using Frozen Temporal Tubelets",
+  "type": "paper",
+  "url": "https://arxiv.org/abs/2610.00003",
+}
+`;
+
+exports[`The OAI-PMH pair for hep-th/9711200 parses to this paper 1`] = `
+{
+  "abstract": "We show that the large $N$ limit of certain conformal field theories in various dimensions include in their Hilbert space a sector describing supergravity on the product of Anti-deSitter spacetimes, spheres and other compact manifolds. This is shown by taking some branes in the full M/string theory and then taking a low energy limit where the field theory on the brane decouples from the bulk. We observe that, in this limit, we can still trust the near horizon geometry for large $N$. The enhanced supersymmetries of the near horizon geometry correspond to the extra supersymmetry generators present in the superconformal group (as opposed to just the super-Poincare group). The 't Hooft limit of 4-d \${\\cal N} =4$ super-Yang-Mills at the conformal point is shown to contain strings: they are IIB strings. We conjecture that compactifications of M/string theory on various Anti-deSitter spacetimes are dual to various conformal field theories. This leads to a new proposal for a definition of M-theory which could be extended to include five non-compact dimensions.",
+  "authors": [
+    "Juan M. Maldacena",
+  ],
+  "category": "hep-th",
+  "comment": "20 pages, harvmac, v2: section on AdS_2 corrected, references added, v3: More references and a sign in eqns 2.8 and 2.9 corrected",
+  "id": "arxiv:hep-th/9711200",
+  "journal_ref": "Adv.Theor.Math.Phys.2:231-252,1998",
+  "links": [
+    {
+      "label": "PDF",
+      "url": "https://arxiv.org/pdf/hep-th/9711200",
+    },
+  ],
+  "published": "1997-11-27",
+  "source": "arXiv High Energy Physics - Theory",
+  "title": "The Large N Limit of Superconformal Field Theories and Supergravity",
+  "type": "paper",
+  "url": "https://arxiv.org/abs/hep-th/9711200",
+}
+`;
+
+exports[`The error answers are read as these ids, failures and messages 1`] = `
+[
+  {
+    "apiFailed": false,
+    "label": "400 with an id",
+    "rejectedId": "not-an-id",
+    "whatHappened": "answered HTTP 400",
+  },
+  {
+    "apiFailed": false,
+    "label": "400 without an id",
+    "rejectedId": null,
+    "whatHappened": "answered HTTP 400",
+  },
+  {
+    "apiFailed": false,
+    "label": "200 feed",
+    "rejectedId": null,
+    "whatHappened": "answered with something that isn't an arXiv feed (starts "<?xml version='1.0' encoding='UTF-8'?> <")",
+  },
+  {
+    "apiFailed": true,
+    "label": "200 page that is no feed",
+    "rejectedId": null,
+    "whatHappened": "answered with something that isn't an arXiv feed (starts "<html>Log in to Wi-Fi</html>")",
+  },
+  {
+    "apiFailed": true,
+    "label": "429 with a reason",
+    "rejectedId": null,
+    "whatHappened": "answered HTTP 429 "Rate exceeded."",
+  },
+  {
+    "apiFailed": true,
+    "label": "503 with markup",
+    "rejectedId": null,
+    "whatHappened": "answered HTTP 503",
+  },
+  {
+    "apiFailed": true,
+    "label": "no answer",
+    "rejectedId": null,
+    "whatHappened": "gave no answer",
+  },
+]
+`;

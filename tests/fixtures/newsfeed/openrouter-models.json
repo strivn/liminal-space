@@ -1,0 +1,544 @@
+{
+	"data": [
+		{
+			"id": "google/gemini-4-neon",
+			"name": "Google: Gemini 4 Neon",
+			"created": 1795006977,
+			"description": "Gemini 4 Neon is a fast, mid-priced model in the Gemini 4 family from Google, built for coding and agentic work. It is suited for repository and terminal coding, web..."
+		},
+		{
+			"id": "google/gemini-4-neon:batch",
+			"name": "Google: Gemini 4 Neon (batch)",
+			"created": 1795006977,
+			"description": "Gemini 4 Neon is a fast, mid-priced model in the Gemini 4 family from Google, built for coding and agentic work. It is suited for repository and terminal coding, web..."
+		},
+		{
+			"id": "openai/gpt-6.2-astra-pro",
+			"name": "OpenAI: GPT-6.2 Astra Pro",
+			"created": 1794938432,
+			"description": "GPT-6.2 Astra Pro is the same underlying model as [GPT-6.2 Astra](https://openrouter.ai/openai/gpt-6.2-astra), served with `reasoning.mode` set to `pro` for higher-quality responses on complex tasks. **Cost note:** pro mode spends far more..."
+		},
+		{
+			"id": "openai/gpt-6.2-astra-pro:batch",
+			"name": "OpenAI: GPT-6.2 Astra Pro (batch)",
+			"created": 1794938432,
+			"description": "GPT-6.2 Astra Pro is the same underlying model as [GPT-6.2 Astra](https://openrouter.ai/openai/gpt-6.2-astra), served with `reasoning.mode` set to `pro` for higher-quality responses on complex tasks. **Cost note:** pro mode spends far more..."
+		},
+		{
+			"id": "openai/gpt-6.2-astra",
+			"name": "OpenAI: GPT-6.2 Astra",
+			"created": 1794938423,
+			"description": "GPT-6.2 Astra is the flagship model in the GPT-6.2 series from OpenAI, built for the hardest projects. It is suited for real-world engineering, professional work and scientific research, with stronger..."
+		},
+		{
+			"id": "openai/gpt-6.2-astra:batch",
+			"name": "OpenAI: GPT-6.2 Astra (batch)",
+			"created": 1794938423,
+			"description": "GPT-6.2 Astra is the flagship model in the GPT-6.2 series from OpenAI, built for the hardest projects. It is suited for real-world engineering, professional work and scientific research, with stronger..."
+		},
+		{
+			"id": "openai/gpt-6.2-sol-pro",
+			"name": "OpenAI: GPT-6.2 Sol Pro",
+			"created": 1794938409,
+			"description": "GPT-6.2 Sol Pro is the same underlying model as [GPT-6.2 Sol](https://openrouter.ai/openai/gpt-6.2-sol), served with `reasoning.mode` set to `pro` for higher-quality responses on complex tasks. **Cost note:** pro mode spends far more..."
+		},
+		{
+			"id": "openai/gpt-6.2-sol-pro:batch",
+			"name": "OpenAI: GPT-6.2 Sol Pro (batch)",
+			"created": 1794938409,
+			"description": "GPT-6.2 Sol Pro is the same underlying model as [GPT-6.2 Sol](https://openrouter.ai/openai/gpt-6.2-sol), served with `reasoning.mode` set to `pro` for higher-quality responses on complex tasks. **Cost note:** pro mode spends far more..."
+		},
+		{
+			"id": "openai/gpt-6.2-sol",
+			"name": "OpenAI: GPT-6.2 Sol",
+			"created": 1794938371,
+			"description": "GPT-6.2 Sol is an upgrade to GPT-6.1 Sol from OpenAI, positioned below the flagship GPT-6.2 Astra in the GPT-6.2 series. It is an efficient, versatile model for everyday work, suited..."
+		},
+		{
+			"id": "openai/gpt-6.2-sol:batch",
+			"name": "OpenAI: GPT-6.2 Sol (batch)",
+			"created": 1794938371,
+			"description": "GPT-6.2 Sol is an upgrade to GPT-6.1 Sol from OpenAI, positioned below the flagship GPT-6.2 Astra in the GPT-6.2 series. It is an efficient, versatile model for everyday work, suited..."
+		},
+		{
+			"id": "tencent/hy4-flash",
+			"name": "Tencent: Hy4 flash",
+			"created": 1794838706,
+			"description": "Hy4 flash is a cost-efficient variant of [Hy4](https://openrouter.ai/tencent/hy4) from Tencent, served with roughly a quarter of the flagship's parameter count for lower latency and cost. It targets code assistance, agent..."
+		},
+		{
+			"id": "qwen/qwen4-max",
+			"name": "Qwen: Qwen4 Max",
+			"created": 1794795526,
+			"description": "Qwen4 Max is the flagship model in Alibaba's Qwen4 series. It accepts text, image, and video input and returns text, with a 1M-token context window and reasoning enabled by default...."
+		},
+		{
+			"id": "inclusionai/ling-3.2-flash:free",
+			"name": "inclusionAI: Ling 3.2 Flash (free)",
+			"created": 1794591958,
+			"description": "Ling 3.2 Flash is a hybrid reasoning model from inclusionAI that accepts text and image input, with a 1M-token context window and up to 200 images per request. Thinking can..."
+		},
+		{
+			"id": "google/gemini-4-hydrogen",
+			"name": "Google: Gemini 4 Hydrogen",
+			"created": 1794506460,
+			"description": "Gemini 4 Hydrogen is the high-efficiency workhorse model of the Gemini 4 family from Google, built for high-throughput agentic workflows, coding and multi-model routing at lower cost and latency than..."
+		},
+		{
+			"id": "google/gemini-4-hydrogen:batch",
+			"name": "Google: Gemini 4 Hydrogen (batch)",
+			"created": 1794506460,
+			"description": "Gemini 4 Hydrogen is the high-efficiency workhorse model of the Gemini 4 family from Google, built for high-throughput agentic workflows, coding and multi-model routing at lower cost and latency than..."
+		},
+		{
+			"id": "baidu/ernie-5.5-flash-preview:free",
+			"name": "Baidu: ERNIE-5.5-Flash-Preview (free)",
+			"created": 1794333533,
+			"description": "ERNIE 5.5 Flash Preview is the latest foundation model in the ERNIE family, with comprehensive improvements in coding, agentic capabilities, knowledge work, and deep research. It has 280 billion total..."
+		},
+		{
+			"id": "baidu/ernie-light-dt-1.0-intl",
+			"name": "Baidu: ERNIE-Light-DT-1.0",
+			"created": 1794331260,
+			"description": "ERNIE-Light-DT-1.0 is based on open-source GLM models and includes research findings from Baidu Search's Lightning large model. It features Baidu Sparse Attention (BSA), a unique sparse attention mechanism developed by..."
+		},
+		{
+			"id": "google/gemini-4-carbon",
+			"name": "Google: Gemini 4 Carbon",
+			"created": 1794326871,
+			"description": "Gemini 4 Carbon is a frontier Gemini 4 model from Google for coding, agentic and complex reasoning work. It takes text, image, audio, video and file input, supports long decode..."
+		},
+		{
+			"id": "google/gemini-4-carbon:batch",
+			"name": "Google: Gemini 4 Carbon (batch)",
+			"created": 1794326871,
+			"description": "Gemini 4 Carbon is a frontier Gemini 4 model from Google for coding, agentic and complex reasoning work. It takes text, image, audio, video and file input, supports long decode..."
+		},
+		{
+			"id": "nex-agi/nex-n2.6",
+			"name": "Nex AGI: Nex-N2.6",
+			"created": 1794282379,
+			"description": "Nex-N2.6 is an agentic model from Nex AGI, built on [GLM-5.3-Flash](https://huggingface.co/zai-org/GLM-5.3-Flash-BF16) with about 321B parameters. It is suited for computer use, coding, and long-horizon tasks that involve tools. Compared with..."
+		},
+		{
+			"id": "thinkingmachines/inkling-2-small",
+			"name": "Thinking Machines: Inkling 2 Small",
+			"created": 1794261847,
+			"description": "Inkling 2 Small is an open-weight multimodal mixture-of-experts reasoning model from Thinking Machines Lab, with 17B active parameters out of 594B total. It is the first model in the second..."
+		},
+		{
+			"id": "anthropic/claude-fable-5.2",
+			"name": "Anthropic: Claude Fable 5.2",
+			"created": 1794253781,
+			"description": "Claude Fable 5.2 is Anthropic's most capable model for the most demanding technical work, with gains over Fable 5.1 in coding, reasoning, and vision. In prerelease testing it completed otherwise-infeasible..."
+		},
+		{
+			"id": "anthropic/claude-fable-5.2:batch",
+			"name": "Anthropic: Claude Fable 5.2 (batch)",
+			"created": 1794253781,
+			"description": "Claude Fable 5.2 is Anthropic's most capable model for the most demanding technical work, with gains over Fable 5.1 in coding, reasoning, and vision. In prerelease testing it completed otherwise-infeasible..."
+		},
+		{
+			"id": "meta/muse-ember",
+			"name": "Meta: Muse Ember",
+			"created": 1794247648,
+			"description": "Muse Ember is the smallest and most efficient model from Meta that’s designed for complex reasoning execution and the work agents repeat all day: tool calls, coding agent subtasks, routing,..."
+		},
+		{
+			"id": "liquid/lfm-3-1.7b",
+			"name": "LiquidAI: LFM3-1.7B",
+			"created": 1794009477,
+			"description": "A compact 1.7B-parameter text model with a 256K-token context, post-trained for agents, tool calling, and structured outputs. It reasons before it answers. Prompts and outputs may be retained and used..."
+		},
+		{
+			"id": "liquid/lfm-3-1.7b:free",
+			"name": "LiquidAI: LFM3-1.7B (free)",
+			"created": 1794009477,
+			"description": "A compact 1.7B-parameter text model with a 256K-token context, post-trained for agents, tool calling, and structured outputs. It reasons before it answers. Prompts and outputs may be retained and used..."
+		},
+		{
+			"id": "google/gemini-omni-1.2-flash",
+			"name": "Google: Gemini Omni 1.2 Flash",
+			"created": 1793898961,
+			"description": "Gemini Omni 1.2 Flash is Google's native multimodal video generation and editing model, the successor to Gemini Omni 1.1 Flash. It generates clips up to 15 seconds long with native..."
+		},
+		{
+			"id": "kt/midm-k-3.0-pro",
+			"name": "KT: Mi:dm K 3.0 Pro",
+			"created": 1793897701,
+			"description": "Mi:dm K 3.0 Pro is a Mixture-of-Experts reasoning model from KT, with 120B total and 12B active parameters. It uses a hybrid architecture that mixes Mamba, MoE and attention layers."
+		},
+		{
+			"id": "google/gemini-omni-1.1-flash",
+			"name": "Google: Gemini Omni 1.1 Flash",
+			"created": 1793825668,
+			"description": "Gemini Omni 1.1 Flash is Google's native multimodal video generation and editing model, the generally available successor to Gemini Omni Flash Preview. It is suited for text-to-video, image-to-video, first and..."
+		},
+		{
+			"id": "ricursiveai/ripple-65b-preview",
+			"name": "Ricursive: Ripple 65B Preview",
+			"created": 1793818990,
+			"description": "Ripple-65B-Preview by ricursiveAI, a 65B model with native tool calling, served in BF16."
+		},
+		{
+			"id": "tencent/hy4",
+			"name": "Tencent: Hy4",
+			"created": 1793766031,
+			"description": "The official release of Hy4 delivers comprehensive and substantial improvements over Hy4 Preview, with particularly strong gains in agentic capabilities and performance across a wide range of long-horizon, real-world productivity..."
+		},
+		{
+			"id": "motif-technologies/motif-3",
+			"name": "Motif Technologies: Motif 3",
+			"created": 1793655334,
+			"description": "Motif 3 is a Mixture-of-Experts language model from Motif Technologies, with 314B total and 13.2B active parameters. It is a general-purpose multilingual model for English and Korean, particularly strong at..."
+		},
+		{
+			"id": "z-ai/glm-5.3-flashx-legal",
+			"name": "Z.ai: GLM 5.3 FlashX Legal",
+			"created": 1793626154,
+			"description": "GLM-5.3-FlashX-Legal (GLM-Legal) is Z.ai's legal-domain variant of GLM-5.3-FlashX, a native multimodal model that accepts text, image, and video input and produces text. It adds legal-domain mid-training and post-training with reinforcement..."
+		},
+		{
+			"id": "particle-ai/particle-1",
+			"name": "Particle AI: Particle-1",
+			"created": 1793207893,
+			"description": "Particle-1 is a token-efficient agentic coding model from Particle AI, post-trained on DeepSeek V4.1 Flash. It is suited for software engineering work such as terminal workflows, codebase changes, and data..."
+		},
+		{
+			"id": "particle-ai/particle-1:free",
+			"name": "Particle AI: Particle-1 (free)",
+			"created": 1793207893,
+			"description": "Particle-1 is a token-efficient agentic coding model from Particle AI, post-trained on DeepSeek V4.1 Flash. It is suited for software engineering work such as terminal workflows, codebase changes, and data..."
+		},
+		{
+			"id": "openai/gpt-6.1-terra-pro",
+			"name": "OpenAI: GPT-6.1 Terra Pro",
+			"created": 1793038556,
+			"description": "GPT-6.1 Terra Pro is the same underlying model as [GPT-6.1 Terra](https://openrouter.ai/openai/gpt-6.1-terra), served with `reasoning.mode` set to `pro` for higher-quality responses on complex tasks. **Cost note:** pro mode spends far more..."
+		},
+		{
+			"id": "openai/gpt-6.1-terra-pro:batch",
+			"name": "OpenAI: GPT-6.1 Terra Pro (batch)",
+			"created": 1793038556,
+			"description": "GPT-6.1 Terra Pro is the same underlying model as [GPT-6.1 Terra](https://openrouter.ai/openai/gpt-6.1-terra), served with `reasoning.mode` set to `pro` for higher-quality responses on complex tasks. **Cost note:** pro mode spends far more..."
+		},
+		{
+			"id": "openai/gpt-6.1-terra",
+			"name": "OpenAI: GPT-6.1 Terra",
+			"created": 1793038409,
+			"description": "GPT-6.1 Terra is the mid-tier model in OpenAI's GPT-6.1 series, priced below GPT-6.1 Sol. It is suited for everyday agentic, coding, and writing work, is particularly strong at understanding screenshots..."
+		},
+		{
+			"id": "openai/gpt-6.1-terra:batch",
+			"name": "OpenAI: GPT-6.1 Terra (batch)",
+			"created": 1793038409,
+			"description": "GPT-6.1 Terra is the mid-tier model in OpenAI's GPT-6.1 series, priced below GPT-6.1 Sol. It is suited for everyday agentic, coding, and writing work, is particularly strong at understanding screenshots..."
+		},
+		{
+			"id": "moonshotai/kimi-k3.1-pro",
+			"name": "MoonshotAI: Kimi K3.1 Pro",
+			"created": 1792778188,
+			"description": "Kimi K3.1 Pro is Moonshot AI's flagship open-weight multimodal reasoning model and a post-trained successor to Kimi K3, with a 1M-token context window. It is built for long-horizon coding, 3D..."
+		},
+		{
+			"id": "moonshotai/kimi-k3.1-pro:batch",
+			"name": "MoonshotAI: Kimi K3.1 Pro (batch)",
+			"created": 1792778188,
+			"description": "Kimi K3.1 Pro is Moonshot AI's flagship open-weight multimodal reasoning model and a post-trained successor to Kimi K3, with a 1M-token context window. It is built for long-horizon coding, 3D..."
+		},
+		{
+			"id": "recursive/flint-v1.0:free",
+			"name": "Recursive: Flint (free)",
+			"created": 1792622765,
+			"description": "Flint is an open-weight mixture-of-experts model from Recursive, with about 2.5B active parameters out of 40B total, built by Recursive's autoresearch system Eureka Machine for coding agents. It is suited..."
+		},
+		{
+			"id": "minimax/minimax-m3.1-flash",
+			"name": "MiniMax: MiniMax M3.1 Flash",
+			"created": 1792379569,
+			"description": "MiniMax-M3.1-Flash is a multimodal model from MiniMax. Compared with M3, it delivers significant improvements across multiple benchmarks, particularly in complex agentic tasks, coding, and cybersecurity. It is built for complex,..."
+		},
+		{
+			"id": "deepseek/deepseek-v4.1-flash-1017",
+			"name": "DeepSeek: DeepSeek V4.1 Flash 1017",
+			"created": 1792225624,
+			"description": "DeepSeek V4.1 Flash 1017 is the October 17, 2026 snapshot of DeepSeek V4.1 Flash, served by DeepSeek under the `deepseek-flash` API model name. V4.1 Flash is a sparse mixture-of-experts model..."
+		},
+		{
+			"id": "deepseek/deepseek-v4.1-flash-1017:batch",
+			"name": "DeepSeek: DeepSeek V4.1 Flash 1017 (batch)",
+			"created": 1792225624,
+			"description": "DeepSeek V4.1 Flash 1017 is the October 17, 2026 snapshot of DeepSeek V4.1 Flash, served by DeepSeek under the `deepseek-flash` API model name. V4.1 Flash is a sparse mixture-of-experts model..."
+		},
+		{
+			"id": "elorian/glimpse",
+			"name": "Elorian: Glimpse",
+			"created": 1792206629,
+			"description": "Glimpse is a multimodal visual reasoning model from Elorian, built for visual understanding and complex visual reasoning in the physical world. It reasons directly over images and video rather than..."
+		},
+		{
+			"id": "reflection/beam-1.0-501b-a23b",
+			"name": "Reflection: Beam 1.0 501B A23B",
+			"created": 1792160499,
+			"description": "Beam 1.0 is Reflection's open-weight reasoning model for coding and long-horizon agentic workflows. It uses a sparse mixture-of-experts architecture with 501B total and 23B active parameters per token, and a..."
+		},
+		{
+			"id": "prism-ml/ternary-bonsai-2-9b",
+			"name": "PrismML: Ternary Bonsai 2 9B",
+			"created": 1792130995,
+			"description": "Ternary Bonsai 2 9B is PrismML’s compact, open-weight language model for conversational AI, reasoning, and tool use. Built on Qwen3.5, it uses ternary weights packed into 2 bits for efficient..."
+		},
+		{
+			"id": "moondream/moondream3-preview",
+			"name": "Moondream: Moondream 3 Preview",
+			"created": 1792102385,
+			"description": "Moondream 3 Preview is a vision-language model from Moondream with 9B total parameters and 2B active (mixture-of-experts). It handles visual question answering, captioning, OCR, and visual reasoning over images, with..."
+		},
+		{
+			"id": "moondream/moondream3.1-9b-a2b",
+			"name": "Moondream: Moondream 3.1",
+			"created": 1792102373,
+			"description": "Moondream 3.1 is a vision-language model from Moondream, the successor to Moondream 3 Preview, with 9B total parameters and 2B active (mixture-of-experts). It handles visual question answering, captioning, OCR, and..."
+		},
+		{
+			"id": "meta/muse-spark-open",
+			"name": "Meta: Muse Spark Open",
+			"created": 1792087069,
+			"description": "Muse Spark Open is a coding-optimized open-weight model. Trained specifically for agentic coding workflows, it delivers higher first-attempt accuracy, reliable tool calling, and deep codebase understanding across the repos developers..."
+		},
+		{
+			"id": "nvidia/nemotron-3.5-super-vl",
+			"name": "NVIDIA: Nemotron 3.5 Super VL",
+			"created": 1792076662,
+			"description": "NVIDIA Nemotron 3.5 Super VL is an open multimodal mixture-of-experts model from NVIDIA, with 12B active parameters out of 120B total. It takes text, images, documents, GUI screenshots, and video..."
+		},
+		{
+			"id": "nvidia/nemotron-3.5-super-vl:free",
+			"name": "NVIDIA: Nemotron 3.5 Super VL (free)",
+			"created": 1792076662,
+			"description": "NVIDIA Nemotron 3.5 Super VL is an open multimodal mixture-of-experts model from NVIDIA, with 12B active parameters out of 120B total. It takes text, images, documents, GUI screenshots, and video..."
+		},
+		{
+			"id": "unbiased/pareto-26.10",
+			"name": "Pareto 26.10",
+			"created": 1792073620,
+			"description": "Pareto is a multimodal composite model built for research, coding, and agentic workflows, while delivering frontier-level performance across a broad range of general-purpose tasks."
+		},
+		{
+			"id": "~unbiased/pareto-latest",
+			"name": "Pareto Latest",
+			"created": 1791933050,
+			"description": "This model always redirects to the latest model in the Pareto family."
+		},
+		{
+			"id": "unbiased/pareto-26.9",
+			"name": "Pareto 26.9",
+			"created": 1791930537,
+			"description": "Pareto is a multimodal composite model built for research, coding, and agentic workflows, while delivering frontier-level performance across a broad range of general-purpose tasks."
+		},
+		{
+			"id": "liquid/lfm-2.5-24b-a2b",
+			"name": "LiquidAI: LFM2.5-24B-A2B",
+			"created": 1791912025,
+			"description": "LFM2.5-24B-A2B is a mixture-of-experts reasoning model from Liquid AI with 24B total and 2.45B active parameters. It always reasons before answering and is built for agents that call tools. Liquid..."
+		},
+		{
+			"id": "google/gemini-4-argon",
+			"name": "Google: Gemini 4 Argon",
+			"created": 1791907477,
+			"description": "Gemini 4 Argon is Google's flagship reasoning model, built for complex software engineering, deep mathematical and scientific problem solving, and autonomous multi-step agents. Google trained it to keep context across..."
+		},
+		{
+			"id": "google/gemini-4-argon:batch",
+			"name": "Google: Gemini 4 Argon (batch)",
+			"created": 1791907477,
+			"description": "Gemini 4 Argon is Google's flagship reasoning model, built for complex software engineering, deep mathematical and scientific problem solving, and autonomous multi-step agents. Google trained it to keep context across..."
+		},
+		{
+			"id": "scaledown/summarize",
+			"name": "ScaleDown: Summarize",
+			"created": 1791893360,
+			"description": "Summarize is an abstractive summarization model from ScaleDown. It condenses long text and documents into a fluent, faithful rewrite rather than lifting sentences from the source, and is suited for..."
+		},
+		{
+			"id": "scaledown/extract",
+			"name": "ScaleDown: Extract",
+			"created": 1791893351,
+			"description": "Extract is a description-driven entity extraction model from ScaleDown. Instead of a fixed set of entity types, callers describe the fields they want in plain English through `provider.options.scaledown.entities`, and the..."
+		},
+		{
+			"id": "meta/muse-wonder",
+			"name": "Meta: Muse Wonder",
+			"created": 1791807945,
+			"description": "Muse Wonder is a frontier reasoning model from Meta, designed for complex personal and professional agentic tasks. It accepts text, images, video, audio, and PDF documents and returns text, with..."
+		},
+		{
+			"id": "stepfun/step-5-preview",
+			"name": "StepFun: Step 5 Preview",
+			"created": 1791462849,
+			"description": "Step 5 Preview is StepFun's flagship model for agentic work, built on a sparse Mixture-of-Experts architecture (27B active / 600B total parameters). It performs strongly in software engineering and professional..."
+		},
+		{
+			"id": "anthropic/claude-haiku-5.5",
+			"name": "Anthropic: Claude Haiku 5.5",
+			"created": 1791397883,
+			"description": "Claude Haiku 5.5 is Anthropic's small, fast model for high-volume, cost-sensitive work such as summarization, subagents, and browser use. It succeeds Claude Haiku 4.5 with stronger coding, computer use, and..."
+		},
+		{
+			"id": "anthropic/claude-haiku-5.5:batch",
+			"name": "Anthropic: Claude Haiku 5.5 (batch)",
+			"created": 1791397883,
+			"description": "Claude Haiku 5.5 is Anthropic's small, fast model for high-volume, cost-sensitive work such as summarization, subagents, and browser use. It succeeds Claude Haiku 4.5 with stronger coding, computer use, and..."
+		},
+		{
+			"id": "google/gemini-nano-banana-2.1",
+			"name": "Google: Nano Banana 2.1",
+			"created": 1791300825,
+			"description": "Nano Banana 2.1 (Gemini Nano Banana 2.1) is Google's image generation and editing model on the Flash tier, succeeding Nano Banana 2 and Nano Banana Pro. It improves product recontextualization,..."
+		},
+		{
+			"id": "mistralai/mistral-large-4-0",
+			"name": "Mistral: Mistral Large 4",
+			"created": 1791294122,
+			"description": "Mistral Large 4 is a frontier multimodal (text and image input) model from Mistral AI built for reasoning, coding, and agentic workloads. It offers a 1M-token context window with up..."
+		},
+		{
+			"id": "inclusionai/ling-3.1-flash",
+			"name": "inclusionAI: Ling 3.1 Flash",
+			"created": 1790950024,
+			"description": "Ling 3.1 Flash is a hybrid reasoning mixture-of-experts model from inclusionAI, with 25B active parameters out of 560B total."
+		},
+		{
+			"id": "unbiased/pareto-26.10-preview",
+			"name": "Pareto 26.10 Preview",
+			"created": 1790863623,
+			"description": "Pareto is a multimodal composite model built for research, coding, and agentic workflows, while delivering frontier-level performance across a broad range of general-purpose tasks. This is a preview of the..."
+		},
+		{
+			"id": "~deepseek/deepseek-pro-latest",
+			"name": "DeepSeek: DeepSeek Pro Latest",
+			"created": 1789399174,
+			"description": "This model always redirects to the latest model in the DeepSeek Pro family."
+		},
+		{
+			"id": "~deepseek/deepseek-flash-latest",
+			"name": "DeepSeek: DeepSeek Flash Latest",
+			"created": 1789399150,
+			"description": "This model always redirects to the latest model in the DeepSeek Flash family."
+		},
+		{
+			"id": "~openai/gpt-astra-latest",
+			"name": "OpenAI: GPT Astra Latest",
+			"created": 1789130932,
+			"description": "This model always redirects to the latest model in the GPT Astra family."
+		},
+		{
+			"id": "~openai/gpt-sol-latest",
+			"name": "OpenAI: GPT Sol Latest",
+			"created": 1789130928,
+			"description": "This model always redirects to the latest model in the GPT Sol family."
+		},
+		{
+			"id": "~openai/gpt-terra-latest",
+			"name": "OpenAI: GPT Terra Latest",
+			"created": 1789130925,
+			"description": "This model always redirects to the latest model in the GPT Terra family."
+		},
+		{
+			"id": "~openai/gpt-luna-latest",
+			"name": "OpenAI: GPT Luna Latest",
+			"created": 1789130922,
+			"description": "This model always redirects to the latest model in the GPT Luna family."
+		},
+		{
+			"id": "~z-ai/glm-flash-latest",
+			"name": "Z.ai: GLM Flash Latest",
+			"created": 1787817633,
+			"description": "This model always redirects to the latest model in the GLM Flash family."
+		},
+		{
+			"id": "~z-ai/glm-latest",
+			"name": "Z.ai: GLM Latest",
+			"created": 1787151053,
+			"description": "This model always redirects to the latest GLM model from Z.ai."
+		},
+		{
+			"id": "~deepseek/deepseek-v4-flash-latest",
+			"name": "DeepSeek: DeepSeek V4 Flash Latest",
+			"created": 1785606009,
+			"description": "This model always redirects to the latest model in the DeepSeek V4 Flash family."
+		},
+		{
+			"id": "~x-ai/grok-latest",
+			"name": "xAI: Grok Latest",
+			"created": 1783519360,
+			"description": "This model always redirects to the latest Grok model from xAI."
+		},
+		{
+			"id": "~anthropic/claude-fable-latest",
+			"name": "Anthropic: Claude Fable Latest",
+			"created": 1781029944,
+			"description": "This model always redirects to the latest model in the Claude Fable family."
+		},
+		{
+			"id": "~anthropic/claude-haiku-latest",
+			"name": "Anthropic: Claude Haiku Latest",
+			"created": 1777318492,
+			"description": "This model always redirects to the latest model in the Claude Haiku family."
+		},
+		{
+			"id": "~openai/gpt-mini-latest",
+			"name": "OpenAI: GPT Mini Latest",
+			"created": 1777318471,
+			"description": "This model always redirects to the latest model in the GPT Mini family."
+		},
+		{
+			"id": "~google/gemini-pro-latest",
+			"name": "Google: Gemini Pro Latest",
+			"created": 1777318451,
+			"description": "This model always redirects to the latest model in the Gemini Pro family."
+		},
+		{
+			"id": "~moonshotai/kimi-latest",
+			"name": "MoonshotAI: Kimi Latest",
+			"created": 1777318428,
+			"description": "This model always redirects to the latest model in the Kimi family."
+		},
+		{
+			"id": "~google/gemini-flash-latest",
+			"name": "Google: Gemini Flash Latest",
+			"created": 1777318398,
+			"description": "This model always redirects to the latest model in the Gemini Flash family."
+		},
+		{
+			"id": "~anthropic/claude-sonnet-latest",
+			"name": "Anthropic: Claude Sonnet Latest",
+			"created": 1777318368,
+			"description": "This model always redirects to the latest model in the Claude Sonnet family."
+		},
+		{
+			"id": "~anthropic/claude-opus-latest",
+			"name": "Anthropic: Claude Opus Latest",
+			"created": 1776795361,
+			"description": "This model always redirects to the latest model in the Claude Opus family."
+		},
+		{
+			"id": "bytedance/ui-tars-1.5-7b",
+			"name": "ByteDance: UI-TARS 7B ",
+			"created": 1753205056,
+			"description": "UI-TARS-1.5 is a multimodal vision-language agent optimized for GUI-based environments, including desktop interfaces, web browsers, mobile systems, and games. Built by ByteDance, it builds upon the UI-TARS framework with reinforcement..."
+		},
+		{
+			"id": "openrouter/auto",
+			"name": "Auto Router",
+			"created": 1793885889,
+			"description": "Auto is OpenRouter’s flagship model router, built for general-purpose usage. It adapts to each request, choosing cost-optimal models and adjusting reasoning effort. It balances task difficulty, benchmark results, live prices,..."
+		},
+		{
+			"id": "openrouter/auto-code",
+			"name": "Auto Code",
+			"created": 1793884321,
+			"description": "Auto Code is OpenRouter’s router built specifically for coding agents and harnesses. It uses the same routing engine as the [Auto Router](https://openrouter.ai/openrouter/auto), with every request treated as part of an..."
+		}
+	]
+}
