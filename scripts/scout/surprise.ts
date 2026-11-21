@@ -13,6 +13,7 @@ import { errorCode, isJsonObject } from "../../shared/narrow.ts";
 import { idsInText } from "../digests/digests-file.ts";
 import { type Fail, failer } from "../lib/cli.ts";
 import CONSTANTS from "../lib/constants.json" with { type: "json" };
+import { htmlToText } from "../lib/html.ts";
 import { request } from "../lib/http.ts";
 import {
 	daysBefore,
@@ -100,10 +101,9 @@ function oneLine(value: unknown) {
 		.trim();
 }
 
-// Rendered HTML -> one line of plain text. Tags go first, then entities ("&#8217;" -> "’"),
-// so an encoded "&lt;b&gt;" stays visible text instead of being removed as a tag.
+// Rendered HTML as one line.
 function plainText(html: string) {
-	return oneLine(decodeHTML(String(html || "").replace(/<[^>]*>/g, "")));
+	return oneLine(htmlToText(String(html || "")));
 }
 
 // The `rendered` text of a WordPress field such as title; "" when the field is missing.

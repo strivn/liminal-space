@@ -91,6 +91,59 @@ export const MATH_DELIMITERS: MathDelimiter[] = [
 	{ left: "\\[", right: "\\]", display: true },
 ];
 
+// A character TeX escapes in prose, such as \$ or \%.
+export type Literal = { literal: string };
+
+// Cut `text` at each escaped \$ \% \& \# \_ outside delimited math. Math stays whole.
+export function literalPieces(text: string): (string | Literal)[] {
+	const pieces: (string | Literal)[] = [];
+	const unclosed = new Set<string>();
+	let plain = "";
+	for (let i = 0; i < text.length; ) {
+		const escaped = /^\\([$%&#_])/.exec(text.slice(i, i + 2));
+		if (escaped !== null) {
+			if (plain !== "") pieces.push(plain);
+			pieces.push({ literal: escaped[1] as string });
+			plain = "";
+			i += 2;
+			continue;
+		}
+		const after = mathEnd(text, i, unclosed);
+		if (after !== -1) {
+			plain += text.slice(i, after);
+			i = after;
+			continue;
+		}
+		plain += text[i];
+		i++;
+	}
+	if (plain !== "") pieces.push(plain);
+	return pieces;
+}
+
+// Where the math opening at `i` ends, or -1. A delimiter `unclosed` holds never closes later.
+function mathEnd(text: string, i: number, unclosed: Set<string>): number {
+	const math = MATH_DELIMITERS.find((delimiter) =>
+		text.startsWith(delimiter.left, i),
+	);
+	if (math === undefined || unclosed.has(math.left)) return -1;
+	const end = closingDelimiter(text, math.right, i + math.left.length);
+	if (end === -1) {
+		unclosed.add(math.left);
+		return -1;
+	}
+	return end + math.right.length;
+}
+
+// Where `right` closes math, an escaped \$ not counting.
+function closingDelimiter(text: string, right: string, from: number): number {
+	let end = text.indexOf(right, from);
+	while (end > 0 && right === "$" && text[end - 1] === "\\") {
+		end = text.indexOf(right, end + 1);
+	}
+	return end;
+}
+
 // An abstract is plain text, so a % in its math is a percent sign, never the start of a TeX comment.
 export function escapePercent(math: string): string {
 	return math.replace(/(?<!\\)%/g, "\\%");
@@ -98,37 +151,34 @@ export function escapePercent(math: string): string {
 
 // A prose command's element and what it holds, which is more prose, or for texttt one piece of text.
 export type ProseElement = {
-	tag: "i" | "em" | "strong" | "code";
+	tag: "i" | "em" | "strong" | "code" | "span";
+	class?: string;
 	children: ProseNode[];
 };
 export type ProseNode = string | ProseElement;
 
-const PROSE_TAGS: Record<string, ProseElement["tag"]> = {
-	textit: "i",
-	emph: "em",
-	textbf: "strong",
-	texttt: "code",
+const PROSE_ELEMENTS: Record<string, Omit<ProseElement, "children">> = {
+	textit: { tag: "i" },
+	emph: { tag: "em" },
+	textbf: { tag: "strong" },
+	texttt: { tag: "code" },
+	textsc: { tag: "span", class: "small-caps" },
 };
 
-// Cut `text` at its known prose commands (\textit, \emph, \textbf, \texttt): each becomes an element holding its
+// Cut `text` at its known prose commands (\textit, \emph, \textbf, \texttt, \textsc): each becomes an element holding its
 // braces' content. Math, unknown commands and groups without their closing brace stay as written.
 export function proseNodes(text: string, depth: number): ProseNode[] {
 	if (depth >= 32) return [text];
 	const nodes: ProseNode[] = [];
+	const unclosed = new Set<string>();
 	let plain = "";
 	for (let i = 0; i < text.length; ) {
 		// Delimited formulas stay untouched, whether or not KaTeX is there to draw them.
-		const math = MATH_DELIMITERS.find((delimiter) =>
-			text.startsWith(delimiter.left, i),
-		);
-		if (math !== undefined) {
-			const end = text.indexOf(math.right, i + math.left.length);
-			if (end !== -1) {
-				const to = end + math.right.length;
-				plain += text.slice(i, to);
-				i = to;
-				continue;
-			}
+		const after = mathEnd(text, i, unclosed);
+		if (after !== -1) {
+			plain += text.slice(i, after);
+			i = after;
+			continue;
 		}
 		if (text[i] !== "\\") {
 			plain += text[i];
@@ -153,8 +203,8 @@ export function proseNodes(text: string, depth: number): ProseNode[] {
 			if (text[end] === "}") braces--;
 			end++;
 		}
-		const tag = PROSE_TAGS[command[1] || ""];
-		if (braces !== 0 || tag === undefined) {
+		const element = PROSE_ELEMENTS[command[1] || ""];
+		if (braces !== 0 || element === undefined) {
 			plain += text.slice(i, end);
 			i = end;
 			continue;
@@ -162,8 +212,8 @@ export function proseNodes(text: string, depth: number): ProseNode[] {
 		if (plain !== "") nodes.push(plain);
 		plain = "";
 		const content = text.slice(from, end - 1);
-		if (tag === "code") nodes.push({ tag: tag, children: [content] });
-		else nodes.push({ tag: tag, children: proseNodes(content, depth + 1) });
+		if (element.tag === "code") nodes.push({ ...element, children: [content] });
+		else nodes.push({ ...element, children: proseNodes(content, depth + 1) });
 		i = end;
 	}
 	if (plain !== "") nodes.push(plain);

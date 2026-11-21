@@ -64,6 +64,9 @@ details.day:nth-last-child(1 of details.day:not([hidden])) {
 .entry__abstract {
 	margin-top: 8px;
 }
+.small-caps {
+	font-variant-caps: small-caps;
+}
 /* A paper's other links (Code, ...) and a news item's links, after the figure. */
 .entry__links {
 	display: flex;

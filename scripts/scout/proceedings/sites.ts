@@ -3,7 +3,7 @@ import { decodeHTML } from "entities";
 import { isHttpUrl } from "../../../shared/entry-checks.ts";
 import { isJsonObject } from "../../../shared/narrow.ts";
 import CONSTANTS from "../../lib/constants.json" with { type: "json" };
-import { attribute, tagsNamed } from "../../lib/html.ts";
+import { attribute, htmlToText, tagsNamed } from "../../lib/html.ts";
 import { request } from "../../lib/http.ts";
 
 // The proceedings' sites, each overridable for tests.
@@ -111,11 +111,9 @@ export function proceedingsOf(
 	return null;
 }
 
-// HTML as plain text: tags removed, then entities decoded once, runs of whitespace collapsed.
+// HTML as one line of text.
 function htmlText(html: string) {
-	return decodeHTML(html.replace(/<[^>]*>/g, ""))
-		.replace(/\s+/g, " ")
-		.trim();
+	return htmlToText(html).replace(/\s+/g, " ").trim();
 }
 
 // An address on a page, made whole against the page's own address; null when it doesn't parse.

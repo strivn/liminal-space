@@ -3,6 +3,7 @@ import { el } from "./dom.ts";
 import {
 	escapePercent,
 	linkPieces,
+	literalPieces,
 	MATH_DELIMITERS,
 	type MathDelimiter,
 	type ProseNode,
@@ -15,6 +16,7 @@ import {
 // caps every size the TeX names, maxExpand the number of macro expansions in one span.
 type MathOptions = {
 	delimiters: MathDelimiter[];
+	ignoredClasses: string[];
 	preProcess: (math: string) => string;
 	macros: Record<string, string>;
 	maxSize: number;
@@ -31,6 +33,7 @@ const AUTHOR_MACROS: Record<string, string> = { "\\eps": "\\varepsilon" };
 // Entry text comes from arXiv and publishers' pages, so its TeX may be careless or hostile: a box, rule or space
 // larger than 5 em is drawn 5 em, and a span whose macros expand more than 1000 times (KaTeX's
 // default, kept on purpose) stays as written.
+const TEX_LITERAL = "tex-literal";
 const MAX_SIZE_EM = 5;
 const MAX_EXPAND = 1000;
 
@@ -38,12 +41,23 @@ const MAX_EXPAND = 1000;
 export function typeset(node: HTMLElement): void {
 	texLinks(node);
 	for (const text of textNodesOutside(node, ".katex, code")) {
-		if (/\\(?:textit|emph|textbf|texttt)\s*\{/.test(text.data))
+		if (/\\(?:textit|emph|textbf|texttt|textsc)\s*\{/.test(text.data))
 			text.replaceWith(proseFragment(text.data));
+	}
+	for (const text of textNodesOutside(node, ".katex, code")) {
+		if (!/\\[$%&#_]/.test(text.data)) continue;
+		text.replaceWith(
+			...literalPieces(text.data).map((piece) =>
+				typeof piece === "string"
+					? piece
+					: el("span", { class: TEX_LITERAL }, piece.literal),
+			),
+		);
 	}
 	if (typeof renderMathInElement === "function")
 		renderMathInElement(node, {
 			delimiters: MATH_DELIMITERS,
+			ignoredClasses: [TEX_LITERAL],
 			preProcess: escapePercent,
 			macros: AUTHOR_MACROS,
 			maxSize: MAX_SIZE_EM,
@@ -75,7 +89,8 @@ function proseFragment(text: string): DocumentFragment {
 
 function proseDom(node: ProseNode): Node | string {
 	if (typeof node === "string") return node;
-	return el(node.tag, null, ...node.children.map(proseDom));
+	const attrs = node.class === undefined ? null : { class: node.class };
+	return el(node.tag, attrs, ...node.children.map(proseDom));
 }
 
 // The text nodes inside `element`, in page order, less those inside an element `skip` matches, such as typeset math
