@@ -26,6 +26,7 @@ import {
 	expect,
 	test,
 } from "vitest";
+import { isArxivId } from "../../shared/arxiv-id.ts";
 import { allowLocal, closeServers, serve } from "./local-server.ts";
 
 const SCRIPT = new URL("../../scripts/scout/arxiv/arxiv.ts", import.meta.url);
@@ -158,6 +159,10 @@ async function standIn(behaviour: Behaviour = {}) {
 			"oai:arXiv.org:",
 			"",
 		);
+		if (!isArxivId(id)) {
+			out.end(oaiError("badArgument", "not an arXiv id"));
+			return;
+		}
 		const instead = behaviour.oai?.(id);
 		if (instead !== undefined) {
 			out.writeHead(instead.status);
