@@ -441,6 +441,37 @@ test("malformed TeX stays as written while the math after it still renders", () 
 	expect(abstract?.querySelector(".katex-error")).toBeNull();
 });
 
+test("an escaped \\$ in an abstract shows as a dollar sign, and the formulas around it still typeset", () => {
+	loadKatex();
+	const article = drawn(
+		paper({
+			abstract:
+				"It costs only \\$1.7 and \\$0.3 per run, with $\\alpha$ and $x^2$ fixed.",
+		}),
+	);
+	const abstract = article.querySelector(".entry__abstract");
+	expect(abstract?.querySelectorAll(".katex")).toHaveLength(2);
+	expect(abstract?.querySelector(".katex-error")).toBeNull();
+	expect(abstract?.textContent).toContain("only $1.7 and $0.3 per run");
+	expect(abstract?.textContent).not.toContain("\\$");
+});
+
+test("an escaped \\%, \\&, \\# or \\_ in an abstract shows as the plain character, and a \\% inside math stays math", () => {
+	loadKatex();
+	const article = drawn(
+		paper({
+			abstract:
+				"Recall rose from 42\\% to 63\\% on Who\\&When, run \\#3 of my\\_set, at $10\\%$ noise.",
+		}),
+	);
+	const abstract = article.querySelector(".entry__abstract");
+	expect(abstract?.textContent).toContain(
+		"from 42% to 63% on Who&When, run #3 of my_set, at",
+	);
+	expect(abstract?.querySelectorAll(".katex")).toHaveLength(1);
+	expect(abstract?.querySelector(".katex-error")).toBeNull();
+});
+
 test("an author's macro that KaTeX lacks still renders", () => {
 	loadKatex();
 	const article = drawn(paper({ abstract: "an $\\eps$ is a claim" }));

@@ -91,6 +91,50 @@ export const MATH_DELIMITERS: MathDelimiter[] = [
 	{ left: "\\[", right: "\\]", display: true },
 ];
 
+// A character TeX escapes in prose, such as \$ or \%.
+export type Literal = { literal: string };
+
+// Cut `text` at each escaped \$ \% \& \# \_ outside delimited math. Math stays whole.
+export function literalPieces(text: string): (string | Literal)[] {
+	const pieces: (string | Literal)[] = [];
+	let plain = "";
+	for (let i = 0; i < text.length; ) {
+		const escaped = /^\\([$%&#_])/.exec(text.slice(i, i + 2));
+		if (escaped !== null) {
+			if (plain !== "") pieces.push(plain);
+			pieces.push({ literal: escaped[1] as string });
+			plain = "";
+			i += 2;
+			continue;
+		}
+		const math = MATH_DELIMITERS.find((delimiter) =>
+			text.startsWith(delimiter.left, i),
+		);
+		const end =
+			math === undefined
+				? -1
+				: closingDelimiter(text, math.right, i + math.left.length);
+		if (math !== undefined && end !== -1) {
+			plain += text.slice(i, end + math.right.length);
+			i = end + math.right.length;
+			continue;
+		}
+		plain += text[i];
+		i++;
+	}
+	if (plain !== "") pieces.push(plain);
+	return pieces;
+}
+
+// Where `right` closes math, an escaped \$ not counting.
+function closingDelimiter(text: string, right: string, from: number): number {
+	let end = text.indexOf(right, from);
+	while (end > 0 && right === "$" && text[end - 1] === "\\") {
+		end = text.indexOf(right, end + 1);
+	}
+	return end;
+}
+
 // An abstract is plain text, so a % in its math is a percent sign, never the start of a TeX comment.
 export function escapePercent(math: string): string {
 	return math.replace(/(?<!\\)%/g, "\\%");
