@@ -164,13 +164,12 @@ async function standIn(behaviour: Behaviour = {}) {
 			out.end(instead.body);
 			return;
 		}
-		out.end(
-			oaiRecord(
-				id,
-				url.searchParams.get("metadataPrefix") as string,
-				behaviour,
-			),
-		);
+		const format = url.searchParams.get("metadataPrefix");
+		if (format !== "arXiv" && format !== "arXivRaw") {
+			out.end(oaiError("cannotDisseminateFormat", "format not supported"));
+			return;
+		}
+		out.end(oaiRecord(id, format, behaviour));
 	});
 	return { api: `${base}/api`, oai: `${base}/oai`, asked: asked };
 }
