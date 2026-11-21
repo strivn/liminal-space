@@ -97,6 +97,7 @@ export type Literal = { literal: string };
 // Cut `text` at each escaped \$ \% \& \# \_ outside delimited math. Math stays whole.
 export function literalPieces(text: string): (string | Literal)[] {
 	const pieces: (string | Literal)[] = [];
+	const unclosed = new Set<string>();
 	let plain = "";
 	for (let i = 0; i < text.length; ) {
 		const escaped = /^\\([$%&#_])/.exec(text.slice(i, i + 2));
@@ -107,16 +108,10 @@ export function literalPieces(text: string): (string | Literal)[] {
 			i += 2;
 			continue;
 		}
-		const math = MATH_DELIMITERS.find((delimiter) =>
-			text.startsWith(delimiter.left, i),
-		);
-		const end =
-			math === undefined
-				? -1
-				: closingDelimiter(text, math.right, i + math.left.length);
-		if (math !== undefined && end !== -1) {
-			plain += text.slice(i, end + math.right.length);
-			i = end + math.right.length;
+		const after = mathEnd(text, i, unclosed);
+		if (after !== -1) {
+			plain += text.slice(i, after);
+			i = after;
 			continue;
 		}
 		plain += text[i];
@@ -124,6 +119,20 @@ export function literalPieces(text: string): (string | Literal)[] {
 	}
 	if (plain !== "") pieces.push(plain);
 	return pieces;
+}
+
+// Where the math opening at `i` ends, or -1. A delimiter `unclosed` holds never closes later.
+function mathEnd(text: string, i: number, unclosed: Set<string>): number {
+	const math = MATH_DELIMITERS.find((delimiter) =>
+		text.startsWith(delimiter.left, i),
+	);
+	if (math === undefined || unclosed.has(math.left)) return -1;
+	const end = closingDelimiter(text, math.right, i + math.left.length);
+	if (end === -1) {
+		unclosed.add(math.left);
+		return -1;
+	}
+	return end + math.right.length;
 }
 
 // Where `right` closes math, an escaped \$ not counting.
@@ -161,20 +170,15 @@ const PROSE_ELEMENTS: Record<string, Omit<ProseElement, "children">> = {
 export function proseNodes(text: string, depth: number): ProseNode[] {
 	if (depth >= 32) return [text];
 	const nodes: ProseNode[] = [];
+	const unclosed = new Set<string>();
 	let plain = "";
 	for (let i = 0; i < text.length; ) {
 		// Delimited formulas stay untouched, whether or not KaTeX is there to draw them.
-		const math = MATH_DELIMITERS.find((delimiter) =>
-			text.startsWith(delimiter.left, i),
-		);
-		if (math !== undefined) {
-			const end = text.indexOf(math.right, i + math.left.length);
-			if (end !== -1) {
-				const to = end + math.right.length;
-				plain += text.slice(i, to);
-				i = to;
-				continue;
-			}
+		const after = mathEnd(text, i, unclosed);
+		if (after !== -1) {
+			plain += text.slice(i, after);
+			i = after;
+			continue;
 		}
 		if (text[i] !== "\\") {
 			plain += text[i];
