@@ -2,12 +2,14 @@
 // Prose formatting in an entry's text keeps comments working: a passage can be found and highlighted across the
 // elements the formatting makes (site/page/typeset.ts, comments/passage.ts).
 import { afterEach, expect, test } from "vitest";
+import { FIELD_CAPS } from "../../shared/entry-checks.ts";
 import {
 	selectedPassage,
 	unwrapPassages,
 	wrapPassage,
 } from "../../site/page/comments/passage.ts";
 import { renderEntry } from "../../site/page/entry.ts";
+import { literalPieces, proseNodes } from "../../site/page/text.ts";
 import { loadKatex, unloadKatex } from "./page-site.ts";
 
 afterEach(() => {
@@ -73,4 +75,15 @@ test("a selection across formatted words gives the passage as plain text, where 
 	expect(found?.passage).toBe("useful result");
 	expect(found?.start).toBe(2);
 	expect(found?.occurrence).toBe(1);
+});
+
+test("security: an abstract at its length cap full of math openers that never close is read in under 20 ms", () => {
+	for (const opener of ["\\(", "\\[", "$$"]) {
+		const openers = opener.repeat(FIELD_CAPS.abstract / 2 - 12);
+		const started = performance.now();
+		literalPieces(`${openers}\\$`);
+		proseNodes(`${openers}\\textit{x}`, 0);
+		const ms = performance.now() - started;
+		expect(ms, `${opener}: took ${Math.round(ms)} ms`).toBeLessThan(20);
+	}
 });
