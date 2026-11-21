@@ -476,3 +476,23 @@ test("a comment closed with --!> hides only itself, so a Figure 1 after it is st
 		height: 275,
 	});
 });
+
+test("a dollar sign in a caption's words stays a dollar sign and never opens math", async () => {
+	const { figureFromHtml }: typeof Figure = await import(SCRIPT.href);
+	const delta =
+		'<math class="ltx_Math" alttext="\\Delta=+0.095" display="inline"><semantics><mi>Δ</mi></semantics></math>';
+	const html = page(
+		figure(
+			img("2609.35544v1/x1.png", SHOWN_SIZE),
+			"Figure 1: ",
+			`A placebo ($0 impact) shows no effect; others show ${delta}.`,
+		),
+	);
+	assert.deepEqual(figureFromHtml(html, BASE), {
+		imageUrl: "https://arxiv.org/html/2609.35544v1/x1.png",
+		caption:
+			"Figure 1: A placebo (\\$0 impact) shows no effect; others show $\\Delta=+0.095$.",
+		width: 548,
+		height: 275,
+	});
+});

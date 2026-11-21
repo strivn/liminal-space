@@ -153,18 +153,23 @@ function captionText(html: string) {
 		if (opening === null) {
 			continue; // a closing tag with no formula open
 		}
-		text += textOf(html.slice(from, opening.start));
+		text += wordsOf(html.slice(from, opening.start));
 		const tex = attribute(opening.text, "alttext");
 		if (tex === null) {
-			text += textOf(html.slice(opening.start, tag.end));
+			text += wordsOf(html.slice(opening.start, tag.end));
 		} else {
 			text += `$${decodeHTMLAttribute(tex)}$`;
 		}
 		from = tag.end;
 		opening = null;
 	}
-	text += textOf(html.slice(from));
+	text += wordsOf(html.slice(from));
 	return text.replace(/\s+/g, " ").trim();
+}
+
+// Caption words, a literal $ escaped as TeX writes it.
+function wordsOf(html: string) {
+	return textOf(html).replaceAll("$", "\\$");
 }
 
 // Every <figure> element in document order, as { start, end, innerStart, innerEnd, children }: where its opening tag
