@@ -41,7 +41,7 @@ const MAX_EXPAND = 1000;
 export function typeset(node: HTMLElement): void {
 	texLinks(node);
 	for (const text of textNodesOutside(node, ".katex, code")) {
-		if (/\\(?:textit|emph|textbf|texttt)\s*\{/.test(text.data))
+		if (/\\(?:textit|emph|textbf|texttt|textsc)\s*\{/.test(text.data))
 			text.replaceWith(proseFragment(text.data));
 	}
 	for (const text of textNodesOutside(node, ".katex, code")) {
@@ -89,7 +89,8 @@ function proseFragment(text: string): DocumentFragment {
 
 function proseDom(node: ProseNode): Node | string {
 	if (typeof node === "string") return node;
-	return el(node.tag, null, ...node.children.map(proseDom));
+	const attrs = node.class === undefined ? null : { class: node.class };
+	return el(node.tag, attrs, ...node.children.map(proseDom));
 }
 
 // The text nodes inside `element`, in page order, less those inside an element `skip` matches, such as typeset math

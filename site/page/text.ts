@@ -142,19 +142,21 @@ export function escapePercent(math: string): string {
 
 // A prose command's element and what it holds, which is more prose, or for texttt one piece of text.
 export type ProseElement = {
-	tag: "i" | "em" | "strong" | "code";
+	tag: "i" | "em" | "strong" | "code" | "span";
+	class?: string;
 	children: ProseNode[];
 };
 export type ProseNode = string | ProseElement;
 
-const PROSE_TAGS: Record<string, ProseElement["tag"]> = {
-	textit: "i",
-	emph: "em",
-	textbf: "strong",
-	texttt: "code",
+const PROSE_ELEMENTS: Record<string, Omit<ProseElement, "children">> = {
+	textit: { tag: "i" },
+	emph: { tag: "em" },
+	textbf: { tag: "strong" },
+	texttt: { tag: "code" },
+	textsc: { tag: "span", class: "small-caps" },
 };
 
-// Cut `text` at its known prose commands (\textit, \emph, \textbf, \texttt): each becomes an element holding its
+// Cut `text` at its known prose commands (\textit, \emph, \textbf, \texttt, \textsc): each becomes an element holding its
 // braces' content. Math, unknown commands and groups without their closing brace stay as written.
 export function proseNodes(text: string, depth: number): ProseNode[] {
 	if (depth >= 32) return [text];
@@ -197,8 +199,8 @@ export function proseNodes(text: string, depth: number): ProseNode[] {
 			if (text[end] === "}") braces--;
 			end++;
 		}
-		const tag = PROSE_TAGS[command[1] || ""];
-		if (braces !== 0 || tag === undefined) {
+		const element = PROSE_ELEMENTS[command[1] || ""];
+		if (braces !== 0 || element === undefined) {
 			plain += text.slice(i, end);
 			i = end;
 			continue;
@@ -206,8 +208,8 @@ export function proseNodes(text: string, depth: number): ProseNode[] {
 		if (plain !== "") nodes.push(plain);
 		plain = "";
 		const content = text.slice(from, end - 1);
-		if (tag === "code") nodes.push({ tag: tag, children: [content] });
-		else nodes.push({ tag: tag, children: proseNodes(content, depth + 1) });
+		if (element.tag === "code") nodes.push({ ...element, children: [content] });
+		else nodes.push({ ...element, children: proseNodes(content, depth + 1) });
 		i = end;
 	}
 	if (plain !== "") nodes.push(plain);

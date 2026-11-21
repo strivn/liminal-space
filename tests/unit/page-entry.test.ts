@@ -472,6 +472,18 @@ test("an escaped \\%, \\&, \\# or \\_ in an abstract shows as the plain characte
 	expect(abstract?.querySelector(".katex-error")).toBeNull();
 });
 
+test("\\textsc in an abstract shows its words in small caps", () => {
+	loadKatex();
+	const article = drawn(
+		paper({ abstract: "We introduce \\textsc{FavorBench}, a benchmark." }),
+	);
+	const smallCaps = article.querySelector(".entry__abstract .small-caps");
+	expect(smallCaps?.textContent).toBe("FavorBench");
+	expect(text(article, ".entry__abstract")).toBe(
+		"We introduce FavorBench, a benchmark.",
+	);
+});
+
 test("an author's macro that KaTeX lacks still renders", () => {
 	loadKatex();
 	const article = drawn(paper({ abstract: "an $\\eps$ is a claim" }));
