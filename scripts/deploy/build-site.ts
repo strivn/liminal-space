@@ -76,12 +76,9 @@ const OWNER_PAGE_CLASS = {
 // carries a hash. Images also come from data: addresses and arXiv (Figure 1). The manifest comes from the site.
 const CONTENT_SECURITY_POLICY =
 	"default-src 'none'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://arxiv.org; " +
-	"font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
-// Trusted Types: the browser refuses an HTML string written into a sink such as innerHTML. The page writes none and
-// needs no policy. Report-only until a staging check shows Cloudflare's analytics
-// beacon raises no violation; then it joins the policy above.
-const TRUSTED_TYPES_POLICY =
-	"require-trusted-types-for 'script'; trusted-types 'none'";
+	"font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; " +
+	// Only DOMPurify may write HTML.
+	"require-trusted-types-for 'script'; trusted-types dompurify";
 // A file a browser keeps for a year without asking again.
 const KEEP_A_YEAR = "  Cache-Control: public, max-age=31536000, immutable";
 // The page's own files a browser keeps for a year, relative to the page's folder ("/" ends a folder). The page asks
@@ -119,7 +116,6 @@ const HEADERS = [
 	KEEP_A_DAY,
 	`/${PAGE_PATH}/*`,
 	`  Content-Security-Policy: ${CONTENT_SECURITY_POLICY}`,
-	`  Content-Security-Policy-Report-Only: ${TRUSTED_TYPES_POLICY}`,
 	"/*",
 	"  Strict-Transport-Security: max-age=31536000",
 	"  X-Content-Type-Options: nosniff",

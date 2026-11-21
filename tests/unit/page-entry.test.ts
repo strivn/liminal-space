@@ -146,9 +146,9 @@ test("security: a javascript: URL never becomes a link, and a javascript: extra 
 	);
 	expect(article.querySelector(".entry__title a")).toBeNull();
 	expect(article.querySelector(".entry__links")).toBeNull();
-	expect(
-		hrefs(article).filter((href) => href?.startsWith("javascript:")),
-	).toEqual([]);
+	for (const href of hrefs(article)) {
+		expect(href).toMatch(/^https?:/);
+	}
 });
 
 test("security: a javascript: URL that holds http:// further on never becomes a link", () => {
@@ -160,9 +160,9 @@ test("security: a javascript: URL that holds http:// further on never becomes a 
 	);
 	expect(article.querySelector(".entry__title a")).toBeNull();
 	expect(article.querySelector(".entry__links")).toBeNull();
-	expect(
-		hrefs(article).filter((href) => href?.startsWith("javascript:")),
-	).toEqual([]);
+	for (const href of hrefs(article)) {
+		expect(href).toMatch(/^https?:/);
+	}
 });
 
 test("the links row skips a link that is not an object or has no web address, and shows a number label as text", () => {
@@ -822,4 +822,18 @@ test("a paper's line shows no host", () => {
 	expect(text(article, ".entry__meta")).toBe(
 		"paper · arXiv Artificial Intelligence · arxiv:2601.00001",
 	);
+});
+
+test("security: a data: or vbscript: URL never becomes a link, in the title or the links row", () => {
+	for (const url of [
+		"data:text/html,<script>alert(1)</script>",
+		"vbscript:msgbox(1)",
+	]) {
+		const article = drawn(news({ url, links: [{ label: "Extra", url }] }));
+		expect(article.querySelector(".entry__title a")).toBeNull();
+		expect(article.querySelector(".entry__links")).toBeNull();
+		for (const href of hrefs(article)) {
+			expect(href).toMatch(/^https?:/);
+		}
+	}
 });
