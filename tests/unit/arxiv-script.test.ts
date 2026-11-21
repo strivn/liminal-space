@@ -174,6 +174,7 @@ async function standIn(behaviour: Behaviour = {}) {
 			out.end(oaiError("cannotDisseminateFormat", "format not supported"));
 			return;
 		}
+		out.writeHead(200, { "content-type": "text/xml; charset=utf-8" });
 		out.end(oaiRecord(id, format, behaviour));
 	});
 	return { api: `${base}/api`, oai: `${base}/oai`, asked: asked };
