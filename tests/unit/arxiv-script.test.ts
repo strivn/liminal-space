@@ -26,6 +26,7 @@ import {
 	expect,
 	test,
 } from "vitest";
+import { isArxivId } from "../../shared/arxiv-id.ts";
 import { allowLocal, closeServers, serve } from "./local-server.ts";
 
 const SCRIPT = new URL("../../scripts/scout/arxiv/arxiv.ts", import.meta.url);
@@ -158,19 +159,23 @@ async function standIn(behaviour: Behaviour = {}) {
 			"oai:arXiv.org:",
 			"",
 		);
+		if (!isArxivId(id)) {
+			out.end(oaiError("badArgument", "not an arXiv id"));
+			return;
+		}
 		const instead = behaviour.oai?.(id);
 		if (instead !== undefined) {
 			out.writeHead(instead.status);
 			out.end(instead.body);
 			return;
 		}
-		out.end(
-			oaiRecord(
-				id,
-				url.searchParams.get("metadataPrefix") as string,
-				behaviour,
-			),
-		);
+		const format = url.searchParams.get("metadataPrefix");
+		if (format !== "arXiv" && format !== "arXivRaw") {
+			out.end(oaiError("cannotDisseminateFormat", "format not supported"));
+			return;
+		}
+		out.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
+		out.end(oaiRecord(id, format, behaviour));
 	});
 	return { api: `${base}/api`, oai: `${base}/oai`, asked: asked };
 }

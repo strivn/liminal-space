@@ -1,5 +1,6 @@
 // Downloading the conference lists of interests.md and reading their titles in each list format.
 import { decodeHTML } from "entities";
+import { htmlToText } from "../../lib/html.ts";
 import { request } from "../../lib/http.ts";
 import type { ListTitle, ReadList, Run } from "../arxiv/search.ts";
 import type { ConferenceList, Topic } from "../plan/interests.ts";
@@ -75,9 +76,9 @@ function plainText(text: string) {
 	return decodeHTML(text).replace(/\s+/g, " ").trim();
 }
 
-// HTML as plain text: tags removed, then entities decoded, so an escaped "&lt;" can't become a tag.
+// HTML as one line of text.
 function htmlText(html: string) {
-	return plainText(html.replace(/<[^>]*>/g, ""));
+	return htmlToText(html).replace(/\s+/g, " ").trim();
 }
 
 // FAccT: a CSV whose "Title" column holds the titles.

@@ -146,9 +146,9 @@ test("security: a javascript: URL never becomes a link, and a javascript: extra 
 	);
 	expect(article.querySelector(".entry__title a")).toBeNull();
 	expect(article.querySelector(".entry__links")).toBeNull();
-	expect(
-		hrefs(article).filter((href) => href?.startsWith("javascript:")),
-	).toEqual([]);
+	for (const href of hrefs(article)) {
+		expect(href).toMatch(/^https?:/);
+	}
 });
 
 test("security: a javascript: URL that holds http:// further on never becomes a link", () => {
@@ -160,9 +160,9 @@ test("security: a javascript: URL that holds http:// further on never becomes a 
 	);
 	expect(article.querySelector(".entry__title a")).toBeNull();
 	expect(article.querySelector(".entry__links")).toBeNull();
-	expect(
-		hrefs(article).filter((href) => href?.startsWith("javascript:")),
-	).toEqual([]);
+	for (const href of hrefs(article)) {
+		expect(href).toMatch(/^https?:/);
+	}
 });
 
 test("the links row skips a link that is not an object or has no web address, and shows a number label as text", () => {
@@ -439,6 +439,49 @@ test("malformed TeX stays as written while the math after it still renders", () 
 	expect(abstract?.textContent).toContain("$\\frac{1}$");
 	expect(abstract?.querySelectorAll(".katex")).toHaveLength(1);
 	expect(abstract?.querySelector(".katex-error")).toBeNull();
+});
+
+test("an escaped \\$ in an abstract shows as a dollar sign, and the formulas around it still typeset", () => {
+	loadKatex();
+	const article = drawn(
+		paper({
+			abstract:
+				"It costs only \\$1.7 and \\$0.3 per run, with $\\alpha$ and $x^2$ fixed.",
+		}),
+	);
+	const abstract = article.querySelector(".entry__abstract");
+	expect(abstract?.querySelectorAll(".katex")).toHaveLength(2);
+	expect(abstract?.querySelector(".katex-error")).toBeNull();
+	expect(abstract?.textContent).toContain("only $1.7 and $0.3 per run");
+	expect(abstract?.textContent).not.toContain("\\$");
+});
+
+test("an escaped \\%, \\&, \\# or \\_ in an abstract shows as the plain character, and a \\% inside math stays math", () => {
+	loadKatex();
+	const article = drawn(
+		paper({
+			abstract:
+				"Recall rose from 42\\% to 63\\% on Who\\&When, run \\#3 of my\\_set, at $10\\%$ noise.",
+		}),
+	);
+	const abstract = article.querySelector(".entry__abstract");
+	expect(abstract?.textContent).toContain(
+		"from 42% to 63% on Who&When, run #3 of my_set, at",
+	);
+	expect(abstract?.querySelectorAll(".katex")).toHaveLength(1);
+	expect(abstract?.querySelector(".katex-error")).toBeNull();
+});
+
+test("\\textsc in an abstract shows its words in small caps", () => {
+	loadKatex();
+	const article = drawn(
+		paper({ abstract: "We introduce \\textsc{FavorBench}, a benchmark." }),
+	);
+	const smallCaps = article.querySelector(".entry__abstract .small-caps");
+	expect(smallCaps?.textContent).toBe("FavorBench");
+	expect(text(article, ".entry__abstract")).toBe(
+		"We introduce FavorBench, a benchmark.",
+	);
 });
 
 test("an author's macro that KaTeX lacks still renders", () => {
@@ -822,4 +865,18 @@ test("a paper's line shows no host", () => {
 	expect(text(article, ".entry__meta")).toBe(
 		"paper · arXiv Artificial Intelligence · arxiv:2601.00001",
 	);
+});
+
+test("security: a data: or vbscript: URL never becomes a link, in the title or the links row", () => {
+	for (const url of [
+		"data:text/html,<script>alert(1)</script>",
+		"vbscript:msgbox(1)",
+	]) {
+		const article = drawn(news({ url, links: [{ label: "Extra", url }] }));
+		expect(article.querySelector(".entry__title a")).toBeNull();
+		expect(article.querySelector(".entry__links")).toBeNull();
+		for (const href of hrefs(article)) {
+			expect(href).toMatch(/^https?:/);
+		}
+	}
 });

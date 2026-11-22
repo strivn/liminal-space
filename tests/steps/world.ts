@@ -244,10 +244,6 @@ async function contextFor(
 	return context;
 }
 
-// What WebKit logs on every page about the site's report-only Trusted Types policy, word for word.
-const WEBKIT_REPORT_ONLY_NOTE =
-	"The Content Security Policy 'require-trusted-types-for 'script'; trusted-types 'none'' was delivered in report-only mode, but does not specify a 'report-to'; the policy will have no effect. Please either add a 'report-to' directive, or deliver the policy via the 'Content-Security-Policy' header.";
-
 // Open `reader`'s page (the owner's copy or the public one) and wait for today's papers to draw.
 export async function openPage(
 	world: World,
@@ -262,9 +258,7 @@ export async function openPage(
 		const refused =
 			message.text().startsWith("Failed to load resource") &&
 			world.signedOutRequests.has(message.location().url);
-		// WebKit's note on the Content-Security-Policy-Report-Only header that scripts/deploy/build-site.ts writes.
-		const reportOnly = message.text() === WEBKIT_REPORT_ONLY_NOTE;
-		if (message.type() === "error" && !refused && !reportOnly) {
+		if (message.type() === "error" && !refused) {
 			world.errors.push(`${reader}: ${message.text()}`);
 		}
 	});

@@ -65,7 +65,9 @@ async function serveHtml(
 		response.on("finish", () => {
 			record.ended = Date.now();
 		});
-		const answer = pages[record.path];
+		const answer = Object.hasOwn(pages, record.path)
+			? pages[record.path]
+			: undefined;
 		if (answer === undefined) {
 			response.writeHead(404);
 			response.end();
