@@ -1,11 +1,129 @@
 // The published-version script, scripts/scout/proceedings/camera-ready.ts: reading proceedings files, matching papers
 // to them, and filling each paper's camera_ready field.
-import { expect, test } from "vitest";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { afterAll, afterEach, expect, test } from "vitest";
 import { proceedingsLines } from "../../scripts/scout/plan/interests.ts";
 import {
 	matchPublished,
 	readProceedings,
 } from "../../scripts/scout/proceedings/camera-ready.ts";
+import { closeServers, serve } from "./local-server.ts";
+import {
+	digestText,
+	entriesOfLine,
+	removeTempFolders,
+	runScript,
+	scriptPath,
+	tempFolder,
+} from "./run-script.ts";
+
+const SCRIPT = scriptPath("scout/proceedings/camera-ready.ts");
+const TODAY = "2026-11-24";
+const PMLR = "https://proceedings.mlr.press/v306/assets/bib/bibliography.bib";
+const FACCT_CONTAINER =
+	"Proceedings of the 2026 ACM Conference on Fairness, Accountability, and Transparency";
+
+afterEach(closeServers);
+afterAll(removeTempFolders);
+
+const ICML_BIB = `@InProceedings{pmlr-v306-shapira26a,
+  title = {How {RLHF} Amplifies Sycophancy},
+  author = {Shapira, Itai and Benade, Gerdus},
+  url = {https://proceedings.mlr.press/v306/shapira26a.html}
+}
+@InProceedings{pmlr-v306-old26a,
+  title = {An Older Paper},
+  author = {Older, Ada},
+  url = {https://proceedings.mlr.press/v306/old26a.html}
+}
+@InProceedings{pmlr-v306-elsewhere26a,
+  title = {A Paper Linked Elsewhere},
+  author = {Away, Ben},
+  url = {https://elsewhere.example/paper.html}
+}
+`;
+
+function crossrefAnswer(container: string) {
+	return JSON.stringify({
+		status: "ok",
+		message: {
+			items: [
+				{
+					DOI: "10.1145/3805689.3806475",
+					title: [
+						"Crowding Out the Noise: Algorithmic Collective Action Under Differential Privacy",
+					],
+					"container-title": [container],
+					author: [{ given: "Rushabh", family: "Solanki" }],
+				},
+			],
+		},
+	});
+}
+
+function paperEntry(n: number, title: string, author: string, venue: string) {
+	return {
+		id: `arxiv:2601.0000${n}`,
+		type: "paper",
+		title: title,
+		authors: [author],
+		url: `https://arxiv.org/abs/2601.0000${n}`,
+		venue: venue,
+	};
+}
+
+// A proceedings stand-in, its requests counted.
+async function proceedingsStandIn(
+	answers: Record<string, { status: number; body: string }>,
+) {
+	const requests: string[] = [];
+	const base = await serve((incoming, outgoing) => {
+		const path = new URL(incoming.url ?? "/", "http://x").pathname;
+		requests.push(path);
+		const answer = answers[path] ?? { status: 404, body: "" };
+		outgoing.writeHead(answer.status);
+		outgoing.end(answer.body);
+	});
+	return { base, requests };
+}
+
+// Interests, digests and a run.
+async function fill(
+	lines: unknown[][],
+	answers: Record<string, { status: number; body: string }>,
+	args: string[] = [],
+) {
+	const folder = tempFolder("camera-ready-");
+	const interests = join(folder, "interests.md");
+	writeFileSync(
+		interests,
+		`## Proceedings
+- ICML 2026: ${PMLR}
+- FAccT 2026: https://api.crossref.org/works?filter=prefix:10.1145 (${FACCT_CONTAINER})
+- PETS 2026: https://petsymposium.org/popets/2026/
+`,
+	);
+	const file = join(folder, "digests.js");
+	const dates = ["2026-11-01", TODAY];
+	writeFileSync(
+		file,
+		`${lines.map((entries, i) => digestText(dates[i] ?? TODAY, entries)).join("\n")}\n`,
+	);
+	const stand = await proceedingsStandIn(answers);
+	const ran = await runScript(SCRIPT, [file, ...args], {
+		INTERESTS_FILE: interests,
+		PROCEEDINGS_BASE: stand.base,
+		LIMINAL_TODAY: TODAY,
+		CROSSREF_GAP_MS: "0",
+	});
+	const written = readFileSync(file, "utf8").trim().split("\n");
+	return { ran, written: written.map(entriesOfLine), requests: stand.requests };
+}
+
+const ICML_FILE = {
+	"/v306/assets/bib/bibliography.bib": { status: 200, body: ICML_BIB },
+};
 
 test("The proceedings lines in interests.md are read with their conference and address", () => {
 	const markdown = `## Conferences
@@ -149,9 +267,26 @@ test("AAAI's OAI-PMH records for AIES are read into each paper's title, first au
 		},
 	]);
 });
-test.todo(
-	"A FAccT paper's published version is its DOI from arXiv, else the Crossref record in the FAccT proceedings with the same title and first author",
-);
+test("A FAccT paper's published version is the Crossref record in the FAccT proceedings with the same title and first author", async () => {
+	const facct = paperEntry(
+		2,
+		"Crowding Out the Noise: Algorithmic Collective Action Under Differential Privacy",
+		"Rushabh Solanki",
+		"FAccT 2026",
+	);
+	const inFacct = await fill([[], [facct]], {
+		"/works": { status: 200, body: crossrefAnswer(FACCT_CONTAINER) },
+	});
+	expect(inFacct.written[1]?.[0]?.camera_ready).toEqual({
+		url: "https://doi.org/10.1145/3805689.3806475",
+		venue: "FAccT 2026",
+		from: "https://api.crossref.org/works?filter=prefix:10.1145",
+	});
+	const elsewhere = await fill([[], [facct]], {
+		"/works": { status: 200, body: crossrefAnswer("Proceedings of CHI 2026") },
+	});
+	expect(elsewhere.written[1]?.[0]?.camera_ready).toBeUndefined();
+});
 const LISTED = [
 	{
 		title: "Attention is All you Need",
@@ -212,23 +347,176 @@ test("Two papers with the same title but different first authors do not match", 
 		),
 	).toBeNull();
 });
-test.todo(
-	"Only papers whose venue names the proceedings' conference and year are matched against them",
-);
-test.todo(
-	"The morning run fills the published version of today's papers that have a venue",
-);
-test.todo(
-	"The weekly check fills every paper with a venue and no published version yet",
-);
-test.todo("A paper that already has a published version keeps it");
-test.todo(
-	"Each proceedings file is fetched once per run, however many papers it fills",
-);
-test.todo(
-	"A proceedings site that refuses or times out is named, and its papers wait for the next check",
-);
-test.todo("A conference with no proceedings line is skipped and named");
-test.todo(
-	"security: a published version is recorded only as an https page on its proceedings' own site or doi.org",
-);
+test("Only papers whose venue names the proceedings' conference and year are matched against them", async () => {
+	const { written } = await fill(
+		[
+			[],
+			[
+				paperEntry(
+					1,
+					"How RLHF Amplifies Sycophancy",
+					"Itai Shapira",
+					"ICML 2025",
+				),
+				paperEntry(
+					2,
+					"How RLHF Amplifies Sycophancy",
+					"Itai Shapira",
+					"NeurIPS 2026",
+				),
+			],
+		],
+		ICML_FILE,
+	);
+	expect(written[1]?.map((entry) => entry.camera_ready)).toEqual([
+		undefined,
+		undefined,
+	]);
+});
+test("The morning run fills the published version of today's papers that have a venue", async () => {
+	const { ran, written } = await fill(
+		[
+			[paperEntry(1, "An Older Paper", "Ada Older", "ICML 2026")],
+			[
+				paperEntry(
+					2,
+					"How RLHF Amplifies Sycophancy",
+					"Itai Shapira",
+					"ICML 2026",
+				),
+				{
+					...paperEntry(3, "No Venue Here", "Ada Older", "ICML 2026"),
+					venue: undefined,
+				},
+			],
+		],
+		ICML_FILE,
+	);
+	expect(ran.code, ran.stderr).toBe(0);
+	expect(written[1]?.[0]?.camera_ready).toEqual({
+		url: "https://proceedings.mlr.press/v306/shapira26a.html",
+		venue: "ICML 2026",
+		from: PMLR,
+	});
+	expect(written[1]?.[1]?.camera_ready).toBeUndefined();
+	expect(written[0]?.[0]?.camera_ready).toBeUndefined();
+});
+test("The weekly check fills every paper with a venue and no published version yet", async () => {
+	const { written } = await fill(
+		[
+			[paperEntry(1, "An Older Paper", "Ada Older", "ICML 2026")],
+			[
+				paperEntry(
+					2,
+					"How RLHF Amplifies Sycophancy",
+					"Itai Shapira",
+					"ICML 2026",
+				),
+			],
+		],
+		ICML_FILE,
+		["--all"],
+	);
+	expect(written.map((line) => line[0]?.camera_ready)).toMatchObject([
+		{ url: "https://proceedings.mlr.press/v306/old26a.html" },
+		{ url: "https://proceedings.mlr.press/v306/shapira26a.html" },
+	]);
+});
+test("A paper that already has a published version keeps it", async () => {
+	const kept = {
+		url: "https://proceedings.mlr.press/v306/kept.html",
+		venue: "ICML 2026",
+		from: PMLR,
+	};
+	const { written, requests } = await fill(
+		[
+			[],
+			[
+				{
+					...paperEntry(
+						2,
+						"How RLHF Amplifies Sycophancy",
+						"Itai Shapira",
+						"ICML 2026",
+					),
+					camera_ready: kept,
+				},
+			],
+		],
+		ICML_FILE,
+	);
+	expect(written[1]?.[0]?.camera_ready).toEqual(kept);
+	expect(requests).toEqual([]);
+});
+test("Each proceedings file is fetched once per run, however many papers it fills", async () => {
+	const { written, requests } = await fill(
+		[
+			[paperEntry(1, "An Older Paper", "Ada Older", "ICML 2026")],
+			[
+				paperEntry(
+					2,
+					"How RLHF Amplifies Sycophancy",
+					"Itai Shapira",
+					"ICML 2026",
+				),
+			],
+		],
+		ICML_FILE,
+		["--all"],
+	);
+	expect(written.flat().filter((entry) => entry.camera_ready)).toHaveLength(2);
+	expect(requests).toEqual(["/v306/assets/bib/bibliography.bib"]);
+});
+test("A proceedings site that refuses or times out is named, and its papers wait for the next check", async () => {
+	const pets = paperEntry(
+		4,
+		"Gaze3P: Gaze-Based Prediction",
+		"Mayar Elfares",
+		"PETS 2026",
+	);
+	const icml = paperEntry(
+		2,
+		"How RLHF Amplifies Sycophancy",
+		"Itai Shapira",
+		"ICML 2026",
+	);
+	const { ran, written } = await fill([[], [pets, icml]], {
+		...ICML_FILE,
+		"/popets/2026/": { status: 503, body: "" },
+	});
+	expect(ran.code).toBe(0);
+	expect(ran.stderr).toContain(
+		"https://petsymposium.org/popets/2026/ not read: answered HTTP 503; its papers wait for the next check",
+	);
+	expect(written[1]?.[0]?.camera_ready).toBeUndefined();
+	expect(written[1]?.[1]?.camera_ready).toBeDefined();
+});
+test("A conference with no proceedings line is skipped and named", async () => {
+	const { ran, written, requests } = await fill(
+		[
+			[],
+			[
+				paperEntry(
+					5,
+					"A Workshop Paper",
+					"Ada Older",
+					"NeurIPS 2026 Workshop (BiAlign)",
+				),
+			],
+		],
+		ICML_FILE,
+	);
+	expect(ran.code).toBe(0);
+	expect(ran.stderr).toContain(
+		"no proceedings line in interests.md for NeurIPS Workshop (BiAlign) 2026",
+	);
+	expect(written[1]?.[0]?.camera_ready).toBeUndefined();
+	expect(requests).toEqual([]);
+});
+test("security: a published version is recorded only as an https page on its proceedings' own site or doi.org", async () => {
+	const { written } = await fill(
+		[[], [paperEntry(6, "A Paper Linked Elsewhere", "Ben Away", "ICML 2026")]],
+		ICML_FILE,
+	);
+	expect(written[1]?.[0]?.camera_ready).toBeUndefined();
+});

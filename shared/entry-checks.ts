@@ -498,6 +498,30 @@ function figureProblems(figure: unknown) {
 	return problems;
 }
 
+function cameraReadyProblems(value: unknown) {
+	if (!isJsonObject(value)) {
+		return ["camera_ready must hold a url, a venue and where it was read"];
+	}
+	const problems = [];
+	if (!isHttpUrl(value.url) || !value.url.startsWith("https:")) {
+		problems.push("camera_ready.url must be https");
+	}
+	if (!hasText(value.venue)) {
+		problems.push("camera_ready.venue is missing");
+	}
+	if (!isHttpUrl(value.from)) {
+		problems.push("camera_ready.from must be http or https");
+	}
+	for (const field of ["url", "from"]) {
+		if (isOver(value[field], FIELD_CAPS.url)) {
+			problems.push(
+				`camera_ready.${field} is over ${FIELD_CAPS.url} characters`,
+			);
+		}
+	}
+	return problems;
+}
+
 // Only post-figure.ts writes figures.
 function labFigureProblems(entry: JsonObject, mode: CheckMode) {
 	if (mode === "add") {
@@ -567,6 +591,11 @@ function pageProblems(entry: JsonObject) {
 	for (const field of ["venue_source", "pick_source"]) {
 		if (entry[field] !== undefined && !isHttpUrl(entry[field])) {
 			problems.push(`${field} must be http or https`);
+		}
+	}
+	if (entry.camera_ready !== undefined) {
+		for (const problem of cameraReadyProblems(entry.camera_ready)) {
+			problems.push(problem);
 		}
 	}
 	if (entry.figure !== undefined) {

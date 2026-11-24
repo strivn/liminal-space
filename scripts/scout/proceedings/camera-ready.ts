@@ -1,10 +1,32 @@
 // Link papers to published versions.
 // Usage: node scripts/scout/proceedings/camera-ready.ts <digests file>         today's papers with a venue
 //        node scripts/scout/proceedings/camera-ready.ts <digests file> --all   every paper with a venue and none yet
+// Tests set INTERESTS_FILE, PROCEEDINGS_BASE.
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { setTimeout as pause } from "node:timers/promises";
 import { decodeHTML } from "entities";
-import { isJsonObject } from "../../../shared/narrow.ts";
+import { isJsonObject, type JsonObject } from "../../../shared/narrow.ts";
+import {
+	type DigestsFile,
+	readDigests,
+	writeChangedLines,
+} from "../../digests/digests-file.ts";
+import { type Fail, failer, REPO } from "../../lib/cli.ts";
 import { htmlToText } from "../../lib/html.ts";
+import { request } from "../../lib/http.ts";
+import { jakartaToday } from "../../lib/run-date.ts";
+import { type ProceedingsLine, proceedingsLines } from "../plan/interests.ts";
 import { normaliseTitle, titlesMatch } from "../plan/title-match.ts";
+
+const fail: Fail = failer("camera-ready.ts");
+const USAGE =
+	"usage: node scripts/scout/proceedings/camera-ready.ts <digests file> [--all]";
+const INTERESTS_FILE = process.env.INTERESTS_FILE || join(REPO, "interests.md");
+// PMLR's file is 14 MB.
+const FETCH_TIMEOUT_MS = 90_000;
+// Crossref's anonymous limit: 1/s.
+const CROSSREF_GAP_MS = Number(process.env.CROSSREF_GAP_MS ?? 1100);
 
 export type ProceedingsFormat =
 	| "pmlr-bib"
@@ -63,7 +85,7 @@ function bibAuthors(field: string) {
 
 function readBib(body: string) {
 	const papers: PublishedPaper[] = [];
-	for (const entry of body.split(/\n@/).slice(1)) {
+	for (const entry of body.split(/(?:^|\n)@/).slice(1)) {
 		if (!/^inproceedings\s*\{/i.test(entry)) continue;
 		const url = bibField(entry, "url");
 		const title = bibField(entry, "title");
@@ -217,6 +239,169 @@ export function matchPublished(
 	);
 }
 
+// "ACL 2026 Findings" -> "ACL Findings 2026".
+function editionOf(venue: string) {
+	const year = venue.match(/\b(?:19|20)\d\d\b/)?.[0];
+	if (year === undefined) return null;
+	const name = venue.replace(year, "").replace(/\s+/g, " ").trim();
+	return `${name} ${year}`;
+}
+
+// Its proceedings' site, or doi.org.
+function isPublishedAddress(url: string, fileUrl: string) {
+	const page = URL.parse(url);
+	const file = URL.parse(fileUrl);
+	if (page === null || file === null || page.protocol !== "https:")
+		return false;
+	if (page.username || page.password) return false;
+	if (formatOf(fileUrl) === "crossref") return page.host === "doi.org";
+	return page.host === file.host;
+}
+
+// Crossref works in one container.
+function inContainer(body: string, container: string) {
+	const answer: unknown = JSON.parse(body);
+	if (!isJsonObject(answer) || !isJsonObject(answer.message)) return body;
+	const items = Array.isArray(answer.message.items) ? answer.message.items : [];
+	answer.message.items = items.filter(
+		(item) =>
+			isJsonObject(item) &&
+			Array.isArray(item["container-title"]) &&
+			item["container-title"][0] === container,
+	);
+	return JSON.stringify(answer);
+}
+
+type Target = { entry: JsonObject; index: number; edition: string };
+
+// Papers with a venue and none yet.
+function targetsIn(read: DigestsFile, all: boolean) {
+	const today = jakartaToday();
+	const targets: Target[] = [];
+	for (const { index, digest } of read.digests) {
+		if (!isJsonObject(digest) || !Array.isArray(digest.entries)) continue;
+		if (!all && digest.date !== today) continue;
+		for (const entry of digest.entries) {
+			if (!isJsonObject(entry) || entry.type !== "paper") continue;
+			if (typeof entry.venue !== "string" || entry.camera_ready !== undefined)
+				continue;
+			const edition = editionOf(entry.venue);
+			if (edition !== null) targets.push({ entry, index, edition });
+		}
+	}
+	return targets;
+}
+
+async function fetchText(url: string) {
+	const base = process.env.PROCEEDINGS_BASE;
+	const address = new URL(url);
+	const from = base
+		? new URL(address.pathname + address.search, base)
+		: address;
+	const answer = await request(from.href, { timeoutMs: FETCH_TIMEOUT_MS });
+	if ("problem" in answer) return { problem: answer.problem };
+	if (!answer.ok) return { problem: `answered HTTP ${answer.status}` };
+	return { text: answer.text() };
+}
+
+async function main(args: string[]) {
+	const [file, flag] = args;
+	if (!file || (flag !== undefined && flag !== "--all") || args.length > 2) {
+		fail(USAGE);
+	}
+	if (!existsSync(file)) fail(`${file} doesn't exist`);
+	const lines = proceedingsLines(readFileSync(INTERESTS_FILE, "utf8"));
+	const read = readDigests(file, (line, problem) =>
+		fail(`line ${line} of ${file} ${problem}`),
+	);
+	const targets = targetsIn(read, flag === "--all");
+	const unnamed = new Set<string>();
+	const unread = new Set<string>();
+	const changed = new Set<number>();
+	// One fetch and parse per file.
+	const listed = new Map<string, Promise<PublishedPaper[] | null>>();
+	let crossrefTurn: Promise<unknown> = Promise.resolve();
+	const fetchInTurn = (url: string, line: ProceedingsLine) => {
+		if (formatOf(line.url) !== "crossref") return fetchText(url);
+		const answer = crossrefTurn.then(() => fetchText(url));
+		crossrefTurn = answer.then(() => pause(CROSSREF_GAP_MS));
+		return answer;
+	};
+	const papersAt = (line: ProceedingsLine, url: string) => {
+		const known =
+			listed.get(url) ??
+			fetchInTurn(url, line).then((body) => {
+				const format = formatOf(line.url);
+				if (body.text === undefined || format === null) {
+					unread.add(`${line.url} not read: ${body.problem}`);
+					return null;
+				}
+				const text = line.container
+					? inContainer(body.text, line.container)
+					: body.text;
+				return readProceedings(format, text, line.url);
+			});
+		listed.set(url, known);
+		return known;
+	};
+	const matches = await Promise.all(
+		targets.map(async (target) => {
+			const own = lines.filter((line) => line.venue === target.edition);
+			if (own.length === 0) {
+				unnamed.add(target.edition);
+				return null;
+			}
+			const title = String(target.entry.title);
+			const authors = Array.isArray(target.entry.authors)
+				? target.entry.authors.map(String)
+				: [];
+			const lists = await Promise.all(
+				own.map((line) =>
+					papersAt(
+						line,
+						formatOf(line.url) === "crossref"
+							? `${line.url}&query.bibliographic=${encodeURIComponent(title)}&rows=5`
+							: line.url,
+					),
+				),
+			);
+			for (const [i, papers] of lists.entries()) {
+				const line = own[i];
+				if (papers === null || line === undefined) continue;
+				const found = matchPublished({ title, authors }, papers);
+				if (found !== null && isPublishedAddress(found.url, line.url)) {
+					return { target, found, from: line.url };
+				}
+			}
+			return null;
+		}),
+	);
+	let filled = 0;
+	for (const match of matches) {
+		if (match === null) continue;
+		match.target.entry.camera_ready = {
+			url: match.found.url,
+			venue: match.target.edition,
+			from: match.from,
+		};
+		changed.add(match.target.index);
+		filled += 1;
+		console.log(`${match.target.entry.id} ${match.found.url}`);
+	}
+	if (changed.size > 0) {
+		writeChangedLines(file, read, changed, (path, code) =>
+			fail(`${path} not written: ${code ?? "unknown error"}`),
+		);
+	}
+	for (const edition of unnamed) {
+		console.error(`no proceedings line in interests.md for ${edition}`);
+	}
+	for (const problem of unread) {
+		console.error(`${problem}; its papers wait for the next check`);
+	}
+	console.log(`published versions: ${filled} of ${targets.length} papers`);
+}
+
 if (import.meta.main) {
-	throw new Error("not implemented");
+	await main(process.argv.slice(2));
 }

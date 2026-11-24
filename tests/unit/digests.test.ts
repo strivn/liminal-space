@@ -1667,6 +1667,47 @@ test("security: a lab figure address that is not https, or carries a user name o
 	}
 });
 
-test.todo(
-	"A paper's camera_ready holds an https url, its venue and where it was read",
-);
+test("A paper's camera_ready holds an https url, its venue and where it was read", async () => {
+	const { entryProblems }: typeof EntryChecks = await import(CHECKS.href);
+	const cameraReady = {
+		url: "https://proceedings.mlr.press/v306/shapira26a.html",
+		venue: "ICML 2026",
+		from: "https://proceedings.mlr.press/v306/assets/bib/bibliography.bib",
+	};
+	assert.deepEqual(
+		entryProblems(paper(1, { camera_ready: cameraReady }), "check"),
+		[],
+	);
+	const refused = [
+		{
+			value: {
+				...cameraReady,
+				url: "http://proceedings.mlr.press/v306/x.html",
+			},
+			reason: "camera_ready.url must be https",
+		},
+		{
+			value: { ...cameraReady, url: "javascript:alert(1)" },
+			reason: "camera_ready.url must be https",
+		},
+		{
+			value: { ...cameraReady, venue: "" },
+			reason: "camera_ready.venue is missing",
+		},
+		{
+			value: { ...cameraReady, from: "file:///etc/passwd" },
+			reason: "camera_ready.from must be http or https",
+		},
+		{
+			value: "https://proceedings.mlr.press/v306/x.html",
+			reason: "camera_ready must hold a url, a venue and where it was read",
+		},
+	];
+	for (const each of refused) {
+		assertHasReason(
+			entryProblems(paper(1, { camera_ready: each.value }), "check"),
+			each.reason,
+			JSON.stringify(each.value),
+		);
+	}
+});
