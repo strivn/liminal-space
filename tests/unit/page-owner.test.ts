@@ -2,6 +2,7 @@
 // The owner's page start() draws from an in-memory site: read toggles and chips, tags, likes, the heatmap, the header's
 // progress line, and the month in view (site/page/render.ts, state.ts, read-board.ts, tag-board.ts, month-scope.ts).
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { SIGNED_IN_AGAIN, signInAgainOnce } from "../../site/page/owner.ts";
 import {
 	type FakeSite,
 	newsEntry,
@@ -20,6 +21,7 @@ beforeEach(() => {
 
 afterEach(() => {
 	releasePage();
+	sessionStorage.clear();
 	vi.useRealTimers();
 	vi.unstubAllGlobals();
 	vi.restoreAllMocks();
@@ -179,24 +181,88 @@ test("when the owner's state can't be read the page draws as the public page and
 
 // ---- Signing in again ----
 
-test.todo(
-	"when the owner's state is refused, the page signs in again once through Access's logout and comes back to the owner page",
-);
-test.todo(
-	"a second refusal in the same tab shows the banner instead of signing in again",
-);
-test.todo(
-	"a state that can't be read for another reason shows the banner without signing in again",
-);
-test.todo(
-	"after the state loads, a later refusal in the same tab may sign in again once more",
-);
-test.todo(
-	"a tab whose storage can't be used shows the banner instead of signing in again",
-);
-test.todo(
-	"security: the fresh sign-in returns only to the owner page on the page's own host",
-);
+const BANNER = "Couldn't load your reading state";
+const guard = () => sessionStorage.getItem(SIGNED_IN_AGAIN);
+// A stand-in for the page's address, whose assign records where the page went.
+function addressAt(href: string) {
+	const url = new URL(href);
+	const assign = vi.fn();
+	return {
+		here: { href: url.href, origin: url.origin, assign } as unknown as Location,
+		assign,
+	};
+}
+
+test("when the owner's state is refused, the page signs in again once through Access's logout and comes back to the owner page", async () => {
+	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
+	await openPage(site, { owner: true });
+	expect(guard()).not.toBeNull();
+	expect(texts("#freshness .status")).not.toContain(BANNER);
+	expect(document.querySelectorAll("main article")).toHaveLength(0);
+
+	sessionStorage.clear();
+	const owners = "https://site.example/liminal-space/owner/#arxiv:2609.00001";
+	const { here, assign } = addressAt(owners);
+	expect(signInAgainOnce(sessionStorage, here)).toBe(true);
+	const logout = new URL(assign.mock.calls[0]?.[0]);
+	expect(logout.pathname).toBe("/cdn-cgi/access/logout");
+	expect(logout.searchParams.get("returnTo")).toBe(owners);
+});
+
+test("a second refusal in the same tab shows the banner instead of signing in again", async () => {
+	sessionStorage.setItem(SIGNED_IN_AGAIN, "1");
+	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
+	await openPage(site, { owner: true });
+	expect(texts("#freshness .status")).toContain(BANNER);
+	expect(document.querySelectorAll("main article")).toHaveLength(2);
+
+	const { here, assign } = addressAt(
+		"https://site.example/liminal-space/owner/",
+	);
+	expect(signInAgainOnce(sessionStorage, here)).toBe(false);
+	expect(assign).not.toHaveBeenCalled();
+});
+
+test("a state that can't be read for another reason shows the banner without signing in again", async () => {
+	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
+	site.statuses["api/owner/state"] = 500;
+	await openPage(site, { owner: true });
+	expect(texts("#freshness .status")).toContain(BANNER);
+	expect(guard()).toBeNull();
+});
+
+test("after the state loads, a later refusal in the same tab may sign in again once more", async () => {
+	sessionStorage.setItem(SIGNED_IN_AGAIN, "1");
+	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
+	await owner(site);
+	expect(guard()).toBeNull();
+
+	releasePage();
+	site.owner = undefined;
+	await openPage(site, { owner: true });
+	expect(guard()).not.toBeNull();
+	expect(texts("#freshness .status")).not.toContain(BANNER);
+});
+
+test("a tab whose storage can't be used shows the banner instead of signing in again", async () => {
+	vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+		throw new DOMException("blocked", "SecurityError");
+	});
+	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
+	await openPage(site, { owner: true });
+	expect(texts("#freshness .status")).toContain(BANNER);
+});
+
+test("security: the fresh sign-in returns only to the owner page on the page's own host", () => {
+	const owners = "https://site.example/liminal-space/owner/?q=1#x";
+	const { here, assign } = addressAt(owners);
+	signInAgainOnce(sessionStorage, here);
+	const logout = new URL(assign.mock.calls[0]?.[0]);
+	expect(logout.origin).toBe("https://site.example");
+	const back = new URL(logout.searchParams.get("returnTo") ?? "");
+	expect(back.origin).toBe(logout.origin);
+	expect(back.href).toBe(owners);
+});
 
 // ---- Read chips ----
 

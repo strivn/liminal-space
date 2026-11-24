@@ -36,14 +36,16 @@ describe("reading the owner's state", () => {
 				),
 		);
 		const loaded = await loadOwnerState();
-		expect(Object.getPrototypeOf(loaded?.comments)).toBeNull();
-		expect(Object.keys(loaded?.comments || {})).toEqual(["__proto__"]);
+		if (typeof loaded !== "object" || loaded === null)
+			throw new Error("no state");
+		expect(Object.getPrototypeOf(loaded.comments)).toBeNull();
+		expect(Object.keys(loaded.comments)).toEqual(["__proto__"]);
 		expect(({} as Record<string, unknown>).id).toBeUndefined();
 	});
 
 	test.each([
 		["no answer", () => Promise.reject(new Error("offline"))],
-		["a refusal", async () => json({}, 403)],
+		["a server error", async () => json({}, 500)],
 		[
 			"Access's sign-in page",
 			async () => new Response("<html>sign in</html>", { status: 200 }),
