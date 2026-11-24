@@ -26,6 +26,7 @@ export type Entry = {
 	journal_ref?: unknown;
 	comment?: unknown;
 	figure?: unknown;
+	camera_ready?: unknown;
 	ad_hoc?: unknown;
 };
 

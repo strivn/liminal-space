@@ -2,17 +2,17 @@
 
 import { ASK_MESSAGES } from "../../../shared/owner-protocol.ts";
 import { askClaude } from "../claude-ask.ts";
-import type { Ask, CommentStore, CommentView } from "../comment-board.ts";
+import type { Ask, CommentStore } from "../comment-board.ts";
 import { el, status } from "../dom.ts";
 import type { Thread } from "../types.ts";
 import { linkAddresses, typeset } from "../typeset.ts";
+import { foldButton } from "./cards.ts";
 import { questionOf } from "./passage.ts";
 
 // What the asks need from the board. `replyBox` draws Claude's reply with the board's Markdown renderer.
 export type AsksNeeds = {
 	store: CommentStore;
 	drawEntry: (entryId: string) => void;
-	placeCards: (view: CommentView) => void;
 	unsaved: (commentId: string) => boolean;
 	readAgain: () => Promise<boolean>;
 	notice: (text: string) => void;
@@ -34,7 +34,6 @@ export function createAsks(needs: AsksNeeds): {
 } {
 	const store = needs.store;
 	const drawEntry = needs.drawEntry;
-	const placeCards = needs.placeCards;
 	const unsaved = needs.unsaved;
 	const readAgain = needs.readAgain;
 	const notice = needs.notice;
@@ -130,7 +129,14 @@ export function createAsks(needs: AsksNeeds): {
 			typeset(reply);
 			linkAddresses(reply);
 		}
-		node.append(reply);
+		node.append(
+			reply,
+			el(
+				"div",
+				{ class: "comment__actions" },
+				foldButton(store.unfolded, reply, threadId),
+			),
+		);
 	}
 
 	// Draw the reply so far into the thread's answering note wherever it shows, without drawing the entry again.
@@ -145,9 +151,6 @@ export function createAsks(needs: AsksNeeds): {
 		}
 		for (const node of nodes) {
 			if (node instanceof HTMLElement) fillAsk(node, entryId, threadId, ask);
-		}
-		for (const view of store.views.values()) {
-			if (view.entry.id === entryId) placeCards(view);
 		}
 	}
 

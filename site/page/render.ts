@@ -38,6 +38,8 @@ import {
 	loadOwnerState,
 	notice as ownerNotice,
 	refreshOnReturn,
+	SIGNED_IN_AGAIN,
+	signInAgainOnce,
 } from "./owner.ts";
 import { countedEntries, heatmapData, type PageModel } from "./page-model.ts";
 import { createPermalinks } from "./permalinks.ts";
@@ -88,7 +90,7 @@ export async function start() {
 // Read the index and the newest month, then draw; `failed` shows "Couldn't load digests". The owner's page reads its
 // saved state alongside and draws with it; when the state can't be read it draws the public page and says so.
 async function drawFromData(main: HTMLElement, failed: () => void) {
-	let ownerLoad: Promise<OwnerData | null> = Promise.resolve(null);
+	let ownerLoad: Promise<OwnerData | "refused" | null> = Promise.resolve(null);
 	if (isOwnerPage()) ownerLoad = loadOwnerState();
 	const answer = await fetchJson(siteFile(INDEX_PATH));
 	let index: SiteIndex | null = null;
@@ -113,7 +115,18 @@ async function drawFromData(main: HTMLElement, failed: () => void) {
 		}
 		olderMonthDays = days.filter((day) => day.month !== newestDay.month);
 	}
-	const owner = await ownerLoad;
+	const ownerAnswer = await ownerLoad;
+	if (ownerAnswer === "refused" && signInAgainOnce(sessionStorage, location))
+		return;
+	const owner = ownerAnswer === "refused" ? null : ownerAnswer;
+	// Let a later refusal retry.
+	if (owner !== null) {
+		try {
+			sessionStorage.removeItem(SIGNED_IN_AGAIN);
+		} catch {
+			// No storage, nothing to clear.
+		}
+	}
 	render(main, lines, olderMonthDays, loadMonth, owner);
 	// The logs come after the days are drawn, so a slow read never holds up the page.
 	if (owner !== null)

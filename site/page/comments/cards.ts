@@ -7,10 +7,10 @@ import type {
 	CommentView,
 	Draft,
 } from "../comment-board.ts";
-import { commentTime } from "../comments.ts";
+import { commentTime, replyCountText, showsFolded } from "../comments.ts";
 import { siteFile } from "../data.ts";
 import { el, status } from "../dom.ts";
-import { type ActionName, withIcon } from "../icons.ts";
+import { type ActionName, actionIcon, withIcon } from "../icons.ts";
 import { colourMentions } from "../mention.ts";
 import type { SavedComment, Thread } from "../types.ts";
 import { linkAddresses, typeset } from "../typeset.ts";
@@ -35,11 +35,49 @@ export type CardsNeeds = {
 		ask: Ask,
 	) => void;
 	articleOf: (view: CommentView) => HTMLElement;
+	drawView: (view: CommentView) => void;
 	replyBox: (
 		boxClass: string,
 		text: string,
 	) => HTMLParagraphElement | HTMLDivElement;
 };
+
+// "Show more" under a comment, which shows its first 3 lines (style.css) until it is opened, by `key` in `unfolded`.
+// The button stays hidden while the comment fits; it is measured whenever its box changes size, because the panel's
+// width sets its lines.
+export function foldButton(
+	unfolded: Set<string>,
+	text: HTMLElement,
+	key: string,
+): HTMLButtonElement {
+	const button = el(
+		"button",
+		{ type: "button", class: "comment-action" },
+		"Show more",
+	);
+	const show = (open: boolean) => {
+		text.classList.toggle("comment__text--folded", !open);
+		button.textContent = open ? "Show less" : "Show more";
+		button.setAttribute("aria-expanded", String(open));
+	};
+	let open = unfolded.has(key);
+	show(open);
+	button.hidden = true;
+	new ResizeObserver(() => {
+		if (open) {
+			button.hidden = false;
+			return;
+		}
+		button.hidden = text.scrollHeight <= text.clientHeight;
+	}).observe(text);
+	button.addEventListener("click", () => {
+		open = !open;
+		if (open) unfolded.add(key);
+		else unfolded.delete(key);
+		show(open);
+	});
+	return button;
+}
 
 export function createCards(needs: CardsNeeds): {
 	threadCard: (
@@ -57,6 +95,7 @@ export function createCards(needs: CardsNeeds): {
 	const askOf = needs.askOf;
 	const fillAsk = needs.fillAsk;
 	const articleOf = needs.articleOf;
+	const drawView = needs.drawView;
 	const replyBox = needs.replyBox;
 
 	// A small button with its icon before its word: Reply, Edit or Delete.
@@ -69,40 +108,8 @@ export function createCards(needs: CardsNeeds): {
 		return button;
 	}
 
-	// "Show more" under a reply, which shows at most 8 lines (style.css) until it is opened. The button stays hidden while
-	// the reply fits; the reply is measured whenever its box changes size, because the panel's width sets its lines.
-	function foldButton(text: HTMLElement, commentId: string) {
-		const button = el(
-			"button",
-			{ type: "button", class: "comment-action" },
-			"Show more",
-		);
-		const show = (open: boolean) => {
-			text.classList.toggle("comment__text--folded", !open);
-			button.textContent = open ? "Show less" : "Show more";
-			button.setAttribute("aria-expanded", String(open));
-		};
-		let open = store.unfolded.has(commentId);
-		show(open);
-		button.hidden = true;
-		new ResizeObserver(() => {
-			if (open) {
-				button.hidden = false;
-				return;
-			}
-			button.hidden = text.scrollHeight <= text.clientHeight;
-		}).observe(text);
-		button.addEventListener("click", () => {
-			open = !open;
-			if (open) store.unfolded.add(commentId);
-			else store.unfolded.delete(commentId);
-			show(open);
-		});
-		return button;
-	}
-
-	// One comment: "<owner> · 27 Sep, 23:20" ("Claude · ..." for Claude's reply), its text, and Edit and Delete, led by the
-	// thread's Reply on its last comment; or the comment box while it is edited.
+	// One comment: "<owner> · 27 Sep, 23:20" ("Claude · ..." for Claude's reply), its text, and Edit and Delete; or the
+	// comment box while it is edited.
 	function commentNode(
 		view: CommentView,
 		thread: Thread,
@@ -155,17 +162,11 @@ export function createCards(needs: CardsNeeds): {
 			node.append(warning);
 		}
 		const actions = el("div", { class: "comment__actions" });
-		if (comment.author === "claude")
-			actions.append(foldButton(text, comment.id));
 		const isLast = index === thread.comments.length - 1;
-		const replying =
-			draft && draft.kind === "reply" && draft.threadId === thread.id;
-		if (isLast && !replying)
-			actions.append(
-				actionButton("Reply", () =>
-					openDraft(view, { kind: "reply", threadId: thread.id, text: "" }),
-				),
-			);
+		// A reply opened while it streamed stays open once saved.
+		if (comment.author === "claude" && isLast && store.unfolded.has(thread.id))
+			store.unfolded.add(comment.id);
+		actions.append(foldButton(store.unfolded, text, comment.id));
 		// Claude's replies can be deleted but not edited.
 		if (comment.author !== "claude")
 			actions.append(
@@ -183,6 +184,38 @@ export function createCards(needs: CardsNeeds): {
 		);
 		node.append(actions);
 		return node;
+	}
+
+	// Open or fold a thread, keeping focus on its toggle. Open, it is the fold icon alone.
+	function threadToggle(
+		view: CommentView,
+		thread: Thread,
+		text: string | null,
+		open: boolean,
+	) {
+		const button = el("button", {
+			type: "button",
+			class: "comment-action comment-thread__toggle",
+			"aria-expanded": String(open),
+		});
+		if (text === null) {
+			button.setAttribute("aria-label", "Fold thread");
+			button.setAttribute("title", "Fold thread");
+			button.append(actionIcon("Collapse all"));
+		} else {
+			button.append(text);
+		}
+		button.addEventListener("click", () => {
+			if (open) store.openThreads.delete(thread.id);
+			else store.openThreads.add(thread.id);
+			drawView(view);
+			document
+				.querySelector<HTMLElement>(
+					`.comment-thread[data-thread="${CSS.escape(thread.id)}"] .comment-thread__toggle`,
+				)
+				?.focus();
+		});
+		return button;
 	}
 
 	// Marks of one thread, for the card's hover.
@@ -218,7 +251,17 @@ export function createCards(needs: CardsNeeds): {
 					String(thread.passage),
 				),
 			);
+		// A long thread shows its first and latest comments.
+		const folded = showsFolded(thread, store.openThreads);
+		const last = thread.comments.length - 1;
+		if (!folded && thread.comments.length >= 4)
+			card.append(threadToggle(view, thread, null, true));
 		thread.comments.forEach((comment, index) => {
+			if (folded && index === 1) {
+				const count = replyCountText(last - 1);
+				card.append(threadToggle(view, thread, count, false));
+			}
+			if (folded && index > 0 && index < last) return;
 			card.append(commentNode(view, thread, comment, index));
 		});
 		// Claude's answer being written, or why it can't be, under the thread's last comment.
@@ -232,9 +275,19 @@ export function createCards(needs: CardsNeeds): {
 			card.append(note);
 		}
 		const draft = view.draft;
-		// A reply being written goes under the last comment. (Reply itself sits in the last comment's buttons.)
+		// Reply, or the reply being written, is the card's last row.
 		if (draft && draft.kind === "reply" && draft.threadId === thread.id)
 			card.append(editor(view));
+		else
+			card.append(
+				el(
+					"div",
+					{ class: "comment__actions comment-thread__reply" },
+					actionButton("Reply", () =>
+						openDraft(view, { kind: "reply", threadId: thread.id, text: "" }),
+					),
+				),
+			);
 		card.addEventListener("mouseenter", () => setActive(view, thread.id, true));
 		card.addEventListener("mouseleave", () =>
 			setActive(view, thread.id, false),

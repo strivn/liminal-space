@@ -149,3 +149,43 @@ Then(
 		await expect.soft(reply.locator(`a[href="${link}"]`)).toHaveCount(1);
 	},
 );
+
+Then(
+	"Claude's reply shows its first 3 lines and {string}",
+	async ({ world, browser }, button: string) => {
+		const page = await pageOf(world, browser, "owner");
+		const reply = await claudesReply(page, world);
+		// Measured once drawn from Markdown, not its plain first draw.
+		await expect(reply).toHaveClass(/comment__text--markdown/);
+		const lines = await reply.evaluate((text) => {
+			const line = parseFloat(getComputedStyle(text).lineHeight);
+			return {
+				shown: Math.round(text.clientHeight / line),
+				cut: text.scrollHeight > text.clientHeight,
+			};
+		});
+		expect.soft(lines).toEqual({ shown: 3, cut: true });
+		await expect
+			.soft(
+				commentPanel(page)
+					.locator(".comment")
+					.filter({ has: page.locator(".comment__claude") })
+					.getByRole("button", { name: button, exact: true }),
+			)
+			.toBeVisible();
+	},
+);
+
+// A thread's card, found by its first comment.
+function threadOf(page: Page, first: string): Locator {
+	return commentPanel(page)
+		.locator(".comment-thread")
+		.filter({ has: page.locator(".comment__text", { hasText: first }) });
+}
+
+When("the owner opens {string}", async ({ world, browser }, button: string) => {
+	const page = await pageOf(world, browser, "owner");
+	await threadOf(page, asked.get(world) ?? "")
+		.getByRole("button", { name: button, exact: true })
+		.click();
+});

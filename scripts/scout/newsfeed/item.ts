@@ -26,6 +26,8 @@ export type Source = {
 	// At most this many new items a run for the outlet (every source with this name): LessWrong's with the most
 	// karma, any other outlet's picked at random. Without it, every new item.
 	max?: number;
+	// How long its requests may take; without it, constants.json's requestTimeoutMs.
+	timeoutMs?: number;
 };
 
 // One item as a source published it, before the window and repeat checks.
@@ -119,9 +121,17 @@ export function authorNames(values: unknown[]): string[] {
 	return names;
 }
 
-// One GET with this project's user agent and time limit; the body, or a ReadProblem saying what went wrong.
-export async function download(url: string): Promise<string> {
-	const answer = await request(url);
+// One GET with this project's user agent and the given or default time limit; the body, or a ReadProblem saying
+// what went wrong.
+export async function download(
+	url: string,
+	timeoutMs?: number,
+): Promise<string> {
+	let options = {};
+	if (timeoutMs !== undefined) {
+		options = { timeoutMs: timeoutMs };
+	}
+	const answer = await request(url, options);
 	if ("problem" in answer) {
 		throw new ReadProblem(answer.problem);
 	}

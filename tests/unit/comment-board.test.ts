@@ -40,8 +40,17 @@ const SAVED = {
 	],
 };
 
+// A ResizeObserver that never reports a change.
+class StillObserver {
+	observe() {}
+	unobserve() {}
+	disconnect() {}
+}
+
 // The real board on a wide window, with the entry's cards drawn in its column.
-function wideBoard(): {
+function wideBoard(
+	resizeObserver: new (callback: () => void) => StillObserver = StillObserver,
+): {
 	view: CommentView;
 	drawAgain: () => void;
 } {
@@ -51,13 +60,7 @@ function wideBoard(): {
 		addEventListener: () => {},
 		removeEventListener: () => {},
 	}));
-	vi.stubGlobal(
-		"ResizeObserver",
-		class {
-			observe() {}
-			disconnect() {}
-		},
-	);
+	vi.stubGlobal("ResizeObserver", resizeObserver);
 	const board = createCommentBoard(
 		structuredClone(SAVED),
 		createSender(),
@@ -193,13 +196,7 @@ function openPage(
 		},
 		removeEventListener: () => {},
 	}));
-	vi.stubGlobal(
-		"ResizeObserver",
-		class {
-			observe() {}
-			disconnect() {}
-		},
-	);
+	vi.stubGlobal("ResizeObserver", StillObserver);
 	vi.stubGlobal("visualViewport", null);
 	Object.defineProperty(document, "fonts", {
 		value: { ready: Promise.resolve() },
@@ -1319,5 +1316,178 @@ describe("the buttons beside a selection", () => {
 			5,
 		);
 		expect(floatButtons()?.hidden).toBe(true);
+	});
+});
+
+test("places the cards again when a card's height changes", async () => {
+	const resized: (() => void)[] = [];
+	const { view } = wideBoard(
+		class extends StillObserver {
+			constructor(callback: () => void) {
+				super();
+				resized.push(callback);
+			}
+		},
+	);
+	// The card as drawn last: the Markdown renderer draws it again.
+	const card = () => view.column.querySelector<HTMLElement>(".comment-thread");
+	await vi.waitFor(() => expect(card()?.style.top).toBe("0px"));
+	// The title moves down, as when a card above it grows.
+	const title = view.fields.title;
+	title.getBoundingClientRect = () => new DOMRect(0, 40, 100, 26);
+	for (const callback of resized) callback();
+	expect(card()?.style.top).toBe("40px");
+});
+describe("folded threads", () => {
+	test("Reply sits on its own row at the end of a thread, under the latest comment", () => {
+		const page = openPage({ saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		const card = view.column.querySelector(".comment-thread") as HTMLElement;
+		const row = card.lastElementChild as HTMLElement;
+		expect(row.textContent).toBe("Reply");
+		expect(
+			row.previousElementSibling?.querySelector(".comment__text")?.textContent,
+		).toBe("It is in table 2.");
+		const inComments = Array.from(
+			card.querySelectorAll(".comment button"),
+			(button) => button.textContent?.trim(),
+		);
+		expect(inComments).not.toContain("Reply");
+	});
+
+	// A question, Claude's answer, a follow-up and Claude's second answer: the middle two fold.
+	const ASKED = {
+		[ENTRY_ID]: [
+			wholeThread(
+				"t1",
+				comment("c1", "@Claude what is the loss?"),
+				comment("c2", "The sum of the errors."),
+				comment("c3", "And the baseline?"),
+				comment("c4", "It is in table 2."),
+			),
+		],
+	};
+	const FOLDED = ["@Claude what is the loss?", "It is in table 2."];
+	const WHOLE = [
+		"@Claude what is the loss?",
+		"The sum of the errors.",
+		"And the baseline?",
+		"It is in table 2.",
+	];
+	const foldIcon = (scope: Element) =>
+		scope.querySelector<HTMLButtonElement>('button[aria-label="Fold thread"]');
+
+	test("a folded thread shows its first comment, the count of the hidden replies and its latest reply", () => {
+		const page = openPage({ saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		expect(cardTexts(view)).toEqual(FOLDED);
+		const card = view.column.querySelector(".comment-thread") as HTMLElement;
+		expect(
+			Array.from(
+				card.querySelectorAll(".comment, .comment-thread__toggle"),
+				(child) =>
+					child.classList.contains("comment-thread__toggle")
+						? child.textContent
+						: child.querySelector(".comment__text")?.textContent,
+			),
+		).toEqual([FOLDED[0], "2 more replies", FOLDED[1]]);
+		// Three comments or fewer hide nothing.
+		const short = openPage({
+			saved: {
+				[ENTRY_ID]: [
+					wholeThread(
+						"t1",
+						comment("c1", "A"),
+						comment("c2", "B"),
+						comment("c3", "C"),
+					),
+				],
+			},
+		});
+		expect(cardTexts(short.views[0] as CommentView)).toEqual(["A", "B", "C"]);
+	});
+
+	test("every comment, the owner's too, shows 3 lines until Show more", () => {
+		const page = openPage({ saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		const texts = view.column.querySelectorAll(".comment__text");
+		expect(texts).toHaveLength(2);
+		for (const text of texts)
+			expect(text.classList.contains("comment__text--folded")).toBe(true);
+		const first = view.column.querySelector(".comment") as HTMLElement;
+		press(first, "Show more");
+		expect(
+			view.column
+				.querySelector(".comment__text")
+				?.classList.contains("comment__text--folded"),
+		).toBe(false);
+	});
+
+	test("an open thread folds with an icon button named Fold thread", () => {
+		const page = openPage({ saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		expect(foldIcon(view.column)).toBeNull();
+		press(view.column, "2 more replies");
+		const fold = foldIcon(view.column);
+		expect(fold?.textContent).toBe("");
+		expect(fold?.querySelector("svg")).not.toBeNull();
+	});
+
+	test("a thread the reader opened stays open when the comments are drawn again", () => {
+		const page = openPage({ saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		press(view.column, "2 more replies");
+		page.board.drawIn(document.body);
+		expect(cardTexts(view)).toEqual(WHOLE);
+	});
+
+	test("a thread's fold button folds it until it is opened again", () => {
+		const page = openPage({ saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		press(view.column, "2 more replies");
+		foldIcon(view.column)?.click();
+		page.board.drawIn(document.body);
+		expect(cardTexts(view)).toEqual(FOLDED);
+	});
+
+	test("a thread the owner replies in opens", async () => {
+		const page = openPage();
+		const view = page.views[0] as CommentView;
+		view.addButton.click();
+		type(box(page, view), "@Claude what is the loss?");
+		saveBox(box(page, view));
+		const id = view.column.querySelector<HTMLElement>(".comment-thread")
+			?.dataset.thread as string;
+		await vi.waitFor(() => expect(page.posted.length).toBeGreaterThan(0));
+		// The thread grows long with the site's state read again, once the save is done.
+		const grown = structuredClone(ASKED);
+		const thread = grown[ENTRY_ID]?.[0];
+		if (thread) thread.id = id;
+		await vi.waitFor(() => {
+			page.board.replace(structuredClone(grown));
+			expect(cardTexts(view)).toEqual(WHOLE);
+		});
+	});
+
+	test("the count opens a folded thread in place in the side panel", () => {
+		const page = openPage({ screen: "narrow", saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		view.countButton.click();
+		const sheet = page.board.sheet;
+		expect(sheet.querySelectorAll(".comment")).toHaveLength(2);
+		press(sheet, "2 more replies");
+		expect(sheet.open).toBe(true);
+		expect(sheet.querySelectorAll(".comment")).toHaveLength(4);
+	});
+
+	test("the count opens a folded thread in place in the phone sheet", () => {
+		const page = openPage({ screen: "phone", saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		view.countButton.click();
+		const sheet = page.board.sheet;
+		expect(sheet.classList.contains("comment-panel--sheet")).toBe(true);
+		press(sheet, "2 more replies");
+		expect(sheet.open).toBe(true);
+		expect(sheet.querySelectorAll(".comment")).toHaveLength(4);
 	});
 });

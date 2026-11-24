@@ -86,6 +86,11 @@
 	font-size: 14px;
 	line-height: 20px;
 }
+/* An open thread's Fold sits at its top right, beside the first comment's meta line. */
+.comment-thread > .comment-thread__toggle[aria-expanded="true"] {
+	float: right;
+	margin-left: 8px;
+}
 /* A card brought into view by its highlight is focused, with the page's focus ring for keyboard focus only. */
 .comment-thread:focus-visible {
 	outline: 2px solid transparent;
@@ -137,11 +142,14 @@
 	font: 600 10px / 12px var(--font-sans);
 	color: var(--text);
 }
-.comment + .comment {
+.comment ~ .comment,
+.comment-thread__toggle[aria-expanded="false"] {
 	margin-top: 12px;
 }
-/* Every comment after a thread's first, and Claude's answer being written, sit 14px in under a thin line. */
-.comment + .comment,
+/* Every comment after a thread's first, a folded thread's count, and Claude's answer being written, sit 14px in under
+   a thin line. */
+.comment ~ .comment,
+.comment-thread__toggle[aria-expanded="false"],
 .comment-ask {
 	margin-left: 2px;
 	padding-left: 12px;
@@ -180,12 +188,16 @@
 .comment__text--markdown {
 	white-space: normal;
 }
-/* A long reply of Claude's shows its first 8 lines until "Show more" opens it. */
+/* A thread's Reply, its last row. */
+.comment-thread__reply {
+	margin-top: 8px;
+}
+/* A long comment shows its first 3 lines until "Show more" opens it. */
 .comment__text--folded {
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 8;
-	line-clamp: 8;
+	-webkit-line-clamp: 3;
+	line-clamp: 3;
 	overflow: hidden;
 }
 .comment__text--markdown > :first-child {

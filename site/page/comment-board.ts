@@ -111,7 +111,8 @@ export type CommentStore = {
 	warnings: Map<string, CommentWarning>; // comment id -> why it wasn't saved or deleted
 	asks: Map<string, Ask>; // thread id -> its question to Claude, while it is answered or after a refusal
 	views: Map<Element, CommentView>; // article element -> its entry's view
-	unfolded: Set<string>; // Claude's replies the reader opened in full, by comment id, so a redraw keeps them open
+	unfolded: Set<string>; // comments the reader opened in full, by comment id, so a redraw keeps them open
+	openThreads: Set<string>; // threads opened or commented in this visit, by thread id
 };
 
 // Where focus goes after a save: the sheet's ring-free inner wrapper after a question to Claude, else null.
@@ -143,6 +144,7 @@ export function createCommentBoard(
 		asks: new Map(),
 		views: new Map(),
 		unfolded: new Set(),
+		openThreads: new Set(),
 	};
 	let lastDraftView: CommentView | null = null; // the view whose comment box was opened last, shown when the window narrows
 
@@ -162,11 +164,13 @@ export function createCommentBoard(
 	const panelBody = panel.body;
 
 	// The board's pieces, each given what it needs from the board.
-	const { placeCards } = createPlacing({ articleOf: articleOf });
+	const { placeAll, placeSoon } = createPlacing({
+		views: () => store.views.values(),
+		articleOf: articleOf,
+	});
 	const { askAbout, askOf, fillAsk } = createAsks({
 		store: store,
 		drawEntry: drawEntry,
-		placeCards: placeCards,
 		unsaved: unsaved,
 		readAgain: readAgain,
 		notice: notice,
@@ -195,6 +199,7 @@ export function createCommentBoard(
 		askOf: askOf,
 		fillAsk: fillAsk,
 		articleOf: articleOf,
+		drawView: drawView,
 		replyBox: replyBox,
 	});
 
@@ -230,6 +235,7 @@ export function createCommentBoard(
 	) {
 		change(store.memory);
 		store.warnings.delete(commentId);
+		store.openThreads.add(threadId);
 		const thread = findThread(store.memory, entryId, threadId);
 		// A reply or an edit to a thread the site's state no longer holds changed nothing: there is nothing to send.
 		if (thread === null) return;
@@ -832,7 +838,6 @@ export function createCommentBoard(
 		} else {
 			view.column.replaceChildren();
 		}
-		placeCards(view);
 
 		// Focus the comment box when it has just opened, or had focus before the redraw.
 		let holder: HTMLElement = view.column;
@@ -843,21 +848,21 @@ export function createCommentBoard(
 			draft &&
 			(draft.focus || caret !== null)
 		) {
+			// Placed first, so focus scrolls to the box's place.
+			placeAll();
 			draft.focus = false;
 			// In the sheet the page behind stays where it was.
 			box.focus({ preventScroll: inPanel && phoneQuery.matches });
 			let at = box.value.length;
 			if (caret !== null) at = caret;
 			box.setSelectionRange(at, at);
+		} else {
+			placeSoon();
 		}
 	}
 
 	function drawAll() {
 		for (const view of store.views.values()) drawView(view);
-	}
-
-	function placeAll() {
-		for (const view of store.views.values()) placeCards(view);
 	}
 
 	// Draw the comments of the entries inside `container`: a day whose month loaded after start() drew the rest.

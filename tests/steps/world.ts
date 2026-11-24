@@ -73,6 +73,8 @@ export type World = {
 	paper: Paper | null;
 	// What a step started that must stop when the scenario ends.
 	closers: (() => Promise<void>)[];
+	// Outside images, served by address.
+	outsideImages: Map<string, Buffer>;
 };
 
 // The two sentences of every seeded abstract, which the highlight and comment steps select.
@@ -240,6 +242,15 @@ async function contextFor(
 			body: bytes,
 		});
 	});
+	await context.route(
+		(url) => world.outsideImages.has(url.href),
+		(route) =>
+			route.fulfill({
+				status: 200,
+				contentType: "image/png",
+				body: world.outsideImages.get(route.request().url()) ?? "",
+			}),
+	);
 	world.contexts.set(reader, context);
 	return context;
 }
@@ -328,6 +339,7 @@ export const test = base.extend<{ world: World }>({
 			requested: [],
 			paper: null,
 			closers: [],
+			outsideImages: new Map(),
 		};
 		await use(world);
 		for (const context of world.contexts.values()) {

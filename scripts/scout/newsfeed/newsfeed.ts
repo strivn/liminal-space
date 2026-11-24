@@ -1,8 +1,10 @@
 // Collect the day's newsfeed: every new item from the sources in feeds.json, as each source published it, with no
 // model choosing. Reads RSS, Atom, LessWrong's GraphQL API, OpenRouter's model list and the post links on a lab's
 // blog page, never the posts themselves. Writes the new items as an items file
-// for `digests.ts add`; with nothing new it writes none and prints "nothing new".
-// Usage: node scripts/scout/newsfeed/newsfeed.ts <feeds file> <digests file> <items file>
+// for `digests.ts add`; with nothing new it writes none and prints "nothing new". With a describe list it also writes
+// the links of the new items that came without a description, one per line, for `describe.ts`; none when every item
+// has one.
+// Usage: node scripts/scout/newsfeed/newsfeed.ts <feeds file> <digests file> <items file> [<describe list>]
 // A source that can't be read is named on stderr and the run goes on; the exit code is then 1.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import {
@@ -33,7 +35,7 @@ import { pageItems } from "./page.ts";
 const fail: Fail = failer("newsfeed.ts");
 
 const USAGE =
-	"usage: node scripts/scout/newsfeed/newsfeed.ts <feeds file> <digests file> <items file>";
+	"usage: node scripts/scout/newsfeed/newsfeed.ts <feeds file> <digests file> <items file> [<describe list>]";
 // LessWrong posts off the frontpage get their tags days after posting (all tagged by day 4).
 const LATE_TAG_WINDOW_MS = 7 * 24 * 3600 * 1000;
 // The most characters of a description that are kept; a longer one is cut at a word and ends in "…".
@@ -113,6 +115,12 @@ function sourceProblem(entry: unknown): string | null {
 	) {
 		return "max must be a whole number above 0";
 	}
+	if (
+		entry.timeoutMs !== undefined &&
+		!(Number.isInteger(entry.timeoutMs) && Number(entry.timeoutMs) > 0)
+	) {
+		return "timeoutMs must be a whole number above 0";
+	}
 	for (const key of ["categories", "excludeCategories", "tags"]) {
 		if (entry[key] !== undefined && !isTextList(entry[key])) {
 			return `${key} must be a list of names`;
@@ -187,18 +195,21 @@ async function readSource(source: Source, now: number): Promise<Item[]> {
 			}
 			break;
 		case "feed":
-			items = feedItems(await download(source.url), source.url);
+			items = feedItems(
+				await download(source.url, source.timeoutMs),
+				source.url,
+			);
 			break;
 		case "page":
 			items = pageItems(
-				await download(source.url),
+				await download(source.url, source.timeoutMs),
 				source.url,
 				source.links || "",
 			);
 			break;
 		case "openrouter":
 			items = releaseItems(
-				await download(source.url),
+				await download(source.url, source.timeoutMs),
 				source.providers || [],
 				now,
 			);
@@ -253,12 +264,24 @@ function entryOf(item: Item, source: Source): JsonObject {
 	return entry;
 }
 
+// The links of the entries that have no description.
+export function undescribed(entries: JsonObject[]): string[] {
+	return entries
+		.filter((entry) => entry.description === undefined)
+		.map((entry) => String(entry.url));
+}
+
 async function main(args: string[]) {
-	if (args.length !== 3) {
+	if (args.length !== 3 && args.length !== 4) {
 		console.error(USAGE);
 		process.exit(2);
 	}
-	const [feedsFile, digestsFile, itemsFile] = args as [string, string, string];
+	const [feedsFile, digestsFile, itemsFile, describeFile] = args as [
+		string,
+		string,
+		string,
+		string | undefined,
+	];
 	const sources = readSources(feedsFile);
 	const known = knownKeys(digestsFile);
 	const now = Date.now();
@@ -317,6 +340,11 @@ async function main(args: string[]) {
 	}
 	writeFileSync(itemsFile, `${JSON.stringify(entries, null, "\t")}\n`);
 	console.log(`wrote ${entries.length} items to ${itemsFile}`);
+	const links = undescribed(entries);
+	if (describeFile !== undefined && links.length > 0) {
+		writeFileSync(describeFile, `${links.join("\n")}\n`);
+		console.log(`wrote ${links.length} links to describe to ${describeFile}`);
+	}
 }
 
 // Run only when called as a script, not when imported.

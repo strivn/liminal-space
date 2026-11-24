@@ -14,6 +14,8 @@ import {
 	occurrenceOf,
 	readingLine,
 	removeComment,
+	replyCountText,
+	showsFolded,
 	stackTops,
 	usableThreads,
 } from "../../site/page/comments.ts";
@@ -903,25 +905,48 @@ test("Deleting the first comment deletes its thread and highlight", () => {
 
 test("Cards sit level with what they comment on", () => {
 	// Cards that don't overlap keep the tops they want.
-	assert.deepEqual(stackTops([0, 200], [50, 50], 8), [0, 200]);
-	assert.deepEqual(stackTops([0, 58], [50, 50], 8), [0, 58]);
-	assert.deepEqual(stackTops([], [], 8), []);
+	assert.deepEqual(
+		stackTops([0, 200], [50, 50], 8, Number.NEGATIVE_INFINITY),
+		[0, 200],
+	);
+	assert.deepEqual(
+		stackTops([0, 58], [50, 50], 8, Number.NEGATIVE_INFINITY),
+		[0, 58],
+	);
+	assert.deepEqual(stackTops([], [], 8, Number.NEGATIVE_INFINITY), []);
 });
 
 test("Cards that would overlap stack, in the order of their passages", () => {
 	// Two cards wanting one line: the second starts 8 px below the first.
-	assert.deepEqual(stackTops([100, 100], [60, 40], 8), [100, 168]);
+	assert.deepEqual(
+		stackTops([100, 100], [60, 40], 8, Number.NEGATIVE_INFINITY),
+		[100, 168],
+	);
 	// A push carries on down, and stops where a card already sits low enough.
-	assert.deepEqual(stackTops([10, 20, 300], [100, 100, 10], 8), [10, 118, 300]);
-	assert.deepEqual(stackTops([10, 20, 200], [100, 100, 10], 8), [10, 118, 226]);
+	assert.deepEqual(
+		stackTops([10, 20, 300], [100, 100, 10], 8, Number.NEGATIVE_INFINITY),
+		[10, 118, 300],
+	);
+	assert.deepEqual(
+		stackTops([10, 20, 200], [100, 100, 10], 8, Number.NEGATIVE_INFINITY),
+		[10, 118, 226],
+	);
 	// The gap is the one given.
-	assert.deepEqual(stackTops([0, 0], [30, 30], 12), [0, 42]);
+	assert.deepEqual(
+		stackTops([0, 0], [30, 30], 12, Number.NEGATIVE_INFINITY),
+		[0, 42],
+	);
 });
 
 test("Six cards on one line stack one below the other, 8 px apart", () => {
 	// Six cards on the title's line: each 70 px tall, 8 px apart.
 	assert.deepEqual(
-		stackTops([40, 40, 40, 40, 40, 40], [70, 70, 70, 70, 70, 70], 8),
+		stackTops(
+			[40, 40, 40, 40, 40, 40],
+			[70, 70, 70, 70, 70, 70],
+			8,
+			Number.NEGATIVE_INFINITY,
+		),
 		[40, 118, 196, 274, 352, 430],
 	);
 });
@@ -2207,4 +2232,47 @@ test("well-formed saved takeaways are kept, newest first, and malformed ones are
 	} finally {
 		console.warn = warn;
 	}
+});
+
+test("stackTops starts the first card no higher than the floor", () => {
+	// The card above, in the entry before, ends at 120.
+	assert.deepEqual(stackTops([0, 300], [50, 50], 8, 120), [120, 300]);
+	assert.deepEqual(stackTops([0, 130], [50, 50], 8, 120), [120, 178]);
+	// A floor above every card changes nothing.
+	assert.deepEqual(stackTops([40, 40], [70, 70], 8, -10), [40, 118]);
+});
+test("counts Claude's answers among the hidden replies", () => {
+	const asked = thread("t1", null, null, null, [
+		["c1", "@Claude why?"],
+		["c2", "Because."],
+		["c3", "And then?"],
+		["c4", "Then this."],
+	]);
+	for (const index of [1, 3]) {
+		const answer = asked.comments[index];
+		if (answer) answer.author = "claude";
+	}
+	assert.equal(showsFolded(asked, new Set()), true);
+});
+
+test('names the hidden replies "2 more replies"', () => {
+	assert.equal(replyCountText(2), "2 more replies");
+	assert.equal(replyCountText(12), "12 more replies");
+});
+
+test("folds a thread's middle replies when 2 or more would be hidden, unless it was opened or commented in during this visit", () => {
+	const pairs = (n: number): [string, string][] =>
+		Array.from({ length: n }, (_, i) => [`c${i}`, `Comment ${i}`]);
+	assert.equal(
+		showsFolded(thread("t1", null, null, null, pairs(3)), new Set()),
+		false,
+	);
+	assert.equal(
+		showsFolded(thread("t1", null, null, null, pairs(4)), new Set()),
+		true,
+	);
+	assert.equal(
+		showsFolded(thread("t1", null, null, null, pairs(4)), new Set(["t1"])),
+		false,
+	);
 });
