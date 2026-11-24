@@ -27,7 +27,7 @@ The daily run, in the order `scout.yml` runs it:
 1. `sync.ts count` stops the run when today already has its ten topic papers.
 2. `sync.ts pull` copies D1 into `site/digests.js`, and the step before it restores `.cache/`.
 3. `newsfeed.ts` reads `feeds.json`, `digests.ts add` appends its items and `describe.ts` copies the descriptions of
-   blog posts, while `search.ts` fills the candidate pool.
+   items that came without one, while `search.ts` fills the candidate pool.
 4. `score.ts` scores the pool.
 5. `scout.ts` runs the scout, which adds papers and items through `arxiv.ts`, `proceedings.ts`, `surprise.ts` and
    `digests.ts`, and enriches them with `first-page.ts`, `figure.ts`, `describe.ts` and `fulltext.sh`.

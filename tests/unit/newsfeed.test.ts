@@ -189,11 +189,13 @@ type Result = {
 	stdout: string;
 	stderr: string;
 	items: Item[] | null;
+	describeList: string[] | null;
 };
 
 let counter = 0;
 
-// newsfeed.ts on the sources, with a digests file holding `digests`; the items file it wrote, or null for none.
+// newsfeed.ts on the sources, with a digests file holding `digests`; the items file and describe list it wrote, each
+// null for none.
 async function newsfeed(sources: unknown[], digests = ""): Promise<Result> {
 	counter += 1;
 	const dir = join(WORK, `run-${counter}`);
@@ -201,6 +203,7 @@ async function newsfeed(sources: unknown[], digests = ""): Promise<Result> {
 	const feedsFile = join(dir, "feeds.json");
 	const digestsFile = join(dir, "digests.js");
 	const itemsFile = join(dir, "items.json");
+	const describeFile = join(dir, "describe.txt");
 	writeFileSync(feedsFile, JSON.stringify({ sources: sources }));
 	writeFileSync(digestsFile, digests);
 	let code = 0;
@@ -209,7 +212,7 @@ async function newsfeed(sources: unknown[], digests = ""): Promise<Result> {
 	try {
 		const done = await run(
 			process.execPath,
-			[SCRIPT.pathname, feedsFile, digestsFile, itemsFile],
+			[SCRIPT.pathname, feedsFile, digestsFile, itemsFile, describeFile],
 			{ timeout: 60_000 },
 		);
 		stdout = done.stdout;
@@ -224,7 +227,17 @@ async function newsfeed(sources: unknown[], digests = ""): Promise<Result> {
 	if (existsSync(itemsFile)) {
 		items = JSON.parse(readFileSync(itemsFile, "utf8"));
 	}
-	return { code: code, stdout: stdout, stderr: stderr, items: items };
+	let describeList: string[] | null = null;
+	if (existsSync(describeFile)) {
+		describeList = readFileSync(describeFile, "utf8").trimEnd().split("\n");
+	}
+	return {
+		code: code,
+		stdout: stdout,
+		stderr: stderr,
+		items: items,
+		describeList: describeList,
+	};
 }
 
 // A digests line holding an entry with this address.
@@ -266,6 +279,7 @@ const FLOCK = "Flock says its network has over 120K cameras across 49 states";
 let stand: Awaited<ReturnType<typeof feeds>>;
 let morning: Result;
 let nothingNew: Result;
+let allDescribed: Result;
 let usage: { code: number; stderr: string };
 let invalid: {
 	second: Result;
@@ -471,6 +485,7 @@ beforeAll(async () => {
 		),
 		newsfeed([feed("Mistral", b, "/old")]),
 	]);
+	allDescribed = await newsfeed([feed("Atom Feed", b, "/atom")]);
 	const served = stand.state.served;
 	const two = await Promise.all([
 		newsfeed([
@@ -763,11 +778,22 @@ describe("sources that fail, and the command line", () => {
 });
 
 describe("items left for describe.ts", () => {
-	test.todo(
-		"with a describe list, the run writes the link of every new item that has no description, one per line",
-	);
+	const items = () => morning.items || [];
 
-	test.todo(
-		"an item with its own description is left out of the describe list, and no list is written when every item has one",
-	);
+	test("with a describe list, the run writes the link of every new item that has no description, one per line", () => {
+		const bare = items()
+			.filter((item) => item.description === undefined)
+			.map((item) => item.url);
+		expect(bare.length).toBeGreaterThan(0);
+		expect(bare).toContain(`${stand.base}/lab/blog/timed/`);
+		expect(morning.describeList).toEqual(bare);
+	});
+
+	test("an item with its own description is left out of the describe list, and no list is written when every item has one", () => {
+		const probing = items().find((item) => item.title === PROBING);
+		expect(probing?.description).toBeDefined();
+		expect(morning.describeList).not.toContain(probing?.url);
+		expect(allDescribed.items).toHaveLength(1);
+		expect(allDescribed.describeList).toBeNull();
+	});
 });

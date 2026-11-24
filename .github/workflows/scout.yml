@@ -113,13 +113,13 @@ jobs:
         if: steps.status.outputs.skip == 'false'
         continue-on-error: true
         run: |
-          ( node scripts/scout/newsfeed/newsfeed.ts feeds.json site/digests.js "$RUNNER_TEMP/newsfeed.json" || echo "::warning::a newsfeed source was not read; see this step's log"
+          ( node scripts/scout/newsfeed/newsfeed.ts feeds.json site/digests.js "$RUNNER_TEMP/newsfeed.json" "$RUNNER_TEMP/describe.txt" || echo "::warning::a newsfeed source was not read; see this step's log"
             if [ -f "$RUNNER_TEMP/newsfeed.json" ]; then
               node scripts/digests/digests.ts add site/digests.js "$RUNNER_TEMP/newsfeed.json"
-              # A blog page gives only a post's link, title and date: describe.ts copies each new post's own description.
-              jq -r --slurpfile feeds feeds.json '($feeds[0].sources | map(select(.kind == "page") | .name)) as $pages | .[] | select(.source as $name | $pages | index($name)) | .url' "$RUNNER_TEMP/newsfeed.json" > "$RUNNER_TEMP/page-posts.txt"
-              if [ -s "$RUNNER_TEMP/page-posts.txt" ]; then
-                xargs -d "\n" node scripts/scout/web/describe.ts site/digests.js < "$RUNNER_TEMP/page-posts.txt" || echo "::warning::a blog post's description was not copied; see this step's log"
+              # An item that came without a description (a blog page's post, a feed's empty one): describe.ts copies
+              # its page's own. Pages that refuse scripts, as FT's and NYT's do, stay title only.
+              if [ -s "$RUNNER_TEMP/describe.txt" ]; then
+                xargs -d "\n" node scripts/scout/web/describe.ts site/digests.js < "$RUNNER_TEMP/describe.txt" || echo "::warning::an item's description was not copied; see this step's log"
               fi
             fi ) &
           newsfeed=$!
