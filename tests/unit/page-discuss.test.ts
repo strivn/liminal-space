@@ -26,9 +26,12 @@ test('the Discuss text calls an entry of an unknown type an "entry"', () => {
 	);
 });
 
-test.todo(
-	"the Discuss text asks the chat to look the entry up through the liminal space connector when it's available",
-);
+test("the Discuss text asks the chat to look the entry up through the liminal space connector when it's available", () => {
+	expect(discussText(entry("news"))).toContain(
+		"Read it first in full. If the liminal space connector is available, look this news item up there too, to see " +
+			"my comments and takeaways on it. When we're done,",
+	);
+});
 
 test("Talk about it opens a new ChatGPT chat holding the same text Discuss gives, in the same link form", () => {
 	const paper = entry("paper");

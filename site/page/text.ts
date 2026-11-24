@@ -341,12 +341,14 @@ const ENTRY_NAMES: Record<string, string> = {
 };
 
 // What Discuss types into the new chat: Copy's reference, a blank line, and the prompt for this kind of entry, which
-// asks the chat to read it in full and to end with the owner's takeaway saved through propose_takeaway.
+// asks the chat to read it in full, to look it up through the connector when it has one, and to end with the owner's
+// takeaway saved through propose_takeaway.
 export function discussText(entry: Entry): string {
 	const name = ENTRY_NAMES[entry.type] || "entry";
 	return (
 		`${referenceText(entry)}\n\n` +
-		`I want to discuss this ${name}. Read it first in full. When we're done, ask me for my takeaway in my own ` +
+		`I want to discuss this ${name}. Read it first in full. If the liminal space connector is available, look this ` +
+		`${name} up there too, to see my comments and takeaways on it. When we're done, ask me for my takeaway in my own ` +
 		"words, point out what the discussion settled that my sentence misses, draft one question whose answer " +
 		"is my takeaway, and save both with propose_takeaway after I agree."
 	);
