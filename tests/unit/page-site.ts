@@ -108,6 +108,14 @@ export function stubBrowser(wide = false) {
 		removeEventListener: () => {},
 	}));
 	vi.stubGlobal("visualViewport", null);
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
 	Element.prototype.scrollIntoView = () => {};
 	Object.defineProperty(document, "fonts", {
 		value: { ready: Promise.resolve() },
