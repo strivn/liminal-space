@@ -111,7 +111,7 @@ export type CommentStore = {
 	warnings: Map<string, CommentWarning>; // comment id -> why it wasn't saved or deleted
 	asks: Map<string, Ask>; // thread id -> its question to Claude, while it is answered or after a refusal
 	views: Map<Element, CommentView>; // article element -> its entry's view
-	unfolded: Set<string>; // Claude's replies the reader opened in full, by comment id, so a redraw keeps them open
+	unfolded: Set<string>; // comments the reader opened in full, by comment id, so a redraw keeps them open
 	openThreads: Set<string>; // threads opened or commented in this visit, by thread id
 };
 

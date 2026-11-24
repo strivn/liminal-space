@@ -142,11 +142,14 @@
 	font: 600 10px / 12px var(--font-sans);
 	color: var(--text);
 }
-.comment + .comment {
+.comment ~ .comment,
+.comment-thread__toggle[aria-expanded="false"] {
 	margin-top: 12px;
 }
-/* Every comment after a thread's first, and Claude's answer being written, sit 14px in under a thin line. */
-.comment + .comment,
+/* Every comment after a thread's first, a folded thread's count, and Claude's answer being written, sit 14px in under
+   a thin line. */
+.comment ~ .comment,
+.comment-thread__toggle[aria-expanded="false"],
 .comment-ask {
 	margin-left: 2px;
 	padding-left: 12px;
@@ -185,7 +188,7 @@
 .comment__text--markdown {
 	white-space: normal;
 }
-/* A long reply of Claude's shows its first 3 lines until "Show more" opens it. */
+/* A long comment shows its first 3 lines until "Show more" opens it. */
 .comment__text--folded {
 	display: -webkit-box;
 	-webkit-box-orient: vertical;

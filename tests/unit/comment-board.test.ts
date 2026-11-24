@@ -100,7 +100,6 @@ afterEach(() => {
 
 test("a saved reply from Claude shows as plain text first, then as formatted Markdown once the Markdown renderer loads", async () => {
 	const { view } = wideBoard();
-	press(view.column, "1 reply");
 	expect(reply(view).text.querySelector("strong")).toBeNull();
 	await vi.waitFor(() => {
 		expect(reply(view).text.querySelector("strong")).not.toBeNull();
@@ -109,7 +108,6 @@ test("a saved reply from Claude shows as plain text first, then as formatted Mar
 
 test("a reply from Claude that the reader expanded with Show more stays expanded when the comments are drawn again", async () => {
 	const { view, drawAgain } = wideBoard();
-	press(view.column, "1 reply");
 	// The renderer's own redraw comes first, so the redraw below is the board's.
 	await vi.waitFor(() => {
 		expect(reply(view).text.querySelector("strong")).not.toBeNull();
@@ -380,7 +378,6 @@ describe("writing a comment", () => {
 			},
 		});
 		const view = page.views[0] as CommentView;
-		press(view.column, "1 reply");
 		press(view.column, "Reply");
 		type(box(page, view), "Thanks");
 		saveBox(box(page, view));
@@ -664,7 +661,6 @@ describe("replies, edits and deletes", () => {
 		);
 		const page = openPage({ saved: { [ENTRY_ID]: [thread] } });
 		const view = page.views[0] as CommentView;
-		press(view.column, "2 replies");
 		const second = view.column.querySelectorAll(".comment")[1] as HTMLElement;
 		press(second, "Delete");
 		expect(window.confirm).toHaveBeenLastCalledWith("Delete this reply?");
@@ -1343,67 +1339,115 @@ test("places the cards again when a card's height changes", async () => {
 	expect(card()?.style.top).toBe("40px");
 });
 describe("folded threads", () => {
-	// A question, Claude's answer and a follow-up: two replies.
+	// A question, Claude's answer, a follow-up and Claude's second answer: the middle two fold.
 	const ASKED = {
 		[ENTRY_ID]: [
 			wholeThread(
 				"t1",
 				comment("c1", "@Claude what is the loss?"),
 				comment("c2", "The sum of the errors."),
-				comment("c3", "Thanks"),
+				comment("c3", "And the baseline?"),
+				comment("c4", "It is in table 2."),
 			),
 		],
 	};
+	const FOLDED = ["@Claude what is the loss?", "It is in table 2."];
+	const WHOLE = [
+		"@Claude what is the loss?",
+		"The sum of the errors.",
+		"And the baseline?",
+		"It is in table 2.",
+	];
+	const foldIcon = (scope: Element) =>
+		scope.querySelector<HTMLButtonElement>('button[aria-label="Fold thread"]');
+
+	test("a folded thread shows its first comment, the count of the hidden replies and its latest reply", () => {
+		const page = openPage({ saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		expect(cardTexts(view)).toEqual(FOLDED);
+		const card = view.column.querySelector(".comment-thread") as HTMLElement;
+		expect(
+			Array.from(card.children, (child) =>
+				child.classList.contains("comment-thread__toggle")
+					? child.textContent
+					: child.querySelector(".comment__text")?.textContent,
+			),
+		).toEqual([FOLDED[0], "2 more replies", FOLDED[1]]);
+		// Three comments or fewer hide nothing.
+		const short = openPage({
+			saved: {
+				[ENTRY_ID]: [
+					wholeThread(
+						"t1",
+						comment("c1", "A"),
+						comment("c2", "B"),
+						comment("c3", "C"),
+					),
+				],
+			},
+		});
+		expect(cardTexts(short.views[0] as CommentView)).toEqual(["A", "B", "C"]);
+	});
+
+	test("every comment, the owner's too, shows 3 lines until Show more", () => {
+		const page = openPage({ saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		const texts = view.column.querySelectorAll(".comment__text");
+		expect(texts).toHaveLength(2);
+		for (const text of texts)
+			expect(text.classList.contains("comment__text--folded")).toBe(true);
+		const first = view.column.querySelector(".comment") as HTMLElement;
+		press(first, "Show more");
+		expect(
+			view.column
+				.querySelector(".comment__text")
+				?.classList.contains("comment__text--folded"),
+		).toBe(false);
+	});
+
+	test("an open thread folds with an icon button named Fold thread", () => {
+		const page = openPage({ saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		expect(foldIcon(view.column)).toBeNull();
+		press(view.column, "2 more replies");
+		const fold = foldIcon(view.column);
+		expect(fold?.textContent).toBe("");
+		expect(fold?.querySelector("svg")).not.toBeNull();
+	});
 
 	test("a thread the reader opened stays open when the comments are drawn again", () => {
 		const page = openPage({ saved: structuredClone(ASKED) });
 		const view = page.views[0] as CommentView;
-		expect(cardTexts(view)).toEqual(["@Claude what is the loss?"]);
-		press(view.column, "2 replies");
+		press(view.column, "2 more replies");
 		page.board.drawIn(document.body);
-		expect(cardTexts(view)).toEqual([
-			"@Claude what is the loss?",
-			"The sum of the errors.",
-			"Thanks",
-		]);
+		expect(cardTexts(view)).toEqual(WHOLE);
 	});
 
 	test("a thread's fold button folds it until it is opened again", () => {
 		const page = openPage({ saved: structuredClone(ASKED) });
 		const view = page.views[0] as CommentView;
-		press(view.column, "2 replies");
-		press(view.column, "Fold");
+		press(view.column, "2 more replies");
+		foldIcon(view.column)?.click();
 		page.board.drawIn(document.body);
-		expect(cardTexts(view)).toEqual(["@Claude what is the loss?"]);
-		expect(
-			view.column.querySelector(".comment-thread__toggle")?.textContent,
-		).toBe("2 replies");
+		expect(cardTexts(view)).toEqual(FOLDED);
 	});
 
 	test("a thread the owner replies in opens", async () => {
 		const page = openPage();
 		const view = page.views[0] as CommentView;
 		view.addButton.click();
-		type(box(page, view), "Check the baseline.");
+		type(box(page, view), "@Claude what is the loss?");
 		saveBox(box(page, view));
 		const id = view.column.querySelector<HTMLElement>(".comment-thread")
 			?.dataset.thread as string;
-		await vi.waitFor(() => expect(page.posted).toHaveLength(1));
-		// A reply arrives with the site's state read again, once the save is done.
+		await vi.waitFor(() => expect(page.posted.length).toBeGreaterThan(0));
+		// The thread grows long with the site's state read again, once the save is done.
+		const grown = structuredClone(ASKED);
+		const thread = grown[ENTRY_ID]?.[0];
+		if (thread) thread.id = id;
 		await vi.waitFor(() => {
-			page.board.replace({
-				[ENTRY_ID]: [
-					wholeThread(
-						id,
-						comment("c1", "Check the baseline."),
-						comment("c2", "It is in table 2."),
-					),
-				],
-			});
-			expect(cardTexts(view)).toEqual([
-				"Check the baseline.",
-				"It is in table 2.",
-			]);
+			page.board.replace(structuredClone(grown));
+			expect(cardTexts(view)).toEqual(WHOLE);
 		});
 	});
 
@@ -1412,10 +1456,10 @@ describe("folded threads", () => {
 		const view = page.views[0] as CommentView;
 		view.countButton.click();
 		const sheet = page.board.sheet;
-		expect(sheet.querySelectorAll(".comment")).toHaveLength(1);
-		press(sheet, "2 replies");
+		expect(sheet.querySelectorAll(".comment")).toHaveLength(2);
+		press(sheet, "2 more replies");
 		expect(sheet.open).toBe(true);
-		expect(sheet.querySelectorAll(".comment")).toHaveLength(3);
+		expect(sheet.querySelectorAll(".comment")).toHaveLength(4);
 	});
 
 	test("the count opens a folded thread in place in the phone sheet", () => {
@@ -1424,8 +1468,8 @@ describe("folded threads", () => {
 		view.countButton.click();
 		const sheet = page.board.sheet;
 		expect(sheet.classList.contains("comment-panel--sheet")).toBe(true);
-		press(sheet, "2 replies");
+		press(sheet, "2 more replies");
 		expect(sheet.open).toBe(true);
-		expect(sheet.querySelectorAll(".comment")).toHaveLength(3);
+		expect(sheet.querySelectorAll(".comment")).toHaveLength(4);
 	});
 });

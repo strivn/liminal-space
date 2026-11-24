@@ -10,7 +10,7 @@ import type {
 import { commentTime, replyCountText, showsFolded } from "../comments.ts";
 import { siteFile } from "../data.ts";
 import { el, status } from "../dom.ts";
-import { type ActionName, withIcon } from "../icons.ts";
+import { type ActionName, actionIcon, withIcon } from "../icons.ts";
 import { colourMentions } from "../mention.ts";
 import type { SavedComment, Thread } from "../types.ts";
 import { linkAddresses, typeset } from "../typeset.ts";
@@ -42,9 +42,9 @@ export type CardsNeeds = {
 	) => HTMLParagraphElement | HTMLDivElement;
 };
 
-// "Show more" under a reply of Claude's, which shows its first 3 lines (style.css) until it is opened, by `key` in
-// `unfolded`. The button stays hidden while the reply fits; the reply is measured whenever its box changes size,
-// because the panel's width sets its lines.
+// "Show more" under a comment, which shows its first 3 lines (style.css) until it is opened, by `key` in `unfolded`.
+// The button stays hidden while the comment fits; it is measured whenever its box changes size, because the panel's
+// width sets its lines.
 export function foldButton(
 	unfolded: Set<string>,
 	text: HTMLElement,
@@ -166,8 +166,7 @@ export function createCards(needs: CardsNeeds): {
 		// A reply opened while it streamed stays open once saved.
 		if (comment.author === "claude" && isLast && store.unfolded.has(thread.id))
 			store.unfolded.add(comment.id);
-		if (comment.author === "claude")
-			actions.append(foldButton(store.unfolded, text, comment.id));
+		actions.append(foldButton(store.unfolded, text, comment.id));
 		const replying =
 			draft && draft.kind === "reply" && draft.threadId === thread.id;
 		if (isLast && !replying)
@@ -195,22 +194,25 @@ export function createCards(needs: CardsNeeds): {
 		return node;
 	}
 
-	// Open or fold a thread, keeping focus on its toggle.
+	// Open or fold a thread, keeping focus on its toggle. Open, it is the fold icon alone.
 	function threadToggle(
 		view: CommentView,
 		thread: Thread,
-		text: string,
+		text: string | null,
 		open: boolean,
 	) {
-		const button = el(
-			"button",
-			{
-				type: "button",
-				class: "comment-action comment-thread__toggle",
-				"aria-expanded": String(open),
-			},
-			text,
-		);
+		const button = el("button", {
+			type: "button",
+			class: "comment-action comment-thread__toggle",
+			"aria-expanded": String(open),
+		});
+		if (text === null) {
+			button.setAttribute("aria-label", "Fold thread");
+			button.setAttribute("title", "Fold thread");
+			button.append(actionIcon("Collapse all"));
+		} else {
+			button.append(text);
+		}
 		button.addEventListener("click", () => {
 			if (open) store.openThreads.delete(thread.id);
 			else store.openThreads.add(thread.id);
@@ -257,20 +259,21 @@ export function createCards(needs: CardsNeeds): {
 					String(thread.passage),
 				),
 			);
-		// A thread with replies shows its first comment and their count until opened.
+		// A long thread shows its first and latest comments.
 		const folded = showsFolded(thread, store.openThreads);
-		if (!folded && thread.comments.length > 1)
-			card.append(threadToggle(view, thread, "Fold", true));
-		const shown = folded ? thread.comments.slice(0, 1) : thread.comments;
-		shown.forEach((comment, index) => {
+		const last = thread.comments.length - 1;
+		if (!folded && thread.comments.length >= 4)
+			card.append(threadToggle(view, thread, null, true));
+		thread.comments.forEach((comment, index) => {
+			if (folded && index === 1) {
+				const count = replyCountText(last - 1);
+				card.append(threadToggle(view, thread, count, false));
+			}
+			if (folded && index > 0 && index < last) return;
 			card.append(commentNode(view, thread, comment, index));
 		});
-		if (folded) {
-			const count = replyCountText(thread.comments.length - 1);
-			card.append(threadToggle(view, thread, count, false));
-		}
 		// Claude's answer being written, or why it can't be, under the thread's last comment.
-		const ask = folded ? null : askOf(thread);
+		const ask = askOf(thread);
 		if (ask !== null) {
 			const note = el("div", {
 				class: "comment-ask",

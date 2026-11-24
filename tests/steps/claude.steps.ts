@@ -155,6 +155,8 @@ Then(
 	async ({ world, browser }, button: string) => {
 		const page = await pageOf(world, browser, "owner");
 		const reply = await claudesReply(page, world);
+		// Measured once drawn from Markdown, not its plain first draw.
+		await expect(reply).toHaveClass(/comment__text--markdown/);
 		const lines = await reply.evaluate((text) => {
 			const line = parseFloat(getComputedStyle(text).lineHeight);
 			return {
@@ -181,28 +183,9 @@ function threadOf(page: Page, first: string): Locator {
 		.filter({ has: page.locator(".comment__text", { hasText: first }) });
 }
 
-Then(
-	"the thread {string} shows folded, with {string}",
-	async ({ world, browser }, first: string, count: string) => {
-		const page = await pageOf(world, browser, "owner");
-		const thread = threadOf(page, first);
-		await expect.soft(thread.locator(".comment__text")).toHaveText([first]);
-		await expect
-			.soft(thread.getByRole("button", { name: count, exact: true }))
-			.toBeVisible();
-	},
-);
-
-When(
-	"the owner opens {string} and {string}",
-	async ({ world, browser }, count: string, more: string) => {
-		const page = await pageOf(world, browser, "owner");
-		const question = asked.get(world) ?? "";
-		await threadOf(page, question)
-			.getByRole("button", { name: count, exact: true })
-			.click();
-		await threadOf(page, question)
-			.getByRole("button", { name: more, exact: true })
-			.click();
-	},
-);
+When("the owner opens {string}", async ({ world, browser }, button: string) => {
+	const page = await pageOf(world, browser, "owner");
+	await threadOf(page, asked.get(world) ?? "")
+		.getByRole("button", { name: button, exact: true })
+		.click();
+});

@@ -235,6 +235,12 @@ const ACTION_ICONS: Record<ActionName, { name: string; paths: string }> = {
 	},
 };
 
+// An action's icon alone, for a button named by its aria-label.
+export function actionIcon(name: ActionName): SVGSVGElement {
+	const icon = ACTION_ICONS[name];
+	return svgIcon(icon.name, icon.paths);
+}
+
 // Fill a button with its icon before its word. The icon is hidden from screen readers, so the word is the name.
 export function withIcon(button: HTMLButtonElement, text: ActionName) {
 	const icon = ACTION_ICONS[text];
