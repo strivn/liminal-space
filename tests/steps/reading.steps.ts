@@ -27,9 +27,11 @@ export function entryOf(page: Page, paper: Paper): Locator {
 	return page.locator(`article.entry[id="${paper.id}"]`);
 }
 
-// The comment panel, while it is open.
+// Where the comments show: the open side panel, or on wide windows the comment column of any paper with comments.
 export function commentPanel(page: Page): Locator {
-	return page.locator("dialog[open]");
+	return page.locator(
+		"dialog[open], .entry__comments:has(.comment-thread, .comment-editor)",
+	);
 }
 
 // Select one sentence of a paper's abstract, as a reader's drag would.
@@ -308,16 +310,45 @@ Then("the public page shows none of it", async ({ world, browser }) => {
 	await expect.soft(entry.locator(".comment-count")).toHaveCount(0);
 });
 
+// A paper's height before the owner commented on it.
+const heightBefore = new WeakMap<World, number>();
+
 When(
 	/^the owner scrolls halfway down today's (\d+)(?:st|nd|rd|th) paper$/,
-	async ({ world: _world }, _n: string) => {
-		throw new Error("not written");
+	async ({ world, browser }, n: string) => {
+		const page = await pageOf(world, browser, "owner");
+		const paper = nthPaper(world, world.today, Number(n));
+		world.paper = paper;
+		const height = await entryOf(page, paper).evaluate((entry) => {
+			const box = entry.getBoundingClientRect();
+			window.scrollTo(0, window.scrollY + box.top + box.height / 2);
+			return box.height;
+		});
+		heightBefore.set(world, height);
 	},
 );
 
 Then(
 	"the comment card is level with the paper's title, and the paper is no taller than its text",
-	async () => {
-		throw new Error("not written");
+	async ({ world, browser }) => {
+		const page = await pageOf(world, browser, "owner");
+		const entry = entryOf(page, currentPaper(world));
+		// Placed while scrolled into the paper, measured with its title unstuck.
+		await entry.evaluate(async (node) => {
+			const box = node.getBoundingClientRect();
+			window.scrollTo(0, window.scrollY + box.top + box.height / 2);
+			window.dispatchEvent(new Event("resize"));
+			await new Promise(requestAnimationFrame);
+			node.scrollIntoView({ block: "center" });
+		});
+		const card = entry.locator(".entry__comments .comment-thread");
+		await expect(card).toHaveCount(1);
+		const cardTop = (await card.boundingBox())?.y ?? Number.NaN;
+		const titleTop =
+			(await entry.locator(".entry__title").boundingBox())?.y ?? Number.NaN;
+		expect.soft(Math.abs(cardTop - titleTop)).toBeLessThanOrEqual(1);
+		// As tall as before it had comments.
+		const height = (await entry.boundingBox())?.height ?? Number.NaN;
+		expect.soft(height).toBeCloseTo(heightBefore.get(world) ?? 0, 0);
 	},
 );

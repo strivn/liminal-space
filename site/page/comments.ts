@@ -171,16 +171,18 @@ export function showsFolded(
 	throw new Error("not implemented");
 }
 
-// Card tops in the comment column: each card where it wants to be, or `gap` below the card before it if that is lower.
+// Card tops in the comment column: each card where it wants to be, or `gap` below the card before it if that is lower,
+// and none above `floor`.
 export function stackTops(
 	wanted: number[],
 	heights: number[],
 	gap: number,
+	floor: number,
 ): number[] {
 	const tops: number[] = [];
 	for (let i = 0; i < wanted.length; i++) {
 		// An index past the end reads as undefined, which Number() makes NaN.
-		let top = Number(wanted[i]);
+		let top = Math.max(Number(wanted[i]), floor);
 		if (i > 0)
 			top = Math.max(top, Number(tops[i - 1]) + Number(heights[i - 1]) + gap);
 		tops.push(top);

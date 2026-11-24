@@ -40,8 +40,17 @@ const SAVED = {
 	],
 };
 
+// A ResizeObserver that never reports a change.
+class StillObserver {
+	observe() {}
+	unobserve() {}
+	disconnect() {}
+}
+
 // The real board on a wide window, with the entry's cards drawn in its column.
-function wideBoard(): {
+function wideBoard(
+	resizeObserver: new (callback: () => void) => StillObserver = StillObserver,
+): {
 	view: CommentView;
 	drawAgain: () => void;
 } {
@@ -51,13 +60,7 @@ function wideBoard(): {
 		addEventListener: () => {},
 		removeEventListener: () => {},
 	}));
-	vi.stubGlobal(
-		"ResizeObserver",
-		class {
-			observe() {}
-			disconnect() {}
-		},
-	);
+	vi.stubGlobal("ResizeObserver", resizeObserver);
 	const board = createCommentBoard(
 		structuredClone(SAVED),
 		createSender(),
@@ -193,13 +196,7 @@ function openPage(
 		},
 		removeEventListener: () => {},
 	}));
-	vi.stubGlobal(
-		"ResizeObserver",
-		class {
-			observe() {}
-			disconnect() {}
-		},
-	);
+	vi.stubGlobal("ResizeObserver", StillObserver);
 	vi.stubGlobal("visualViewport", null);
 	Object.defineProperty(document, "fonts", {
 		value: { ready: Promise.resolve() },
@@ -1322,7 +1319,24 @@ describe("the buttons beside a selection", () => {
 	});
 });
 
-test.todo("places the cards again when a card's height changes");
+test("places the cards again when a card's height changes", () => {
+	const resized: (() => void)[] = [];
+	const { view } = wideBoard(
+		class extends StillObserver {
+			constructor(callback: () => void) {
+				super();
+				resized.push(callback);
+			}
+		},
+	);
+	const card = view.column.querySelector<HTMLElement>(".comment-thread");
+	expect(card?.style.top).toBe("0px");
+	// The title moves down, as when a card above it grows.
+	const title = view.fields.title;
+	title.getBoundingClientRect = () => new DOMRect(0, 40, 100, 26);
+	for (const callback of resized) callback();
+	expect(card?.style.top).toBe("40px");
+});
 test.todo(
 	"a thread the reader opened stays open when the comments are drawn again",
 );

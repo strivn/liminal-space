@@ -903,25 +903,48 @@ test("Deleting the first comment deletes its thread and highlight", () => {
 
 test("Cards sit level with what they comment on", () => {
 	// Cards that don't overlap keep the tops they want.
-	assert.deepEqual(stackTops([0, 200], [50, 50], 8), [0, 200]);
-	assert.deepEqual(stackTops([0, 58], [50, 50], 8), [0, 58]);
-	assert.deepEqual(stackTops([], [], 8), []);
+	assert.deepEqual(
+		stackTops([0, 200], [50, 50], 8, Number.NEGATIVE_INFINITY),
+		[0, 200],
+	);
+	assert.deepEqual(
+		stackTops([0, 58], [50, 50], 8, Number.NEGATIVE_INFINITY),
+		[0, 58],
+	);
+	assert.deepEqual(stackTops([], [], 8, Number.NEGATIVE_INFINITY), []);
 });
 
 test("Cards that would overlap stack, in the order of their passages", () => {
 	// Two cards wanting one line: the second starts 8 px below the first.
-	assert.deepEqual(stackTops([100, 100], [60, 40], 8), [100, 168]);
+	assert.deepEqual(
+		stackTops([100, 100], [60, 40], 8, Number.NEGATIVE_INFINITY),
+		[100, 168],
+	);
 	// A push carries on down, and stops where a card already sits low enough.
-	assert.deepEqual(stackTops([10, 20, 300], [100, 100, 10], 8), [10, 118, 300]);
-	assert.deepEqual(stackTops([10, 20, 200], [100, 100, 10], 8), [10, 118, 226]);
+	assert.deepEqual(
+		stackTops([10, 20, 300], [100, 100, 10], 8, Number.NEGATIVE_INFINITY),
+		[10, 118, 300],
+	);
+	assert.deepEqual(
+		stackTops([10, 20, 200], [100, 100, 10], 8, Number.NEGATIVE_INFINITY),
+		[10, 118, 226],
+	);
 	// The gap is the one given.
-	assert.deepEqual(stackTops([0, 0], [30, 30], 12), [0, 42]);
+	assert.deepEqual(
+		stackTops([0, 0], [30, 30], 12, Number.NEGATIVE_INFINITY),
+		[0, 42],
+	);
 });
 
 test("Six cards on one line stack one below the other, 8 px apart", () => {
 	// Six cards on the title's line: each 70 px tall, 8 px apart.
 	assert.deepEqual(
-		stackTops([40, 40, 40, 40, 40, 40], [70, 70, 70, 70, 70, 70], 8),
+		stackTops(
+			[40, 40, 40, 40, 40, 40],
+			[70, 70, 70, 70, 70, 70],
+			8,
+			Number.NEGATIVE_INFINITY,
+		),
 		[40, 118, 196, 274, 352, 430],
 	);
 });
@@ -2209,7 +2232,13 @@ test("well-formed saved takeaways are kept, newest first, and malformed ones are
 	}
 });
 
-test.todo("stackTops starts the first card no higher than the floor");
+test("stackTops starts the first card no higher than the floor", () => {
+	// The card above, in the entry before, ends at 120.
+	assert.deepEqual(stackTops([0, 300], [50, 50], 8, 120), [120, 300]);
+	assert.deepEqual(stackTops([0, 130], [50, 50], 8, 120), [120, 178]);
+	// A floor above every card changes nothing.
+	assert.deepEqual(stackTops([40, 40], [70, 70], 8, -10), [40, 118]);
+});
 test.todo("counts every comment after the first as a reply, Claude's included");
 test.todo('names one reply "1 reply" and more "n replies"');
 test.todo(

@@ -162,11 +162,13 @@ export function createCommentBoard(
 	const panelBody = panel.body;
 
 	// The board's pieces, each given what it needs from the board.
-	const { placeCards } = createPlacing({ articleOf: articleOf });
+	const { placeAll } = createPlacing({
+		views: () => store.views.values(),
+		articleOf: articleOf,
+	});
 	const { askAbout, askOf, fillAsk } = createAsks({
 		store: store,
 		drawEntry: drawEntry,
-		placeCards: placeCards,
 		unsaved: unsaved,
 		readAgain: readAgain,
 		notice: notice,
@@ -832,7 +834,7 @@ export function createCommentBoard(
 		} else {
 			view.column.replaceChildren();
 		}
-		placeCards(view);
+		placeAll();
 
 		// Focus the comment box when it has just opened, or had focus before the redraw.
 		let holder: HTMLElement = view.column;
@@ -854,10 +856,6 @@ export function createCommentBoard(
 
 	function drawAll() {
 		for (const view of store.views.values()) drawView(view);
-	}
-
-	function placeAll() {
-		for (const view of store.views.values()) placeCards(view);
 	}
 
 	// Draw the comments of the entries inside `container`: a day whose month loaded after start() drew the rest.
