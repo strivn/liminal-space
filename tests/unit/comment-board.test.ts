@@ -40,8 +40,17 @@ const SAVED = {
 	],
 };
 
+// A ResizeObserver that never reports a change.
+class StillObserver {
+	observe() {}
+	unobserve() {}
+	disconnect() {}
+}
+
 // The real board on a wide window, with the entry's cards drawn in its column.
-function wideBoard(): {
+function wideBoard(
+	resizeObserver: new (callback: () => void) => StillObserver = StillObserver,
+): {
 	view: CommentView;
 	drawAgain: () => void;
 } {
@@ -51,13 +60,7 @@ function wideBoard(): {
 		addEventListener: () => {},
 		removeEventListener: () => {},
 	}));
-	vi.stubGlobal(
-		"ResizeObserver",
-		class {
-			observe() {}
-			disconnect() {}
-		},
-	);
+	vi.stubGlobal("ResizeObserver", resizeObserver);
 	const board = createCommentBoard(
 		structuredClone(SAVED),
 		createSender(),
@@ -97,6 +100,7 @@ afterEach(() => {
 
 test("a saved reply from Claude shows as plain text first, then as formatted Markdown once the Markdown renderer loads", async () => {
 	const { view } = wideBoard();
+	press(view.column, "1 reply");
 	expect(reply(view).text.querySelector("strong")).toBeNull();
 	await vi.waitFor(() => {
 		expect(reply(view).text.querySelector("strong")).not.toBeNull();
@@ -105,6 +109,7 @@ test("a saved reply from Claude shows as plain text first, then as formatted Mar
 
 test("a reply from Claude that the reader expanded with Show more stays expanded when the comments are drawn again", async () => {
 	const { view, drawAgain } = wideBoard();
+	press(view.column, "1 reply");
 	// The renderer's own redraw comes first, so the redraw below is the board's.
 	await vi.waitFor(() => {
 		expect(reply(view).text.querySelector("strong")).not.toBeNull();
@@ -193,13 +198,7 @@ function openPage(
 		},
 		removeEventListener: () => {},
 	}));
-	vi.stubGlobal(
-		"ResizeObserver",
-		class {
-			observe() {}
-			disconnect() {}
-		},
-	);
+	vi.stubGlobal("ResizeObserver", StillObserver);
 	vi.stubGlobal("visualViewport", null);
 	Object.defineProperty(document, "fonts", {
 		value: { ready: Promise.resolve() },
@@ -381,6 +380,7 @@ describe("writing a comment", () => {
 			},
 		});
 		const view = page.views[0] as CommentView;
+		press(view.column, "1 reply");
 		press(view.column, "Reply");
 		type(box(page, view), "Thanks");
 		saveBox(box(page, view));
@@ -664,6 +664,7 @@ describe("replies, edits and deletes", () => {
 		);
 		const page = openPage({ saved: { [ENTRY_ID]: [thread] } });
 		const view = page.views[0] as CommentView;
+		press(view.column, "2 replies");
 		const second = view.column.querySelectorAll(".comment")[1] as HTMLElement;
 		press(second, "Delete");
 		expect(window.confirm).toHaveBeenLastCalledWith("Delete this reply?");
@@ -1319,5 +1320,112 @@ describe("the buttons beside a selection", () => {
 			5,
 		);
 		expect(floatButtons()?.hidden).toBe(true);
+	});
+});
+
+test("places the cards again when a card's height changes", async () => {
+	const resized: (() => void)[] = [];
+	const { view } = wideBoard(
+		class extends StillObserver {
+			constructor(callback: () => void) {
+				super();
+				resized.push(callback);
+			}
+		},
+	);
+	// The card as drawn last: the Markdown renderer draws it again.
+	const card = () => view.column.querySelector<HTMLElement>(".comment-thread");
+	await vi.waitFor(() => expect(card()?.style.top).toBe("0px"));
+	// The title moves down, as when a card above it grows.
+	const title = view.fields.title;
+	title.getBoundingClientRect = () => new DOMRect(0, 40, 100, 26);
+	for (const callback of resized) callback();
+	expect(card()?.style.top).toBe("40px");
+});
+describe("folded threads", () => {
+	// A question, Claude's answer and a follow-up: two replies.
+	const ASKED = {
+		[ENTRY_ID]: [
+			wholeThread(
+				"t1",
+				comment("c1", "@Claude what is the loss?"),
+				comment("c2", "The sum of the errors."),
+				comment("c3", "Thanks"),
+			),
+		],
+	};
+
+	test("a thread the reader opened stays open when the comments are drawn again", () => {
+		const page = openPage({ saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		expect(cardTexts(view)).toEqual(["@Claude what is the loss?"]);
+		press(view.column, "2 replies");
+		page.board.drawIn(document.body);
+		expect(cardTexts(view)).toEqual([
+			"@Claude what is the loss?",
+			"The sum of the errors.",
+			"Thanks",
+		]);
+	});
+
+	test("a thread's fold button folds it until it is opened again", () => {
+		const page = openPage({ saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		press(view.column, "2 replies");
+		press(view.column, "Fold");
+		page.board.drawIn(document.body);
+		expect(cardTexts(view)).toEqual(["@Claude what is the loss?"]);
+		expect(
+			view.column.querySelector(".comment-thread__toggle")?.textContent,
+		).toBe("2 replies");
+	});
+
+	test("a thread the owner replies in opens", async () => {
+		const page = openPage();
+		const view = page.views[0] as CommentView;
+		view.addButton.click();
+		type(box(page, view), "Check the baseline.");
+		saveBox(box(page, view));
+		const id = view.column.querySelector<HTMLElement>(".comment-thread")
+			?.dataset.thread as string;
+		await vi.waitFor(() => expect(page.posted).toHaveLength(1));
+		// A reply arrives with the site's state read again, once the save is done.
+		await vi.waitFor(() => {
+			page.board.replace({
+				[ENTRY_ID]: [
+					wholeThread(
+						id,
+						comment("c1", "Check the baseline."),
+						comment("c2", "It is in table 2."),
+					),
+				],
+			});
+			expect(cardTexts(view)).toEqual([
+				"Check the baseline.",
+				"It is in table 2.",
+			]);
+		});
+	});
+
+	test("the count opens a folded thread in place in the side panel", () => {
+		const page = openPage({ screen: "narrow", saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		view.countButton.click();
+		const sheet = page.board.sheet;
+		expect(sheet.querySelectorAll(".comment")).toHaveLength(1);
+		press(sheet, "2 replies");
+		expect(sheet.open).toBe(true);
+		expect(sheet.querySelectorAll(".comment")).toHaveLength(3);
+	});
+
+	test("the count opens a folded thread in place in the phone sheet", () => {
+		const page = openPage({ screen: "phone", saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		view.countButton.click();
+		const sheet = page.board.sheet;
+		expect(sheet.classList.contains("comment-panel--sheet")).toBe(true);
+		press(sheet, "2 replies");
+		expect(sheet.open).toBe(true);
+		expect(sheet.querySelectorAll(".comment")).toHaveLength(3);
 	});
 });

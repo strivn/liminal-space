@@ -8,36 +8,96 @@ const CARD_GAP = 8;
 
 // What placing the cards needs from the board.
 export type PlacingNeeds = {
+	views: () => Iterable<CommentView>;
 	articleOf: (view: CommentView) => HTMLElement;
 };
 
-export function createPlacing(needs: PlacingNeeds): {
-	placeCards: (view: CommentView) => void;
-} {
-	const articleOf = needs.articleOf;
+// The anchor's top, title unstuck.
+function naturalTop(anchor: Element): number {
+	const top = anchor.getBoundingClientRect().top;
+	const title = anchor.closest(".entry__title");
+	const text = title?.parentElement;
+	if (!title || !text) return top;
+	const titleTop =
+		text.getBoundingClientRect().top +
+		parseFloat(getComputedStyle(title).marginTop);
+	return top - (title.getBoundingClientRect().top - titleTop);
+}
 
-	// Place the column's cards level with what they comment on, pushing overlapping ones down, and let the entry
-	// grow to hold them.
-	function placeCards(view: CommentView) {
-		const article = articleOf(view);
-		if (view.cards.length === 0) {
-			article.style.minHeight = "";
-			return;
+export function createPlacing(needs: PlacingNeeds): {
+	placeAll: () => void;
+	placeSoon: () => void;
+} {
+	const views = needs.views;
+	const articleOf = needs.articleOf;
+	// Re-place when a card resizes.
+	const watched = new Set<Element>();
+	let resizes: ResizeObserver | null = null;
+
+	function watch(cards: Element[]) {
+		if (cards.length === 0 && resizes === null) return;
+		resizes ??= new ResizeObserver(() => placeAll());
+		for (const node of watched) {
+			if (node.isConnected) continue;
+			resizes.unobserve(node);
+			watched.delete(node);
 		}
-		const articleTop = article.getBoundingClientRect().top;
-		const wanted = view.cards.map(
-			(card) => card.anchor.getBoundingClientRect().top - articleTop,
-		);
-		const heights = view.cards.map((card) => card.node.offsetHeight);
-		const tops = stackTops(wanted, heights, CARD_GAP);
-		view.cards.forEach((card, i) => {
-			card.node.style.top = `${tops[i]}px`;
-		});
-		const last = tops.length - 1;
-		const padding = parseFloat(getComputedStyle(article).paddingBottom);
-		// Number() as in stackTops: last is in range, so these are the numbers themselves.
-		article.style.minHeight = `${Number(tops[last]) + Number(heights[last]) + padding}px`;
+		for (const node of cards) {
+			if (watched.has(node)) continue;
+			resizes.observe(node);
+			watched.add(node);
+		}
 	}
 
-	return { placeCards: placeCards };
+	// Stack column cards in page order.
+	function placeAll() {
+		const shown: CommentView[] = [];
+		for (const view of views()) {
+			const hidden = articleOf(view).closest("[hidden], details:not([open])");
+			if (view.cards.length > 0 && hidden === null) shown.push(view);
+		}
+		shown.sort((a, b) =>
+			articleOf(a).compareDocumentPosition(articleOf(b)) &
+			Node.DOCUMENT_POSITION_FOLLOWING
+				? -1
+				: 1,
+		);
+		// Last card's bottom, page coordinates.
+		let floor = Number.NEGATIVE_INFINITY;
+		const all: Element[] = [];
+		for (const view of shown) {
+			const articleTop = articleOf(view).getBoundingClientRect().top;
+			const wanted = view.cards.map(
+				(card) => naturalTop(card.anchor) - articleTop,
+			);
+			const heights = view.cards.map((card) => card.node.offsetHeight);
+			const pageTop = articleTop + window.scrollY;
+			const tops = stackTops(
+				wanted,
+				heights,
+				CARD_GAP,
+				floor + CARD_GAP - pageTop,
+			);
+			view.cards.forEach((card, i) => {
+				card.node.style.top = `${tops[i]}px`;
+				all.push(card.node);
+			});
+			const last = tops.length - 1;
+			floor = pageTop + Number(tops[last]) + Number(heights[last]);
+		}
+		watch(all);
+	}
+
+	// One placing per batch of redraws.
+	let pending = false;
+	function placeSoon() {
+		if (pending) return;
+		pending = true;
+		queueMicrotask(() => {
+			pending = false;
+			placeAll();
+		});
+	}
+
+	return { placeAll: placeAll, placeSoon: placeSoon };
 }
