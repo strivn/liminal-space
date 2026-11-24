@@ -157,6 +157,16 @@ jobs:
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
+      # Crossref has no abstract for Elsevier's and Springer Nature's papers. The scout's commands never see this key
+      # (Claude Code's env scrub removes it), so the day's DOI papers get Semantic Scholar's abstract here, before the
+      # push; one that fails is a warning, and the push still runs.
+      - name: Fill in the DOI papers' abstracts
+        if: always() && steps.status.outputs.skip == 'false'
+        continue-on-error: true
+        run: node scripts/scout/proceedings/abstracts.ts site/digests.js
+        env:
+          SEMANTIC_SCHOLAR_API_KEY: ${{ secrets.SEMANTIC_SCHOLAR_API_KEY }}
+
       # Also after a session that failed or ran out of time: every line it wrote loads (the scripts write by rename),
       # push checks each before sending, and the site only adds and fills, so nothing the session added is lost.
       # skip is empty when the count failed, and then nothing is pushed.
