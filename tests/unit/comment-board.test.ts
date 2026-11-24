@@ -1319,7 +1319,7 @@ describe("the buttons beside a selection", () => {
 	});
 });
 
-test("places the cards again when a card's height changes", () => {
+test("places the cards again when a card's height changes", async () => {
 	const resized: (() => void)[] = [];
 	const { view } = wideBoard(
 		class extends StillObserver {
@@ -1329,13 +1329,14 @@ test("places the cards again when a card's height changes", () => {
 			}
 		},
 	);
-	const card = view.column.querySelector<HTMLElement>(".comment-thread");
-	expect(card?.style.top).toBe("0px");
+	// The card as drawn last: the Markdown renderer draws it again.
+	const card = () => view.column.querySelector<HTMLElement>(".comment-thread");
+	await vi.waitFor(() => expect(card()?.style.top).toBe("0px"));
 	// The title moves down, as when a card above it grows.
 	const title = view.fields.title;
 	title.getBoundingClientRect = () => new DOMRect(0, 40, 100, 26);
 	for (const callback of resized) callback();
-	expect(card?.style.top).toBe("40px");
+	expect(card()?.style.top).toBe("40px");
 });
 test.todo(
 	"a thread the reader opened stays open when the comments are drawn again",

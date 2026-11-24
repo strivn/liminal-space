@@ -162,7 +162,7 @@ export function createCommentBoard(
 	const panelBody = panel.body;
 
 	// The board's pieces, each given what it needs from the board.
-	const { placeAll } = createPlacing({
+	const { placeAll, placeSoon } = createPlacing({
 		views: () => store.views.values(),
 		articleOf: articleOf,
 	});
@@ -834,7 +834,6 @@ export function createCommentBoard(
 		} else {
 			view.column.replaceChildren();
 		}
-		placeAll();
 
 		// Focus the comment box when it has just opened, or had focus before the redraw.
 		let holder: HTMLElement = view.column;
@@ -845,12 +844,16 @@ export function createCommentBoard(
 			draft &&
 			(draft.focus || caret !== null)
 		) {
+			// Placed first, so focus scrolls to the box's place.
+			placeAll();
 			draft.focus = false;
 			// In the sheet the page behind stays where it was.
 			box.focus({ preventScroll: inPanel && phoneQuery.matches });
 			let at = box.value.length;
 			if (caret !== null) at = caret;
 			box.setSelectionRange(at, at);
+		} else {
+			placeSoon();
 		}
 	}
 

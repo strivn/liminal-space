@@ -26,6 +26,7 @@ function naturalTop(anchor: Element): number {
 
 export function createPlacing(needs: PlacingNeeds): {
 	placeAll: () => void;
+	placeSoon: () => void;
 } {
 	const views = needs.views;
 	const articleOf = needs.articleOf;
@@ -85,5 +86,16 @@ export function createPlacing(needs: PlacingNeeds): {
 		watch(all);
 	}
 
-	return { placeAll: placeAll };
+	// One placing per batch of redraws.
+	let pending = false;
+	function placeSoon() {
+		if (pending) return;
+		pending = true;
+		queueMicrotask(() => {
+			pending = false;
+			placeAll();
+		});
+	}
+
+	return { placeAll: placeAll, placeSoon: placeSoon };
 }
