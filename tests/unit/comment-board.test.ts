@@ -1343,6 +1343,12 @@ test("places the cards again when a card's height changes", async () => {
 	expect(card()?.style.top).toBe("40px");
 });
 describe("folded threads", () => {
+	test.todo(
+		"a folded thread shows its first comment, the count of the hidden replies and its latest reply",
+	);
+	test.todo("every comment, the owner's too, shows 3 lines until Show more");
+	test.todo("an open thread folds with an icon button named Fold thread");
+
 	// A question, Claude's answer and a follow-up: two replies.
 	const ASKED = {
 		[ENTRY_ID]: [

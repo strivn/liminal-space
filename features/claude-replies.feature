@@ -13,10 +13,9 @@ Feature: Asking Claude in a comment
       When the owner scrolls halfway down today's 5th paper
       And the owner comments "@Claude what is the loss?" on today's 5th paper
       Then the comment card is level with the paper's title, and the paper is no taller than its text
-      And Claude's reply shows its first 3 lines and "Show more"
       When the owner reloads the page
-      Then the thread "@Claude what is the loss?" shows folded, with "1 reply"
-      When the owner opens "1 reply" and "Show more"
+      Then Claude's reply shows its first 3 lines and "Show more"
+      When the owner opens "Show more"
       Then Claude's reply shows under the question
       And it shows "Loss" in bold, the formula typeset, a list of 2 items and a link to "https://arxiv.org/abs/2610.30182"
 
