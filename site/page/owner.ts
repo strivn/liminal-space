@@ -13,6 +13,16 @@ export const UNREACHABLE = "couldn't reach the site";
 // How long the page says a read or tag press wasn't saved.
 const NOTICE_MS = 5000;
 
+// The sessionStorage key that says this tab already signed in again.
+export const SIGNED_IN_AGAIN = "liminal-signed-in-again";
+
+// Sign in again through Access once per tab: Access's logout on the page's own host, which returns to this page and
+// asks for a new sign-in. True when it left for the logout; false when this tab already tried, or its storage can't
+// be used.
+export function signInAgainOnce(_storage: Storage, _here: Location): boolean {
+	throw new Error("not implemented");
+}
+
 // The owner's saved state from the site, or null when it can't be read: no answer (Access's sign-in page included),
 // a refusal, or an answer that isn't a state.
 export async function loadOwnerState(): Promise<OwnerData | null> {

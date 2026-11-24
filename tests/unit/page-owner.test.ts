@@ -169,12 +169,34 @@ test("privacy: the public page has no icon rail, no chips, no heatmap and no pro
 
 test("when the owner's state can't be read the page draws as the public page and says so", async () => {
 	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
+	site.statuses["api/owner/state"] = 500;
 	await openPage(site, { owner: true });
 	expect(texts("#freshness .status")).toContain(
 		"Couldn't load your reading state",
 	);
 	expect(document.querySelector(".entry__rail")).toBeNull();
 });
+
+// ---- Signing in again ----
+
+test.todo(
+	"when the owner's state is refused, the page signs in again once through Access's logout and comes back to the owner page",
+);
+test.todo(
+	"a second refusal in the same tab shows the banner instead of signing in again",
+);
+test.todo(
+	"a state that can't be read for another reason shows the banner without signing in again",
+);
+test.todo(
+	"after the state loads, a later refusal in the same tab may sign in again once more",
+);
+test.todo(
+	"a tab whose storage can't be used shows the banner instead of signing in again",
+);
+test.todo(
+	"security: the fresh sign-in returns only to the owner page on the page's own host",
+);
 
 // ---- Read chips ----
 
