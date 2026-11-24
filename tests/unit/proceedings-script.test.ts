@@ -436,32 +436,6 @@ describe("--crossref", () => {
 	});
 });
 
-describe("--crossref with Semantic Scholar's abstracts", () => {
-	test.todo(
-		"a paper Crossref gives without an abstract gets Semantic Scholar's abstract",
-	);
-
-	test.todo(
-		"Semantic Scholar is not asked about a paper whose Crossref record has an abstract",
-	);
-
-	test.todo(
-		"without a Semantic Scholar key, the paper is added without an abstract and the missing key is named",
-	);
-
-	test.todo(
-		"a Semantic Scholar that refuses the key or answers an error is named, and the paper is added without an abstract",
-	);
-
-	test.todo(
-		"security: the Semantic Scholar key goes only in the x-api-key header and never appears in what the run prints",
-	);
-
-	test.todo(
-		"a surprise pick with no abstract on Crossref or Semantic Scholar is refused and named, and nothing is appended",
-	);
-});
-
 describe("a command line the program refuses", () => {
 	test("a refused command says why and fails without changing the digests file", () => {
 		for (const { name, said, result, file } of outcomes.refused || []) {
