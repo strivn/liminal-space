@@ -42,7 +42,7 @@ export function commandLinesIn(lines: string[]): string[] {
 // A command line with its placeholders filled in: D (after --date) and <date> a real date, <digests file> the digests
 // file, each <id> an arXiv id (a trailing " ..." that repeats the last argument dropped), <scratchpad> and <your
 // scratchpad directory> a scratch path, the venue's "<Conference> <year>", a <...URL...> or <url> a URL, <doi> a DOI,
-// and <summary> a sentence holding an apostrophe, written '\'' as the instructions say. A placeholder left over
+// <n> a number, and <summary> a sentence holding an apostrophe, written '\'' as the instructions say. A placeholder left over
 // throws, naming the line, so a new one is filled in here on purpose.
 export function filledIn(
 	command: string,
@@ -59,6 +59,7 @@ export function filledIn(
 		.replaceAll("<Conference> <year>", "ACL 2026")
 		.replaceAll("<url>", "https://example.com/news/1")
 		.replaceAll("<doi>", "10.1038/s41586-026-00001-1")
+		.replaceAll("<n>", "1")
 		.replaceAll("<summary>", "The brain'\\''s map of time.")
 		.replace(/<[^<>]*URL[^<>]*>/g, "https://example.com/source");
 	if (filled.endsWith(" ...")) {

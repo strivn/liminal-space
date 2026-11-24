@@ -159,12 +159,25 @@ searches built from the topic phrases, not from dates or source names. search.ts
 prints no links, because Google News links are redirects: find each headline's own
 page and fetch that. Add them as "Adding news, articles and reports" below says.
 
+## Lab figures
+After the other items are in, give each news item, article and report dated today a figure
+when its post has one. For each URL run
+    node scripts/scout/web/post-figure.ts site/digests.js '<url>'
+It refuses a post that isn't from a listed AI lab without fetching it; move on. Otherwise it
+prints the images in the post's article body, numbered, with their alt text and caption.
+Pick the one whose alt text or caption shows a chart, table, plot or diagram that explains
+the post; a cover, header art, a photo of people, a logo or a product screenshot is never
+the figure. Write it with
+    node scripts/scout/web/post-figure.ts site/digests.js '<url>' --pick <n>
+When no image is such a figure, pick none. A post with no figure is fine.
+
 ## Rules
 - Use only these commands, which the folder's settings allow; anything else may be
   refused or wait for the owner's approval: `node scripts/scout/arxiv/arxiv.ts ...`,
   `node scripts/scout/search.ts ...`, `node scripts/scout/surprise.ts ...`,
   `node scripts/scout/arxiv/figure.ts ...`, `node scripts/digests/digests.ts ...`,
   `node scripts/scout/web/describe.ts ...`, `node scripts/scout/arxiv/first-page.ts ...`,
+  `node scripts/scout/web/post-figure.ts ...`,
   `node scripts/scout/proceedings/proceedings.ts ...`,
   `scripts/scout/web/fulltext.sh ...`,
   `TZ=Asia/Jakarta date +%F`, the Read tool, WebFetch, WebSearch, and writing files in
