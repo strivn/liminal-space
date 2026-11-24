@@ -108,8 +108,8 @@ export function createCards(needs: CardsNeeds): {
 		return button;
 	}
 
-	// One comment: "<owner> · 27 Sep, 23:20" ("Claude · ..." for Claude's reply), its text, and Edit and Delete, led by the
-	// thread's Reply on its last comment; or the comment box while it is edited.
+	// One comment: "<owner> · 27 Sep, 23:20" ("Claude · ..." for Claude's reply), its text, and Edit and Delete; or the
+	// comment box while it is edited.
 	function commentNode(
 		view: CommentView,
 		thread: Thread,
@@ -167,14 +167,6 @@ export function createCards(needs: CardsNeeds): {
 		if (comment.author === "claude" && isLast && store.unfolded.has(thread.id))
 			store.unfolded.add(comment.id);
 		actions.append(foldButton(store.unfolded, text, comment.id));
-		const replying =
-			draft && draft.kind === "reply" && draft.threadId === thread.id;
-		if (isLast && !replying)
-			actions.append(
-				actionButton("Reply", () =>
-					openDraft(view, { kind: "reply", threadId: thread.id, text: "" }),
-				),
-			);
 		// Claude's replies can be deleted but not edited.
 		if (comment.author !== "claude")
 			actions.append(
@@ -283,9 +275,19 @@ export function createCards(needs: CardsNeeds): {
 			card.append(note);
 		}
 		const draft = view.draft;
-		// A reply being written goes under the last comment. (Reply itself sits in the last comment's buttons.)
+		// Reply, or the reply being written, is the card's last row.
 		if (draft && draft.kind === "reply" && draft.threadId === thread.id)
 			card.append(editor(view));
+		else
+			card.append(
+				el(
+					"div",
+					{ class: "comment__actions comment-thread__reply" },
+					actionButton("Reply", () =>
+						openDraft(view, { kind: "reply", threadId: thread.id, text: "" }),
+					),
+				),
+			);
 		card.addEventListener("mouseenter", () => setActive(view, thread.id, true));
 		card.addEventListener("mouseleave", () =>
 			setActive(view, thread.id, false),

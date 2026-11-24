@@ -188,6 +188,10 @@
 .comment__text--markdown {
 	white-space: normal;
 }
+/* A thread's Reply, its last row. */
+.comment-thread__reply {
+	margin-top: 8px;
+}
 /* A long comment shows its first 3 lines until "Show more" opens it. */
 .comment__text--folded {
 	display: -webkit-box;
