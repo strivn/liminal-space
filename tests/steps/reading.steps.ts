@@ -307,3 +307,17 @@ Then("the public page shows none of it", async ({ world, browser }) => {
 		.toHaveCount(0);
 	await expect.soft(entry.locator(".comment-count")).toHaveCount(0);
 });
+
+When(
+	/^the owner scrolls halfway down today's (\d+)(?:st|nd|rd|th) paper$/,
+	async ({ world: _world }, _n: string) => {
+		throw new Error("not written");
+	},
+);
+
+Then(
+	"the comment card is level with the paper's title, and the paper is no taller than its text",
+	async () => {
+		throw new Error("not written");
+	},
+);

@@ -149,3 +149,24 @@ Then(
 		await expect.soft(reply.locator(`a[href="${link}"]`)).toHaveCount(1);
 	},
 );
+
+Then(
+	"Claude's reply shows its first 3 lines and {string}",
+	async ({ world: _world }, _button: string) => {
+		throw new Error("not written");
+	},
+);
+
+Then(
+	"the thread {string} shows folded, with {string}",
+	async ({ world: _world }, _first: string, _count: string) => {
+		throw new Error("not written");
+	},
+);
+
+When(
+	"the owner opens {string} and {string}",
+	async ({ world: _world }, _count: string, _more: string) => {
+		throw new Error("not written");
+	},
+);

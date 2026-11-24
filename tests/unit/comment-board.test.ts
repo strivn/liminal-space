@@ -1321,3 +1321,11 @@ describe("the buttons beside a selection", () => {
 		expect(floatButtons()?.hidden).toBe(true);
 	});
 });
+
+test.todo("places the cards again when a card's height changes");
+test.todo(
+	"a thread the reader opened stays open when the comments are drawn again",
+);
+test.todo("a thread's fold button folds it until it is opened again");
+test.todo("a thread the owner replies in opens");
+test.todo("the count opens a folded thread in place in the side panel");

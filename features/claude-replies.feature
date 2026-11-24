@@ -7,10 +7,16 @@ Feature: Asking Claude in a comment
 
   Rule: Claude's reply shows its formatting and is kept
 
-    Scenario: Claude's reply shows bold, math, a list and a link, and stays after a reload
-      Given Claude will answer "**Loss** is $L = \sum_i x_i$.\n\n- cut into frames\n- follow the path\n\nSee [the paper](https://arxiv.org/abs/2610.30182)."
-      When the owner comments "@Claude what is the loss?" on today's 5th paper
-      And reloads the page
+    Scenario: Claude's reply shows bold, math, a list and a link, sits beside its paper, and stays after a reload
+      Given the window is 1400px wide
+      And Claude will answer "**Loss** is $L = \sum_i x_i$.\n\n- cut into frames\n- follow the path\n\nSee [the paper](https://arxiv.org/abs/2610.30182)."
+      When the owner scrolls halfway down today's 5th paper
+      And the owner comments "@Claude what is the loss?" on today's 5th paper
+      Then the comment card is level with the paper's title, and the paper is no taller than its text
+      And Claude's reply shows its first 3 lines and "Show more"
+      When the owner reloads the page
+      Then the thread "@Claude what is the loss?" shows folded, with "1 reply"
+      When the owner opens "1 reply" and "Show more"
       Then Claude's reply shows under the question
       And it shows "Loss" in bold, the formula typeset, a list of 2 items and a link to "https://arxiv.org/abs/2610.30182"
 

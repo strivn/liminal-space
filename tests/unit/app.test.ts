@@ -2208,3 +2208,10 @@ test("well-formed saved takeaways are kept, newest first, and malformed ones are
 		console.warn = warn;
 	}
 });
+
+test.todo("stackTops starts the first card no higher than the floor");
+test.todo("counts every comment after the first as a reply, Claude's included");
+test.todo('names one reply "1 reply" and more "n replies"');
+test.todo(
+	"shows a thread with replies folded unless it was opened or commented in during this visit",
+);
