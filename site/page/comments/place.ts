@@ -32,9 +32,11 @@ export function createPlacing(needs: PlacingNeeds): {
 	const articleOf = needs.articleOf;
 	// Re-place when a card resizes.
 	const watched = new Set<Element>();
-	const resizes = new ResizeObserver(() => placeAll());
+	let resizes: ResizeObserver | null = null;
 
 	function watch(cards: Element[]) {
+		if (cards.length === 0 && resizes === null) return;
+		resizes ??= new ResizeObserver(() => placeAll());
 		for (const node of watched) {
 			if (node.isConnected) continue;
 			resizes.unobserve(node);
