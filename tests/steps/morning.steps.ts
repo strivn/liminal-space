@@ -92,3 +92,46 @@ Then(
 		await expect.soft(today.locator(".entry__title")).toHaveText([title]);
 	},
 );
+
+Given(
+	"OpenAI's blog has the post {string} with a cover image and a diagram",
+	async ({ world }, title: string) => {
+		throw new Error(`not implemented: ${world.dir} ${title}`);
+	},
+);
+
+When(
+	"the morning scripts add the post, the scout picks its diagram and the day is pushed",
+	async ({ world }) => {
+		throw new Error(`not implemented: ${world.dir}`);
+	},
+);
+
+Then(
+	"the public page shows the diagram under the post's description",
+	async ({ world, browser }) => {
+		throw new Error(`not implemented: ${world.dir} ${browser.version()}`);
+	},
+);
+
+Then("the diagram opens the post", async ({ world }) => {
+	throw new Error(`not implemented: ${world.dir}`);
+});
+
+Given(
+	"NeurIPS 2017 accepted it and its proceedings list it",
+	async ({ world }) => {
+		throw new Error(`not implemented: ${world.dir}`);
+	},
+);
+
+Then(
+	"its title opens its NeurIPS 2017 proceedings page, with arXiv still linked",
+	async ({ world, browser }) => {
+		throw new Error(`not implemented: ${world.dir} ${browser.version()}`);
+	},
+);
+
+Then("its title opens its arXiv page", async ({ world, browser }) => {
+	throw new Error(`not implemented: ${world.dir} ${browser.version()}`);
+});

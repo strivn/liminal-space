@@ -880,3 +880,21 @@ test("security: a data: or vbscript: URL never becomes a link, in the title or t
 		}
 	}
 });
+
+test.todo(
+	"A lab post's figure shows after its description, linked to the post",
+);
+test.todo(
+	"A lab post's figure carries the lab's alt text, and the lab's caption when there is one",
+);
+test.todo("A lab post's figure is requested with no referrer");
+test.todo(
+	"security: a lab post's figure from an address outside its lab is never requested",
+);
+test.todo("A lab post's figure that fails to load leaves no broken image");
+
+test.todo(
+	"A paper's title opens its published version when it has one, and its arXiv page otherwise",
+);
+test.todo("A paper with a published version still links to its arXiv page");
+test.todo("security: a published version that is not https is never linked");

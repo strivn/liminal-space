@@ -1574,3 +1574,17 @@ test("an entry with a field over its cap is refused", async () => {
 		assert.match(entryProblems(paper(1, over), "check").join("; "), refusal);
 	}
 });
+
+test.todo(
+	"A lab post's figure is accepted only from that lab's own image addresses",
+);
+test.todo(
+	"A figure on an item from a news site or an unlisted blog is refused",
+);
+test.todo(
+	"security: a lab figure address that is not https, or carries a user name or password, is refused",
+);
+
+test.todo(
+	"A paper's camera_ready holds an https url, its venue and where it was read",
+);
