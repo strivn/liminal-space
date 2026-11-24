@@ -1,5 +1,6 @@
 // A paper's abstract from Semantic Scholar's Academic Graph API, for the DOI papers Crossref gives without one.
-// Environment: SEMANTIC_SCHOLAR_API (a stand-in for tests).
+// Environment: SEMANTIC_SCHOLAR_API and SEMANTIC_SCHOLAR_RETRY_MS (stand-ins for tests).
+import { setTimeout as sleep } from "node:timers/promises";
 import {
 	cutAtWord,
 	FIELD_CAPS,
@@ -11,6 +12,9 @@ import { request } from "../../lib/http.ts";
 const SEMANTIC_SCHOLAR_API =
 	process.env.SEMANTIC_SCHOLAR_API ||
 	"https://api.semanticscholar.org/graph/v1";
+// A 429 is asked again this many times, after 5, 10 and 20 seconds: the key's 1 request a second still meets 429s.
+const RETRIES = 3;
+const RETRY_MS = Number(process.env.SEMANTIC_SCHOLAR_RETRY_MS || 5000);
 
 // What Semantic Scholar gave for one DOI, or why it gave nothing; a problem's words finish "Semantic Scholar ...".
 export type AbstractAnswer =
@@ -27,7 +31,15 @@ export async function semanticScholarAbstract(
 		return { missing: "no key" };
 	}
 	const url = `${SEMANTIC_SCHOLAR_API}/paper/DOI:${doi.split("/").map(encodeURIComponent).join("/")}?fields=abstract`;
-	const response = await request(url, { headers: { "x-api-key": key } });
+	let response = await request(url, { headers: { "x-api-key": key } });
+	for (let retry = 0; retry < RETRIES; retry++) {
+		if ("problem" in response || response.status !== 429) {
+			break;
+		}
+		// biome-ignore lint/performance/noAwaitInLoops: each retry waits out the one before
+		await sleep(RETRY_MS * 2 ** retry);
+		response = await request(url, { headers: { "x-api-key": key } });
+	}
 	if ("problem" in response) {
 		return { problem: `${response.problem} (${url})` };
 	}

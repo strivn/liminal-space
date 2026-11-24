@@ -38,9 +38,10 @@ function paper(id: string, extra: Record<string, unknown> = {}) {
 
 type Asked = { path: string; key: string | undefined };
 
-// A Semantic Scholar stand-in answering each DOI from `answers` (status and body); 404 for any other.
+// A Semantic Scholar stand-in answering each DOI from `answers` (status and body), after `busy` 429s; 404 for any
+// other DOI.
 async function semanticScholar(
-	answers: Record<string, { status?: number; body: unknown }>,
+	answers: Record<string, { status?: number; body: unknown; busy?: number }>,
 ) {
 	const asked: Asked[] = [];
 	const base = await serve((incoming: IncomingMessage, out) => {
@@ -52,6 +53,12 @@ async function semanticScholar(
 			status: 404,
 			body: { error: "Paper not found" },
 		};
+		if (answer.busy) {
+			answer.busy -= 1;
+			out.writeHead(429, { "content-type": "application/json" });
+			out.end(JSON.stringify({ message: "Too Many Requests" }));
+			return;
+		}
 		out.writeHead(answer.status || 200, { "content-type": "application/json" });
 		out.end(JSON.stringify(answer.body));
 	});
@@ -71,6 +78,7 @@ async function fill(
 		SEMANTIC_SCHOLAR_API: base,
 		SEMANTIC_SCHOLAR_API_KEY: key,
 		SEMANTIC_SCHOLAR_PAUSE_MS: "0",
+		SEMANTIC_SCHOLAR_RETRY_MS: "0",
 	});
 	return { ...ran, after: readFileSync(file, "utf8").trimEnd().split("\n") };
 }
@@ -173,6 +181,19 @@ describe("abstracts from Semantic Scholar", () => {
 			`abstracts.ts: Semantic Scholar answered HTTP 403 (${s2.base}/paper/DOI:10.1000/refused?fields=abstract): doi:10.1000/refused`,
 		);
 		expect(ran.stderr).toContain("answered HTTP 429");
+	});
+
+	test("a Semantic Scholar that answers 429 is asked again after a pause, up to 3 times, and the abstract it then gives is added", async () => {
+		const s2 = await semanticScholar({
+			"10.1000/later": { body: { abstract: ABSTRACT }, busy: 3 },
+		});
+		const ran = await fill(
+			[digestText(TODAY, [paper("doi:10.1000/later")])],
+			s2.base,
+		);
+		expect(ran.code).toBe(0);
+		expect(s2.asked).toHaveLength(4);
+		expect(entriesOfLine(ran.after[0] as string)[0]?.abstract).toBe(ABSTRACT);
 	});
 
 	test("security: the Semantic Scholar key goes only in the x-api-key header and never appears in what the run prints", async () => {
