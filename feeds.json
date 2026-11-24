@@ -150,7 +150,8 @@
 			"kind": "feed",
 			"type": "news",
 			"url": "https://www.geekpark.net/rss",
-			"max": 2
+			"max": 2,
+			"timeoutMs": 120000
 		},
 		{
 			"name": "Thinking Machines",
