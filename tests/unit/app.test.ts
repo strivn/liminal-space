@@ -14,6 +14,8 @@ import {
 	occurrenceOf,
 	readingLine,
 	removeComment,
+	replyCountText,
+	showsFolded,
 	stackTops,
 	usableThreads,
 } from "../../site/page/comments.ts";
@@ -2239,8 +2241,31 @@ test("stackTops starts the first card no higher than the floor", () => {
 	// A floor above every card changes nothing.
 	assert.deepEqual(stackTops([40, 40], [70, 70], 8, -10), [40, 118]);
 });
-test.todo("counts every comment after the first as a reply, Claude's included");
-test.todo('names one reply "1 reply" and more "n replies"');
-test.todo(
-	"shows a thread with replies folded unless it was opened or commented in during this visit",
-);
+test("counts every comment after the first as a reply, Claude's included", () => {
+	const asked = thread("t1", null, null, null, [
+		["c1", "@Claude why?"],
+		["c2", "Because."],
+		["c3", "Thanks"],
+	]);
+	const answer = asked.comments[1];
+	if (answer) answer.author = "claude";
+	assert.equal(replyCountText(asked.comments.length - 1), "2 replies");
+	assert.equal(showsFolded(asked, new Set()), true);
+});
+
+test('names one reply "1 reply" and more "n replies"', () => {
+	assert.equal(replyCountText(1), "1 reply");
+	assert.equal(replyCountText(2), "2 replies");
+	assert.equal(replyCountText(12), "12 replies");
+});
+
+test("shows a thread with replies folded unless it was opened or commented in during this visit", () => {
+	const replied = thread("t1", null, null, null, [
+		["c1", "A"],
+		["c2", "B"],
+	]);
+	const alone = thread("t2", null, null, null, [["c3", "C"]]);
+	assert.equal(showsFolded(replied, new Set()), true);
+	assert.equal(showsFolded(replied, new Set(["t1"])), false);
+	assert.equal(showsFolded(alone, new Set()), false);
+});

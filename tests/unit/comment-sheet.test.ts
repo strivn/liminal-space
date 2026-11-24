@@ -45,5 +45,3 @@ describe("focus after saving", () => {
 		expect(sheet.contains(document.activeElement)).toBe(false);
 	});
 });
-
-test.todo("the count opens a folded thread in place in the phone sheet");

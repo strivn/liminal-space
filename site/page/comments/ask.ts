@@ -6,6 +6,7 @@ import type { Ask, CommentStore } from "../comment-board.ts";
 import { el, status } from "../dom.ts";
 import type { Thread } from "../types.ts";
 import { linkAddresses, typeset } from "../typeset.ts";
+import { foldButton } from "./cards.ts";
 import { questionOf } from "./passage.ts";
 
 // What the asks need from the board. `replyBox` draws Claude's reply with the board's Markdown renderer.
@@ -128,7 +129,14 @@ export function createAsks(needs: AsksNeeds): {
 			typeset(reply);
 			linkAddresses(reply);
 		}
-		node.append(reply);
+		node.append(
+			reply,
+			el(
+				"div",
+				{ class: "comment__actions" },
+				foldButton(store.unfolded, reply, threadId),
+			),
+		);
 	}
 
 	// Draw the reply so far into the thread's answering note wherever it shows, without drawing the entry again.

@@ -159,16 +159,17 @@ export function usableThreads(value: unknown): Thread[] {
 }
 
 // A folded thread's count: "1 reply", "3 replies".
-export function replyCountText(_replies: number): string {
-	throw new Error("not implemented");
+export function replyCountText(replies: number): string {
+	if (replies === 1) return "1 reply";
+	return `${replies} replies`;
 }
 
 // Whether a thread shows only its first comment and its count.
 export function showsFolded(
-	_thread: Thread,
-	_open: ReadonlySet<string>,
+	thread: Thread,
+	open: ReadonlySet<string>,
 ): boolean {
-	throw new Error("not implemented");
+	return thread.comments.length > 1 && !open.has(thread.id);
 }
 
 // Card tops in the comment column: each card where it wants to be, or `gap` below the card before it if that is lower,
