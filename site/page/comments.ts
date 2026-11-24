@@ -158,18 +158,17 @@ export function usableThreads(value: unknown): Thread[] {
 	return usable;
 }
 
-// A folded thread's count: "1 reply", "3 replies".
-export function replyCountText(replies: number): string {
-	if (replies === 1) return "1 reply";
-	return `${replies} replies`;
+// The hidden middle of a folded thread: "2 more replies".
+export function replyCountText(hidden: number): string {
+	return `${hidden} more replies`;
 }
 
-// Whether a thread shows only its first comment and its count.
+// Whether a thread hides its middle replies: at least 2 would be hidden, and it wasn't opened or commented in.
 export function showsFolded(
 	thread: Thread,
 	open: ReadonlySet<string>,
 ): boolean {
-	return thread.comments.length > 1 && !open.has(thread.id);
+	return thread.comments.length >= 4 && !open.has(thread.id);
 }
 
 // Card tops in the comment column: each card where it wants to be, or `gap` below the card before it if that is lower,

@@ -14,6 +14,8 @@ import {
 	occurrenceOf,
 	readingLine,
 	removeComment,
+	replyCountText,
+	showsFolded,
 	stackTops,
 	usableThreads,
 } from "../../site/page/comments.ts";
@@ -2239,10 +2241,38 @@ test("stackTops starts the first card no higher than the floor", () => {
 	// A floor above every card changes nothing.
 	assert.deepEqual(stackTops([40, 40], [70, 70], 8, -10), [40, 118]);
 });
-test.todo("counts Claude's answers among the hidden replies");
+test("counts Claude's answers among the hidden replies", () => {
+	const asked = thread("t1", null, null, null, [
+		["c1", "@Claude why?"],
+		["c2", "Because."],
+		["c3", "And then?"],
+		["c4", "Then this."],
+	]);
+	for (const index of [1, 3]) {
+		const answer = asked.comments[index];
+		if (answer) answer.author = "claude";
+	}
+	assert.equal(showsFolded(asked, new Set()), true);
+});
 
-test.todo('names the hidden replies "2 more replies"');
+test('names the hidden replies "2 more replies"', () => {
+	assert.equal(replyCountText(2), "2 more replies");
+	assert.equal(replyCountText(12), "12 more replies");
+});
 
-test.todo(
-	"folds a thread's middle replies when 2 or more would be hidden, unless it was opened or commented in during this visit",
-);
+test("folds a thread's middle replies when 2 or more would be hidden, unless it was opened or commented in during this visit", () => {
+	const pairs = (n: number): [string, string][] =>
+		Array.from({ length: n }, (_, i) => [`c${i}`, `Comment ${i}`]);
+	assert.equal(
+		showsFolded(thread("t1", null, null, null, pairs(3)), new Set()),
+		false,
+	);
+	assert.equal(
+		showsFolded(thread("t1", null, null, null, pairs(4)), new Set()),
+		true,
+	);
+	assert.equal(
+		showsFolded(thread("t1", null, null, null, pairs(4)), new Set(["t1"])),
+		false,
+	);
+});

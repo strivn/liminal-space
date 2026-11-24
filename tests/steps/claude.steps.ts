@@ -155,6 +155,8 @@ Then(
 	async ({ world, browser }, button: string) => {
 		const page = await pageOf(world, browser, "owner");
 		const reply = await claudesReply(page, world);
+		// Measured once drawn from Markdown, not its plain first draw.
+		await expect(reply).toHaveClass(/comment__text--markdown/);
 		const lines = await reply.evaluate((text) => {
 			const line = parseFloat(getComputedStyle(text).lineHeight);
 			return {
