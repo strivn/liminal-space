@@ -166,6 +166,14 @@ function figureNode(entry: Entry) {
 	return node;
 }
 
+// Its published version, https only.
+function publishedVersionOf(entry: Entry) {
+	const cameraReady = entry.camera_ready;
+	if (!isJsonObject(cameraReady) || typeof cameraReady.url !== "string")
+		return null;
+	return cameraReady.url.startsWith("https://") ? cameraReady.url : null;
+}
+
 // The URL of a paper's link labelled "PDF", or null when it has none that can be a link.
 function pdfLinkOf(entry: Entry) {
 	for (const link of entry.links || []) {
@@ -269,8 +277,9 @@ export function renderEntry(
 		);
 	// A paper's PDF link becomes its title link, so it isn't repeated in the links row. A link that isn't an
 	// object (null in a hand-edited list) is passed over, like one that isn't http(s).
+	const publishedUrl = isPaper ? publishedVersionOf(entry) : null;
 	let pdfUrl: string | null = null;
-	if (isPaper) pdfUrl = pdfLinkOf(entry);
+	if (isPaper && !publishedUrl) pdfUrl = pdfLinkOf(entry);
 	const links: HTMLElement[] = [];
 	for (const link of entry.links || []) {
 		if (!isJsonObject(link)) continue;
@@ -312,6 +321,7 @@ export function renderEntry(
 	// A paper's title opens its PDF; the arXiv logomark after it opens the abstract page. Everything else keeps its URL.
 	let titleUrl = url;
 	if (pdfUrl) titleUrl = pdfUrl;
+	if (publishedUrl) titleUrl = publishedUrl;
 	let titleContent: string | HTMLElement = entry.title;
 	// draggable="false" with style.css's user-select lets a mouse drag select a title's words for a comment.
 	if (titleUrl)
@@ -319,7 +329,7 @@ export function renderEntry(
 	const title = el("h3", { class: "entry__title" }, titleContent);
 	// No space is added before the logomark (CSS spaces it): the title's text, which comments anchor to, stays the same.
 	// A paper from a conference's proceedings links its own site's page, which gets no arXiv mark.
-	if (pdfUrl && url && url.startsWith("https://arxiv.org/")) {
+	if ((pdfUrl || publishedUrl) && url?.startsWith("https://arxiv.org/")) {
 		title.append(arxivLogomark(url));
 	}
 	// A news item, report or article from a site whose icon is stored (scripts/scout/newsfeed/icons.ts) shows it before its title.

@@ -3,11 +3,12 @@
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
-import { expect } from "@playwright/test";
+import { type Browser, expect } from "@playwright/test";
 import { startWorker } from "../support/cloud.ts";
 import {
 	Given,
 	openPage,
+	pageOf,
 	type Reader,
 	runScript,
 	Then,
@@ -20,6 +21,16 @@ const SITE_ICONS = path.join(import.meta.dirname, "..", "..", "site", "icons");
 const LAB_POST =
 	"https://openai.com/index/combatting-adversarial-distillation/";
 const LAB_IMAGES = "https://images.ctfassets.net/kftzwdyauwt9/fixture";
+
+const NEURIPS_2017 = "https://proceedings.neurips.cc/paper_files/paper/2017";
+const ATTENTION_2017 =
+	"https://proceedings.neurips.cc/paper_files/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html";
+
+// Each scenario's proceedings stand-in.
+const proceedingsStandIns = new WeakMap<
+	object,
+	{ base: string; interests: string }
+>();
 
 // Each scenario's stand-in for OpenAI's blog.
 const labStandIns = new WeakMap<object, { base: string; title: string }>();
@@ -43,6 +54,11 @@ const PAPERS: Record<string, { id: string; feed: string }> = {
 		id: "1706.03762",
 		feed: "arxiv-1706.03762.xml",
 	},
+	"Chain of Thought Monitorability: A New and Fragile Opportunity for AI Safety":
+		{
+			id: "2507.11473",
+			feed: "arxiv-2507.11473.xml",
+		},
 };
 
 // Each scenario's stand-in for arXiv's API: its address and the id it knows.
@@ -87,10 +103,14 @@ When("the morning scripts add it and push the day", async ({ world }) => {
 	const written = path.join(world.dir, "digests.js");
 	const pulled = path.join(world.dir, "pulled", "digests.js");
 	fs.mkdirSync(path.dirname(pulled));
+	const proceedings = proceedingsStandIns.get(world);
+	const venue = proceedings
+		? ["--venue", "NeurIPS 2017", "--venue-source", NEURIPS_2017]
+		: [];
 	await runScript(
 		world,
 		"scout/arxiv/arxiv.ts",
-		["--append", written, arxiv.id],
+		["--append", written, ...venue, arxiv.id],
 		{
 			ARXIV_API: arxiv.url,
 			ARXIV_OAI: arxiv.url,
@@ -98,6 +118,18 @@ When("the morning scripts add it and push the day", async ({ world }) => {
 			TMPDIR: world.dir,
 			LIMINAL_ALLOW_LOCAL: new URL(arxiv.url).host,
 		},
+	);
+	await runScript(
+		world,
+		"scout/proceedings/camera-ready.ts",
+		[written],
+		proceedings
+			? {
+					INTERESTS_FILE: proceedings.interests,
+					PROCEEDINGS_BASE: proceedings.base,
+					LIMINAL_ALLOW_LOCAL: new URL(proceedings.base).host,
+				}
+			: {},
 	);
 	await runScript(world, "deploy/sync.ts", ["push", written]);
 	await runScript(world, "deploy/sync.ts", ["pull", "--database", pulled]);
@@ -218,17 +250,49 @@ Then("the diagram opens the post", async ({ world }) => {
 Given(
 	"NeurIPS 2017 accepted it and its proceedings list it",
 	async ({ world }) => {
-		throw new Error(`not implemented: ${world.dir}`);
+		const listing = `<ul><li class="conference" data-track="conference"><div class="paper-content">
+<a title="paper title" href="${new URL(ATTENTION_2017).pathname}">Attention is All you Need</a>
+<span class="paper-authors">Ashish Vaswani, Noam Shazeer, Niki Parmar</span></div></li></ul>`;
+		const server = http.createServer((request, response) => {
+			const found = new URL(request.url ?? "/", "http://x").pathname;
+			response.writeHead(found === new URL(NEURIPS_2017).pathname ? 200 : 404);
+			response.end(listing);
+		});
+		const interests = path.join(world.dir, "interests.md");
+		fs.writeFileSync(
+			interests,
+			`## Proceedings\n- NeurIPS 2017: ${NEURIPS_2017}\n`,
+		);
+		proceedingsStandIns.set(world, {
+			base: await listen(world, server),
+			interests,
+		});
 	},
 );
+
+// The public page's entry for a title.
+async function titleLink(world: World, browser: Browser, title: string) {
+	const page = await pageOf(world, browser, "visitor");
+	return page.locator("article.entry", { hasText: title }).first();
+}
 
 Then(
 	"its title opens its NeurIPS 2017 proceedings page, with arXiv still linked",
 	async ({ world, browser }) => {
-		throw new Error(`not implemented: ${world.dir} ${browser.version()}`);
+		const entry = await titleLink(world, browser, "Attention Is All You Need");
+		await expect(
+			entry.locator(".entry__title > a:not(.entry__arxiv)"),
+		).toHaveAttribute("href", ATTENTION_2017);
+		await expect(entry.locator(".entry__arxiv")).toHaveAttribute(
+			"href",
+			"https://arxiv.org/abs/1706.03762",
+		);
 	},
 );
 
 Then("its title opens its arXiv page", async ({ world, browser }) => {
-	throw new Error(`not implemented: ${world.dir} ${browser.version()}`);
+	const entry = await titleLink(world, browser, "Chain of Thought");
+	await expect(
+		entry.locator(".entry__title > a:not(.entry__arxiv)"),
+	).toHaveAttribute("href", /^https:\/\/arxiv\.org\//);
 });

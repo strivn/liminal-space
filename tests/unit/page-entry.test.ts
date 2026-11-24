@@ -951,8 +951,43 @@ test("A lab post's figure that fails to load leaves no broken image", () => {
 	);
 });
 
-test.todo(
-	"A paper's title opens its published version when it has one, and its arXiv page otherwise",
-);
-test.todo("A paper with a published version still links to its arXiv page");
-test.todo("security: a published version that is not https is never linked");
+const ARXIV_PAPER = {
+	url: "https://arxiv.org/abs/1706.03762",
+	links: [{ label: "PDF", url: "https://arxiv.org/pdf/1706.03762" }],
+};
+const PUBLISHED = {
+	url: "https://proceedings.neurips.cc/paper_files/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html",
+	venue: "NeurIPS 2017",
+	from: "https://proceedings.neurips.cc/paper_files/paper/2017",
+};
+const titleHref = (article: Element) =>
+	article.querySelector(".entry__title > a")?.getAttribute("href");
+
+test("A paper's title opens its published version when it has one, and its arXiv page otherwise", () => {
+	expect(
+		titleHref(drawn(paper({ ...ARXIV_PAPER, camera_ready: PUBLISHED }))),
+	).toBe(PUBLISHED.url);
+	expect(titleHref(drawn(paper(ARXIV_PAPER)))).toBe(
+		"https://arxiv.org/pdf/1706.03762",
+	);
+});
+
+test("A paper with a published version still links to its arXiv page", () => {
+	const article = drawn(paper({ ...ARXIV_PAPER, camera_ready: PUBLISHED }));
+	const links = hrefs(article);
+	expect(links).toContain("https://arxiv.org/abs/1706.03762");
+	expect(links).toContain("https://arxiv.org/pdf/1706.03762");
+});
+
+test("security: a published version that is not https is never linked", () => {
+	for (const url of [
+		"http://proceedings.neurips.cc/paper.html",
+		"javascript:alert(1)",
+	]) {
+		const article = drawn(
+			paper({ ...ARXIV_PAPER, camera_ready: { ...PUBLISHED, url: url } }),
+		);
+		expect(hrefs(article)).not.toContain(url);
+		expect(titleHref(article)).toBe("https://arxiv.org/pdf/1706.03762");
+	}
+});
