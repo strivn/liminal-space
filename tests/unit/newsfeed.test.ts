@@ -725,4 +725,22 @@ describe("sources that fail, and the command line", () => {
 		expect(invalid.served).toBe(0);
 		expect(invalid.second.items).toBeNull();
 	});
+
+	test.todo(
+		"a source with its own timeoutMs waits that long for its answer, while the other sources keep the default 30 seconds",
+	);
+
+	test.todo(
+		"a timeoutMs that is not a whole number above 0 stops the run before any request and names the source",
+	);
+});
+
+describe("items left for describe.ts", () => {
+	test.todo(
+		"with a describe list, the run writes the link of every new item that has no description, one per line",
+	);
+
+	test.todo(
+		"an item with its own description is left out of the describe list, and no list is written when every item has one",
+	);
 });
