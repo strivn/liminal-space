@@ -159,28 +159,31 @@ export function usableThreads(value: unknown): Thread[] {
 }
 
 // A folded thread's count: "1 reply", "3 replies".
-export function replyCountText(_replies: number): string {
-	throw new Error("not implemented");
+export function replyCountText(replies: number): string {
+	if (replies === 1) return "1 reply";
+	return `${replies} replies`;
 }
 
 // Whether a thread shows only its first comment and its count.
 export function showsFolded(
-	_thread: Thread,
-	_open: ReadonlySet<string>,
+	thread: Thread,
+	open: ReadonlySet<string>,
 ): boolean {
-	throw new Error("not implemented");
+	return thread.comments.length > 1 && !open.has(thread.id);
 }
 
-// Card tops in the comment column: each card where it wants to be, or `gap` below the card before it if that is lower.
+// Card tops in the comment column: each card where it wants to be, or `gap` below the card before it if that is lower,
+// and none above `floor`.
 export function stackTops(
 	wanted: number[],
 	heights: number[],
 	gap: number,
+	floor: number,
 ): number[] {
 	const tops: number[] = [];
 	for (let i = 0; i < wanted.length; i++) {
 		// An index past the end reads as undefined, which Number() makes NaN.
-		let top = Number(wanted[i]);
+		let top = Math.max(Number(wanted[i]), floor);
 		if (i > 0)
 			top = Math.max(top, Number(tops[i - 1]) + Number(heights[i - 1]) + gap);
 		tops.push(top);

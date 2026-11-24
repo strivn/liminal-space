@@ -152,21 +152,57 @@ Then(
 
 Then(
 	"Claude's reply shows its first 3 lines and {string}",
-	async ({ world: _world }, _button: string) => {
-		throw new Error("not written");
+	async ({ world, browser }, button: string) => {
+		const page = await pageOf(world, browser, "owner");
+		const reply = await claudesReply(page, world);
+		const lines = await reply.evaluate((text) => {
+			const line = parseFloat(getComputedStyle(text).lineHeight);
+			return {
+				shown: Math.round(text.clientHeight / line),
+				cut: text.scrollHeight > text.clientHeight,
+			};
+		});
+		expect.soft(lines).toEqual({ shown: 3, cut: true });
+		await expect
+			.soft(
+				commentPanel(page)
+					.locator(".comment")
+					.filter({ has: page.locator(".comment__claude") })
+					.getByRole("button", { name: button, exact: true }),
+			)
+			.toBeVisible();
 	},
 );
 
+// A thread's card, found by its first comment.
+function threadOf(page: Page, first: string): Locator {
+	return commentPanel(page)
+		.locator(".comment-thread")
+		.filter({ has: page.locator(".comment__text", { hasText: first }) });
+}
+
 Then(
 	"the thread {string} shows folded, with {string}",
-	async ({ world: _world }, _first: string, _count: string) => {
-		throw new Error("not written");
+	async ({ world, browser }, first: string, count: string) => {
+		const page = await pageOf(world, browser, "owner");
+		const thread = threadOf(page, first);
+		await expect.soft(thread.locator(".comment__text")).toHaveText([first]);
+		await expect
+			.soft(thread.getByRole("button", { name: count, exact: true }))
+			.toBeVisible();
 	},
 );
 
 When(
 	"the owner opens {string} and {string}",
-	async ({ world: _world }, _count: string, _more: string) => {
-		throw new Error("not written");
+	async ({ world, browser }, count: string, more: string) => {
+		const page = await pageOf(world, browser, "owner");
+		const question = asked.get(world) ?? "";
+		await threadOf(page, question)
+			.getByRole("button", { name: count, exact: true })
+			.click();
+		await threadOf(page, question)
+			.getByRole("button", { name: more, exact: true })
+			.click();
 	},
 );
