@@ -13,10 +13,30 @@ export const UNREACHABLE = "couldn't reach the site";
 // How long the page says a read or tag press wasn't saved.
 const NOTICE_MS = 5000;
 
-// The owner's saved state from the site, or null when it can't be read: no answer (Access's sign-in page included),
-// a refusal, or an answer that isn't a state.
-export async function loadOwnerState(): Promise<OwnerData | null> {
+// The sessionStorage key that says this tab already signed in again.
+export const SIGNED_IN_AGAIN = "liminal-signed-in-again";
+
+// Sign in again through Access once per tab: Access's logout on the page's own host, which returns to this page and
+// asks for a new sign-in. True when it left for the logout; false when this tab already tried, or its storage can't
+// be used.
+export function signInAgainOnce(storage: Storage, here: Location): boolean {
+	try {
+		if (storage.getItem(SIGNED_IN_AGAIN) !== null) return false;
+		storage.setItem(SIGNED_IN_AGAIN, "1");
+	} catch {
+		return false;
+	}
+	const logout = new URL("/cdn-cgi/access/logout", here.origin);
+	logout.searchParams.set("returnTo", here.href);
+	here.assign(logout.href);
+	return true;
+}
+
+// The owner's saved state from the site, "refused" when the Worker refused the sign-in (403), or null when it can't
+// be read otherwise: no answer (Access's sign-in page included), another refusal, or an answer that isn't a state.
+export async function loadOwnerState(): Promise<OwnerData | "refused" | null> {
 	const answer = await fetchJson(`${OWNER_API}state`);
+	if (answer.status === 403) return "refused";
 	const json = answer.json;
 	if (answer.status !== 200 || !isJsonObject(json)) return null;
 	if (
@@ -157,7 +177,7 @@ export function createStateRefresh(
 	async function refreshState(): Promise<boolean> {
 		const movesBefore = sender.moves();
 		const fresh = await loadOwnerState();
-		if (fresh === null) {
+		if (fresh === null || fresh === "refused") {
 			console.warn("The saved state couldn't be read again");
 			return false;
 		}
