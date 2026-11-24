@@ -1339,6 +1339,10 @@ test("places the cards again when a card's height changes", async () => {
 	expect(card()?.style.top).toBe("40px");
 });
 describe("folded threads", () => {
+	test.todo(
+		"Reply sits on its own row at the end of a thread, under the latest comment",
+	);
+
 	// A question, Claude's answer, a follow-up and Claude's second answer: the middle two fold.
 	const ASKED = {
 		[ENTRY_ID]: [
