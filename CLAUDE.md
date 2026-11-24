@@ -31,9 +31,10 @@ The daily run, in the order `scout.yml` runs it:
 4. `score.ts` scores the pool.
 5. `scout.ts` runs the scout, which adds papers and items through `arxiv.ts`, `proceedings.ts`, `surprise.ts` and
    `digests.ts`, and enriches them with `first-page.ts`, `figure.ts`, `describe.ts` and `fulltext.sh`.
-6. `abstracts.ts` adds Semantic Scholar's abstract to the day's DOI papers that came without one. Then `sync.ts push`
-   sends the new lines to D1, `.cache/` is saved without `feedback.json`, and `sync.ts log` sends the
-   scout's log.
+6. `abstracts.ts` adds Semantic Scholar's abstract to the day's DOI papers that came without one, and `camera-ready.ts`
+   links today's conference papers to their published versions, read from the proceedings files in `interests.md`
+   (every paper on Mondays). Then `sync.ts push` sends the new lines to D1, `.cache/` is saved without `feedback.json`,
+   and `sync.ts log` sends the scout's log.
 7. A last job calls `deploy.yml`, which applies the D1 migrations, runs `sync.ts pull` and `build-site.ts`, and
    deploys the page.
 

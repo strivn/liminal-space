@@ -4,6 +4,7 @@
 		"allow": [
 			"Bash(node scripts/scout/arxiv/arxiv.ts --append site/digests.js *)",
 			"Bash(node scripts/scout/web/describe.ts site/digests.js *)",
+			"Bash(node scripts/scout/web/post-figure.ts site/digests.js *)",
 			"Bash(node scripts/digests/digests.ts status site/digests.js)",
 			"Bash(node scripts/digests/digests.ts status site/digests.js --date *)",
 			"Bash(node scripts/digests/digests.ts add site/digests.js *)",
