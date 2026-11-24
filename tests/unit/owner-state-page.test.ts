@@ -72,9 +72,9 @@ test('security: an entry id "__proto__" is an ordinary key in the comments and c
 		vi.fn(async () => new Response(body, { status: 200 })),
 	);
 	const state = await loadOwnerState();
-	expect(state).not.toBeNull();
-	expect(Object.getPrototypeOf(state?.comments)).toBeNull();
-	expect(Object.hasOwn(state?.comments ?? {}, "__proto__")).toBe(true);
+	if (typeof state !== "object" || state === null) throw new Error("no state");
+	expect(Object.getPrototypeOf(state.comments)).toBeNull();
+	expect(Object.hasOwn(state.comments, "__proto__")).toBe(true);
 	expect(({} as Record<string, unknown>).polluted).toBeUndefined();
 });
 
