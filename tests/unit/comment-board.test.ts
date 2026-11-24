@@ -1339,6 +1339,22 @@ test("places the cards again when a card's height changes", async () => {
 	expect(card()?.style.top).toBe("40px");
 });
 describe("folded threads", () => {
+	test("Reply sits on its own row at the end of a thread, under the latest comment", () => {
+		const page = openPage({ saved: structuredClone(ASKED) });
+		const view = page.views[0] as CommentView;
+		const card = view.column.querySelector(".comment-thread") as HTMLElement;
+		const row = card.lastElementChild as HTMLElement;
+		expect(row.textContent).toBe("Reply");
+		expect(
+			row.previousElementSibling?.querySelector(".comment__text")?.textContent,
+		).toBe("It is in table 2.");
+		const inComments = Array.from(
+			card.querySelectorAll(".comment button"),
+			(button) => button.textContent?.trim(),
+		);
+		expect(inComments).not.toContain("Reply");
+	});
+
 	// A question, Claude's answer, a follow-up and Claude's second answer: the middle two fold.
 	const ASKED = {
 		[ENTRY_ID]: [
@@ -1367,10 +1383,12 @@ describe("folded threads", () => {
 		expect(cardTexts(view)).toEqual(FOLDED);
 		const card = view.column.querySelector(".comment-thread") as HTMLElement;
 		expect(
-			Array.from(card.children, (child) =>
-				child.classList.contains("comment-thread__toggle")
-					? child.textContent
-					: child.querySelector(".comment__text")?.textContent,
+			Array.from(
+				card.querySelectorAll(".comment, .comment-thread__toggle"),
+				(child) =>
+					child.classList.contains("comment-thread__toggle")
+						? child.textContent
+						: child.querySelector(".comment__text")?.textContent,
 			),
 		).toEqual([FOLDED[0], "2 more replies", FOLDED[1]]);
 		// Three comments or fewer hide nothing.
