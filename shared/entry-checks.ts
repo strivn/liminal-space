@@ -1,5 +1,6 @@
 // Checks on one digests line or entry, with nothing from Node, so the Worker can import them as well as the scripts.
 // What the page needs to draw an entry, and the schema news, articles and reports follow (scripts/scout/scout.md).
+import { isLabFigure } from "./lab-figures.ts";
 import { isJsonObject, type JsonObject } from "./narrow.ts";
 
 const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}$/;
@@ -19,6 +20,7 @@ export const SCHEMA_KEYS = [
 	"url",
 	"links",
 	"description",
+	"figure",
 	"ad_hoc",
 ];
 // Query parameters that only say where a reader came from. Any utm_* parameter is one too.
@@ -457,6 +459,11 @@ function schemaProblems(entry: JsonObject, mode: CheckMode) {
 	) {
 		problems.push("description must be text");
 	}
+	if (entry.figure !== undefined) {
+		for (const problem of labFigureProblems(entry, mode)) {
+			problems.push(problem);
+		}
+	}
 	// "ad_hoc" marks an entry added from a Claude app (digests.ts add --ad-hoc); it says so or is absent.
 	if (entry.ad_hoc !== undefined && entry.ad_hoc !== true) {
 		problems.push("ad_hoc must be true");
@@ -487,6 +494,39 @@ function figureProblems(figure: unknown) {
 	}
 	if (figure.from !== undefined && !isHttpUrl(figure.from)) {
 		problems.push("figure.from must be http or https");
+	}
+	return problems;
+}
+
+// Only post-figure.ts writes figures.
+function labFigureProblems(entry: JsonObject, mode: CheckMode) {
+	if (mode === "add") {
+		return ["a figure comes from scripts/scout/web/post-figure.ts"];
+	}
+	const figure = entry.figure;
+	if (!isJsonObject(figure)) {
+		return ["figure must hold a src and where it is from"];
+	}
+	const problems = [];
+	if (
+		typeof entry.url !== "string" ||
+		typeof figure.src !== "string" ||
+		!isLabFigure(entry.url, figure.src)
+	) {
+		problems.push("figure.src must be an image address of the post's lab");
+	}
+	if (figure.from !== entry.url) {
+		problems.push("figure.from must be the post's url");
+	}
+	for (const field of ["alt", "caption"]) {
+		if (figure[field] !== undefined && typeof figure[field] !== "string") {
+			problems.push(`figure.${field} must be text`);
+		}
+		if (isOver(figure[field], FIELD_CAPS.description)) {
+			problems.push(
+				`figure.${field} is over ${FIELD_CAPS.description} characters`,
+			);
+		}
 	}
 	return problems;
 }

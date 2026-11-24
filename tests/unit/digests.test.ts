@@ -1575,15 +1575,97 @@ test("an entry with a field over its cap is refused", async () => {
 	}
 });
 
-test.todo(
-	"A lab post's figure is accepted only from that lab's own image addresses",
-);
-test.todo(
-	"A figure on an item from a news site or an unlisted blog is refused",
-);
-test.todo(
-	"security: a lab figure address that is not https, or carries a user name or password, is refused",
-);
+// An OpenAI blog post with a figure from OpenAI's own image addresses.
+function labPost(figure: JsonObject) {
+	const url = "https://openai.com/index/combatting-adversarial-distillation/";
+	return newsWith({
+		id: `url:${url}`,
+		url: url,
+		figure: { from: url, ...figure },
+	});
+}
+
+const OPENAI_FIGURE =
+	"https://images.ctfassets.net/kftzwdyauwt9/v3SwlCju2INrQ6LXdq8eB/d0aca54aed53ede3aee7ffc0c40b0646/diagram.png";
+
+test("A lab post's figure is accepted only from that lab's own image addresses", async () => {
+	const { entryProblems }: typeof EntryChecks = await import(CHECKS.href);
+	const accepted = labPost({
+		src: OPENAI_FIGURE,
+		alt: "Two layers of anti-distillation safeguards.",
+		caption: "Figure 1: Two layers.",
+	});
+	assert.deepEqual(entryProblems(accepted, "check"), []);
+	const refused = [
+		{
+			what: "another Contentful customer's image",
+			figure: { src: "https://images.ctfassets.net/otherspace/x/y/z.png" },
+			reason: "figure.src must be an image address of the post's lab",
+		},
+		{
+			what: "Anthropic's image on an OpenAI post",
+			figure: { src: "https://assets.claude.com/9072701b.jpg" },
+			reason: "figure.src must be an image address of the post's lab",
+		},
+		{
+			what: "a figure read from another page",
+			figure: { src: OPENAI_FIGURE, from: "https://openai.com/index/other/" },
+			reason: "figure.from must be the post's url",
+		},
+		{
+			what: "an alt text that is not text",
+			figure: { src: OPENAI_FIGURE, alt: 3 },
+			reason: "figure.alt must be text",
+		},
+	];
+	for (const each of refused) {
+		assertHasReason(
+			entryProblems(labPost(each.figure), "check"),
+			each.reason,
+			each.what,
+		);
+	}
+	assertHasReason(
+		entryProblems(labPost({ src: OPENAI_FIGURE }), "add"),
+		"a figure comes from scripts/scout/web/post-figure.ts",
+		"a figure sent through add",
+	);
+});
+
+test("A figure on an item from a news site or an unlisted blog is refused", async () => {
+	const { entryProblems }: typeof EntryChecks = await import(CHECKS.href);
+	for (const url of [
+		"https://www.nytimes.com/2026/11/20/technology/ai.html",
+		"https://blog.redwoodresearch.org/p/a-post",
+	]) {
+		const entry = newsWith({
+			id: `url:${url}`,
+			url: url,
+			figure: { src: "https://substackcdn.com/image/x.png", from: url },
+		});
+		assertHasReason(
+			entryProblems(entry, "check"),
+			"figure.src must be an image address of the post's lab",
+			url,
+		);
+	}
+});
+
+test("security: a lab figure address that is not https, or carries a user name or password, is refused", async () => {
+	const { entryProblems }: typeof EntryChecks = await import(CHECKS.href);
+	for (const src of [
+		OPENAI_FIGURE.replace("https:", "http:"),
+		OPENAI_FIGURE.replace("https://", "https://user:secret@"),
+		"https://images.ctfassets.net.example.com/kftzwdyauwt9/x.png",
+		"javascript:alert(1)",
+	]) {
+		assertHasReason(
+			entryProblems(labPost({ src: src }), "check"),
+			"figure.src must be an image address of the post's lab",
+			src,
+		);
+	}
+});
 
 test.todo(
 	"A paper's camera_ready holds an https url, its venue and where it was read",
