@@ -1,5 +1,4 @@
-// Where each AI lab's blog figures may load from, keyed by the host of the post's own address. The scripts, the
-// Worker's checks, the page and its image policy all read this list.
+// Each lab's figure addresses, by post host.
 export const LAB_FIGURE_ADDRESSES: Readonly<Record<string, readonly string[]>> =
 	{
 		"openai.com": [
@@ -25,7 +24,15 @@ export const LAB_FIGURE_ADDRESSES: Readonly<Record<string, readonly string[]>> =
 		"sakana.ai": ["https://sakana.ai/"],
 	};
 
-// Whether src is a figure address allowed for the lab post at postUrl.
 export function isLabFigure(postUrl: string, src: string): boolean {
-	throw new Error(`not implemented: ${postUrl} ${src}`);
+	const post = URL.parse(postUrl);
+	const image = URL.parse(src);
+	if (post === null || image === null) return false;
+	if (image.protocol !== "https:" || image.username || image.password) {
+		return false;
+	}
+	const allowed = Object.hasOwn(LAB_FIGURE_ADDRESSES, post.host)
+		? LAB_FIGURE_ADDRESSES[post.host]
+		: undefined;
+	return (allowed ?? []).some((prefix) => image.href.startsWith(prefix));
 }

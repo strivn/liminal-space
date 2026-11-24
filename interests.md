@@ -74,22 +74,22 @@ shows one.
 - COLM: https://colm.cc/static/virtual/data/colm-2026-orals-posters.json
 
 ## Proceedings
-Where each conference publishes its final papers for 2026, one per line. A paper with a
+Where each conference edition publishes its final papers, one per line. A paper with a
 venue links to its published version once the file lists it.
-- ICML: https://proceedings.mlr.press/v306/assets/bib/bibliography.bib
-- ACL: https://aclanthology.org/volumes/2026.acl-long.bib
-- ACL: https://aclanthology.org/volumes/2026.acl-short.bib
-- ACL Findings: https://aclanthology.org/volumes/2026.findings-acl.bib
-- ICLR: https://proceedings.iclr.cc/paper_files/paper/2026
-- COLM: https://proceedings.colm.cc/paper_files/paper/2026
-- NeurIPS: https://proceedings.neurips.cc/paper_files/paper/2026
-- PETS: https://petsymposium.org/popets/2026/
-- AIES: https://ojs.aaai.org/index.php/AIES/oai?verb=ListRecords&metadataPrefix=oai_dc&set=AIES:A26-1
-- AIES: https://ojs.aaai.org/index.php/AIES/oai?verb=ListRecords&metadataPrefix=oai_dc&set=AIES:A26-2
-- AIES: https://ojs.aaai.org/index.php/AIES/oai?verb=ListRecords&metadataPrefix=oai_dc&set=AIES:A26-3
-- AIES: https://ojs.aaai.org/index.php/AIES/oai?verb=ListRecords&metadataPrefix=oai_dc&set=AIES:A26-4
-- AIES: https://ojs.aaai.org/index.php/AIES/oai?verb=ListRecords&metadataPrefix=oai_dc&set=AIES:A26-SA
-- FAccT: https://api.crossref.org/works?filter=prefix:10.1145 (Proceedings of the 2026 ACM Conference on Fairness, Accountability, and Transparency)
+- ICML 2026: https://proceedings.mlr.press/v306/assets/bib/bibliography.bib
+- ACL 2026: https://aclanthology.org/volumes/2026.acl-long.bib
+- ACL 2026: https://aclanthology.org/volumes/2026.acl-short.bib
+- ACL Findings 2026: https://aclanthology.org/volumes/2026.findings-acl.bib
+- ICLR 2026: https://proceedings.iclr.cc/paper_files/paper/2026
+- COLM 2026: https://proceedings.colm.cc/paper_files/paper/2026
+- NeurIPS 2026: https://proceedings.neurips.cc/paper_files/paper/2026
+- PETS 2026: https://petsymposium.org/popets/2026/
+- AIES 2026: https://ojs.aaai.org/index.php/AIES/oai?verb=ListRecords&metadataPrefix=oai_dc&set=AIES:A26-1
+- AIES 2026: https://ojs.aaai.org/index.php/AIES/oai?verb=ListRecords&metadataPrefix=oai_dc&set=AIES:A26-2
+- AIES 2026: https://ojs.aaai.org/index.php/AIES/oai?verb=ListRecords&metadataPrefix=oai_dc&set=AIES:A26-3
+- AIES 2026: https://ojs.aaai.org/index.php/AIES/oai?verb=ListRecords&metadataPrefix=oai_dc&set=AIES:A26-4
+- AIES 2026: https://ojs.aaai.org/index.php/AIES/oai?verb=ListRecords&metadataPrefix=oai_dc&set=AIES:A26-SA
+- FAccT 2026: https://api.crossref.org/works?filter=prefix:10.1145 (Proceedings of the 2026 ACM Conference on Fairness, Accountability, and Transparency)
 
 ## Surprise (one per day)
 One paper from outside AI and machine learning that is recently important or gaining

@@ -106,6 +106,30 @@ export function conferenceLists(markdown: string): ConferenceList[] {
 	return lists;
 }
 
+// One proceedings file per conference edition.
+export type ProceedingsLine = {
+	venue: string;
+	url: string;
+	container: string | null;
+};
+
+// "- ICML 2026: <url> (<container>)" lines.
+export function proceedingsLines(markdown: string): ProceedingsLine[] {
+	const found: ProceedingsLine[] = [];
+	for (const raw of sectionLines(markdown, "Proceedings") ?? []) {
+		const match = raw
+			.trim()
+			.match(/^- ([^:]+):\s+(https:\/\/\S+)(?:\s+\((.+)\))?$/);
+		if (match === null || !URL.canParse(match[2] ?? "")) continue;
+		found.push({
+			venue: (match[1] ?? "").trim(),
+			url: match[2] ?? "",
+			container: match[3] ?? null,
+		});
+	}
+	return found;
+}
+
 // Each phrase as one search clause: its parts written by `quote`, a single part alone, several joined with `and` in
 // parentheses.
 function phraseClauses(

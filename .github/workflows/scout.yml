@@ -157,6 +157,16 @@ jobs:
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
+      # Published versions; every paper on Mondays.
+      - name: Link papers to their published versions
+        if: always() && steps.status.outputs.skip == 'false'
+        run: |
+          if [ "$(TZ=Asia/Jakarta date +%u)" = 1 ]; then
+            node scripts/scout/proceedings/camera-ready.ts site/digests.js --all
+          else
+            node scripts/scout/proceedings/camera-ready.ts site/digests.js
+          fi
+
       # Also after a session that failed or ran out of time: every line it wrote loads (the scripts write by rename),
       # push checks each before sending, and the site only adds and fills, so nothing the session added is lost.
       # skip is empty when the count failed, and then nothing is pushed.
