@@ -1,5 +1,6 @@
 // One entry drawn: its text, Figure 1, icon rail and read toggles; and the heatmap.
 import { hasText } from "../../shared/entry-checks.ts";
+import { isLabFigure } from "../../shared/lab-figures.ts";
 import { isJsonObject } from "../../shared/narrow.ts";
 import type { Depth } from "../../shared/owner-protocol.ts";
 import SOURCE_ICONS from "../icons/index.json" with { type: "json" };
@@ -112,21 +113,28 @@ function isSize(value: unknown): value is number {
 	return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
-// A paper's Figure 1, for after its abstract: the image, linked to the arXiv HTML page it came from, and its caption
-// with the math typeset. null for anything that isn't a paper with a usable figure.
+// A paper's Figure 1, or a lab post's figure.
 function figureNode(entry: Entry) {
 	const figure = entry.figure;
-	if (entry.type !== "paper" || !isJsonObject(figure)) return null;
-	if (typeof figure.src !== "string" || !figure.src.startsWith(FIGURE_SITE))
+	if (!isJsonObject(figure) || typeof figure.src !== "string") return null;
+	const isPaper = entry.type === "paper";
+	if (isPaper && !figure.src.startsWith(FIGURE_SITE)) return null;
+	if (
+		!isPaper &&
+		(typeof entry.url !== "string" || !isLabFigure(entry.url, figure.src))
+	)
 		return null;
 
 	// loading comes before src, so the browser knows to wait until the image is near the screen.
-	const image = el("img", {
+	const attributes: Record<string, string> = {
 		loading: "lazy",
 		decoding: "async",
-		src: figure.src,
-		alt: "Figure 1",
-	});
+	};
+	if (!isPaper) attributes.referrerpolicy = "no-referrer";
+	attributes.src = figure.src;
+	attributes.alt = "Figure 1";
+	if (!isPaper) attributes.alt = hasText(figure.alt) ? figure.alt : "Figure";
+	const image = el("img", attributes);
 	// Width and height reserve the image's box before it loads, so nothing below it moves when it arrives.
 	if (isSize(figure.width) && isSize(figure.height)) {
 		image.setAttribute("width", String(figure.width));
@@ -141,14 +149,14 @@ function figureNode(entry: Entry) {
 			{
 				class: "entry__figure-link",
 				href: from,
-				title: "Figure 1 in arXiv's HTML version",
+				title: isPaper ? "Figure 1 in arXiv's HTML version" : "Open the post",
 			},
 			image,
 		);
 	const node = el("figure", { class: "entry__figure" }, shown);
 	if (hasText(figure.caption)) {
 		const caption = el("figcaption", null, figure.caption);
-		typeset(caption);
+		if (isPaper) typeset(caption);
 		linkAddresses(caption);
 		node.append(caption);
 	}

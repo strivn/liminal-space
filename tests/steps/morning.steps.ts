@@ -12,9 +12,30 @@ import {
 	runScript,
 	Then,
 	When,
+	type World,
 } from "./world.ts";
 
 const FIXTURES = path.join(import.meta.dirname, "..", "fixtures");
+const SITE_ICONS = path.join(import.meta.dirname, "..", "..", "site", "icons");
+const LAB_POST =
+	"https://openai.com/index/combatting-adversarial-distillation/";
+const LAB_IMAGES = "https://images.ctfassets.net/kftzwdyauwt9/fixture";
+
+// Each scenario's stand-in for OpenAI's blog.
+const labStandIns = new WeakMap<object, { base: string; title: string }>();
+
+// Listen on a free port until the scenario ends.
+async function listen(world: World, server: http.Server) {
+	await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+	world.closers.push(
+		() => new Promise<void>((resolve) => server.close(() => resolve())),
+	);
+	const address = server.address();
+	if (address === null || typeof address === "string") {
+		throw new Error("the stand-in has no port");
+	}
+	return `http://127.0.0.1:${address.port}`;
+}
 
 // The arXiv papers the stand-in knows: title → id and the API answer it gives.
 const PAPERS: Record<string, { id: string; feed: string }> = {
@@ -96,26 +117,102 @@ Then(
 Given(
 	"OpenAI's blog has the post {string} with a cover image and a diagram",
 	async ({ world }, title: string) => {
-		throw new Error(`not implemented: ${world.dir} ${title}`);
+		const page = `<!doctype html><html><body><main><article><h1>${title}</h1>
+<p>Distillation copies a model's behaviour through its API.</p>
+<img src="${LAB_IMAGES}/cover.webp" alt="${title} — Cover">
+<figure><img src="${LAB_IMAGES}/diagram.png" alt="Diagram of two layers of anti-distillation safeguards.">
+<figcaption>Model behaviour and API protections.</figcaption></figure>
+</article></main></body></html>`;
+		const server = http.createServer((_request, response) => {
+			response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+			response.end(page);
+		});
+		labStandIns.set(world, { base: await listen(world, server), title });
+		world.outsideImages.set(
+			`${LAB_IMAGES}/diagram.png`,
+			fs.readFileSync(path.join(SITE_ICONS, "openai.com.png")),
+		);
 	},
 );
 
 When(
 	"the morning scripts add the post, the scout picks its diagram and the day is pushed",
 	async ({ world }) => {
-		throw new Error(`not implemented: ${world.dir}`);
+		const lab = labStandIns.get(world);
+		if (lab === undefined) throw new Error("no stand-in for OpenAI's blog");
+		await startWorker(world.cloud);
+		const written = path.join(world.dir, "digests.js");
+		const pulled = path.join(world.dir, "pulled", "digests.js");
+		const items = path.join(world.dir, "items.json");
+		fs.mkdirSync(path.dirname(pulled));
+		fs.writeFileSync(
+			items,
+			JSON.stringify([
+				{
+					type: "news",
+					title: lab.title,
+					published: world.today,
+					source: "OpenAI",
+					url: LAB_POST,
+					description: "How we protect our models from distillation.",
+				},
+			]),
+		);
+		await runScript(world, "digests/digests.ts", ["add", written, items]);
+		const env = {
+			LAB_PAGE_BASE: lab.base,
+			LIMINAL_ALLOW_LOCAL: new URL(lab.base).host,
+		};
+		const listed = await runScript(
+			world,
+			"scout/web/post-figure.ts",
+			[written, LAB_POST],
+			env,
+		);
+		const pick = listed.match(/^(\d+)\. .*\n {3}alt: .*diagram/im)?.[1];
+		if (pick === undefined) throw new Error(`no diagram listed:\n${listed}`);
+		await runScript(
+			world,
+			"scout/web/post-figure.ts",
+			[written, LAB_POST, "--pick", pick],
+			env,
+		);
+		await runScript(world, "deploy/sync.ts", ["push", written]);
+		await runScript(world, "deploy/sync.ts", ["pull", "--database", pulled]);
+		world.digestsFile = pulled;
 	},
 );
 
 Then(
 	"the public page shows the diagram under the post's description",
 	async ({ world, browser }) => {
-		throw new Error(`not implemented: ${world.dir} ${browser.version()}`);
+		const page = await openPage(world, browser, "visitor");
+		const post = page.locator("article.entry", { hasText: "Combatting" });
+		const description = post.locator(".entry__description");
+		const diagram = post.locator(".entry__figure img");
+		await expect(diagram).toHaveAttribute(
+			"alt",
+			"Diagram of two layers of anti-distillation safeguards.",
+		);
+		await expect
+			.poll(() =>
+				diagram.evaluate((image: HTMLImageElement) => image.naturalWidth),
+			)
+			.toBeGreaterThan(0);
+		const below =
+			((await diagram.boundingBox())?.y ?? 0) >
+			((await description.boundingBox())?.y ?? Number.POSITIVE_INFINITY);
+		expect(below, "the diagram sits under the description").toBe(true);
 	},
 );
 
 Then("the diagram opens the post", async ({ world }) => {
-	throw new Error(`not implemented: ${world.dir}`);
+	const page = world.pages.get("visitor");
+	if (page === undefined) throw new Error("the public page isn't open");
+	await expect(page.locator("article.entry .entry__figure a")).toHaveAttribute(
+		"href",
+		LAB_POST,
+	);
 });
 
 Given(

@@ -24,6 +24,7 @@ import { basename, dirname, join, posix, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDay, readLines, UnloadedLine } from "../../shared/entry-checks.ts";
 import { digestMarkdown } from "../../shared/entry-markdown.ts";
+import { LAB_FIGURE_ADDRESSES } from "../../shared/lab-figures.ts";
 import {
 	errorCode,
 	isJsonObject,
@@ -74,8 +75,10 @@ const OWNER_PAGE_CLASS = {
 };
 // Scripts only from the page's own files and Cloudflare's Web Analytics beacon, named by its host: its file path
 // carries a hash. Images also come from data: addresses and arXiv (Figure 1). The manifest comes from the site.
+const LAB_IMAGES = [...new Set(Object.values(LAB_FIGURE_ADDRESSES).flat())];
 const CONTENT_SECURITY_POLICY =
-	"default-src 'none'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://arxiv.org; " +
+	"default-src 'none'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; " +
+	`img-src 'self' data: https://arxiv.org ${LAB_IMAGES.join(" ")}; ` +
 	"font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; " +
 	// Only DOMPurify may write HTML.
 	"require-trusted-types-for 'script'; trusted-types dompurify";

@@ -389,7 +389,7 @@ for (const src of [
 	});
 }
 
-test("only papers show figures", () => {
+test("a news item never shows an arXiv figure", () => {
 	expect(drawn(news({ figure: FIGURE })).querySelector("figure")).toBeNull();
 });
 
@@ -881,17 +881,75 @@ test("security: a data: or vbscript: URL never becomes a link, in the title or t
 	}
 });
 
-test.todo(
-	"A lab post's figure shows after its description, linked to the post",
-);
-test.todo(
-	"A lab post's figure carries the lab's alt text, and the lab's caption when there is one",
-);
-test.todo("A lab post's figure is requested with no referrer");
-test.todo(
-	"security: a lab post's figure from an address outside its lab is never requested",
-);
-test.todo("A lab post's figure that fails to load leaves no broken image");
+const LAB_POST =
+	"https://openai.com/index/combatting-adversarial-distillation/";
+const LAB_FIGURE = {
+	src: "https://images.ctfassets.net/kftzwdyauwt9/v3S/d0a/diagram.png",
+	from: LAB_POST,
+	alt: "Two layers of anti-distillation safeguards.",
+	caption: "Figure 1: Model behaviour and API protections cost $5.",
+};
+function labPost(figure: Record<string, unknown> = LAB_FIGURE) {
+	return news({
+		url: LAB_POST,
+		description: "How we protect our models from distillation.",
+		figure: figure,
+	});
+}
+
+test("A lab post's figure shows after its description, linked to the post", () => {
+	const article = drawn(labPost());
+	const body = article.querySelector(".entry__body");
+	const parts = [...(body?.children ?? [])].map((part) => part.className);
+	expect(parts.indexOf("entry__figure")).toBe(
+		parts.indexOf("entry__description") + 1,
+	);
+	expect(article.querySelector("figure a")?.getAttribute("href")).toBe(
+		LAB_POST,
+	);
+});
+
+test("A lab post's figure carries the lab's alt text, and the lab's caption when there is one", () => {
+	const article = drawn(labPost());
+	expect(article.querySelector("figure img")?.getAttribute("alt")).toBe(
+		LAB_FIGURE.alt,
+	);
+	expect(text(article, "figcaption")).toBe(LAB_FIGURE.caption);
+	const bare = drawn(labPost({ src: LAB_FIGURE.src, from: LAB_POST }));
+	expect(bare.querySelector("figure img")?.getAttribute("alt")).toBe("Figure");
+	expect(bare.querySelector("figcaption")).toBeNull();
+});
+
+test("A lab post's figure is requested with no referrer", () => {
+	const image = drawn(labPost()).querySelector("figure img");
+	expect(image?.getAttribute("referrerpolicy")).toBe("no-referrer");
+});
+
+test("security: a lab post's figure from an address outside its lab is never requested", () => {
+	for (const src of [
+		"https://images.ctfassets.net/otherspace/x.png",
+		"https://assets.claude.com/9072701b.jpg",
+		"http://images.ctfassets.net/kftzwdyauwt9/x.png",
+	]) {
+		const article = drawn(labPost({ ...LAB_FIGURE, src: src }));
+		expect(article.querySelector("figure")).toBeNull();
+		expect(article.querySelector(`img[src="${src}"]`)).toBeNull();
+	}
+	const unlisted = drawn(
+		news({ url: "https://blog.redwoodresearch.org/p/x", figure: LAB_FIGURE }),
+	);
+	expect(unlisted.querySelector("figure")).toBeNull();
+	expect(unlisted.querySelector(`img[src="${LAB_FIGURE.src}"]`)).toBeNull();
+});
+
+test("A lab post's figure that fails to load leaves no broken image", () => {
+	const article = drawn(labPost());
+	article.querySelector("figure img")?.dispatchEvent(new Event("error"));
+	expect(article.querySelector("figure")).toBeNull();
+	expect(text(article, ".entry__description")).toBe(
+		"How we protect our models from distillation.",
+	);
+});
 
 test.todo(
 	"A paper's title opens its published version when it has one, and its arXiv page otherwise",
