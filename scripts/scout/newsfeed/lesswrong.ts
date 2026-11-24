@@ -20,6 +20,7 @@ export async function lesswrongItems(source: Source): Promise<Item[]> {
 	const query = `{ posts(input:{terms:{${terms}}}){ results{ _id title pageUrl postedAt frontpageDate baseScore user{ displayName } tags{ name } contents{ plaintextDescription } } } }`;
 	const body = await download(
 		`${source.url}?query=${encodeURIComponent(query)}`,
+		source.timeoutMs,
 	);
 	let parsed: unknown;
 	try {

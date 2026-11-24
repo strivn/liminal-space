@@ -271,6 +271,8 @@ let invalid: {
 	second: Result;
 	third: Result;
 	pattern: Result;
+	noTime: Result;
+	textTime: Result;
 	served: number;
 };
 
@@ -421,6 +423,7 @@ beforeAll(async () => {
 		},
 		"/slow1": { body: rss([post("Slow 1")]), delayMs: 300 },
 		"/slow2": { body: rss([post("Slow 2")]), delayMs: 300 },
+		"/patient": { body: rss([post("Patient 1")]), delayMs: 500 },
 		"/old": {
 			body: rss([post("Old news", { at: ago(60) })]),
 		},
@@ -455,6 +458,8 @@ beforeAll(async () => {
 				feed("Broken Feed", b, "/page"),
 				feed("Slow One", b, "/slow1"),
 				feed("Slow Two", b, "/slow2"),
+				feed("Hasty", b, "/patient", { timeoutMs: 100 }),
+				feed("Patient", b, "/patient"),
 				page("Lab Blog", b, "/lab/blog/"),
 				page("JSON Page", b, "/json-page"),
 				page("Broken Page", b, "/broken-page"),
@@ -474,11 +479,18 @@ beforeAll(async () => {
 		]),
 		newsfeed([feed("One", b, "/af", { excludeCategories: "sponsored" })]),
 		newsfeed([{ ...page("One", b, "/lab/blog/"), links: "(" }]),
+		newsfeed([feed("One", b, "/af", { timeoutMs: 0 })]),
+		newsfeed([
+			feed("One", b, "/af"),
+			feed("Two", b, "/af", { timeoutMs: "90000" }),
+		]),
 	]);
 	invalid = {
 		second: two[0],
 		third: two[1],
 		pattern: two[2],
+		noTime: two[3],
+		textTime: two[4],
 		served: stand.state.served - served,
 	};
 	usage = { code: 0, stderr: "" };
@@ -726,13 +738,28 @@ describe("sources that fail, and the command line", () => {
 		expect(invalid.second.items).toBeNull();
 	});
 
-	test.todo(
-		"a source with its own timeoutMs waits that long for its answer, while the other sources keep the default 30 seconds",
-	);
+	test("a source with its own timeoutMs waits that long for its answer, while the other sources keep the default 30 seconds", () => {
+		expect(morning.stderr).toContain(
+			`Hasty (${stand.base}/patient) not read: gave no answer within 0.1 seconds`,
+		);
+		expect(titlesOf("Hasty")).toEqual([]);
+		expect(titlesOf("Patient")).toEqual(["Patient 1"]);
+	});
 
-	test.todo(
-		"a timeoutMs that is not a whole number above 0 stops the run before any request and names the source",
-	);
+	test("a timeoutMs that is not a whole number above 0 stops the run before any request and names the source", () => {
+		expect(invalid.noTime.code).toBe(1);
+		expect(invalid.noTime.stderr).toContain("source 1 in");
+		expect(invalid.noTime.stderr).toContain(
+			"timeoutMs must be a whole number above 0",
+		);
+		expect(invalid.textTime.code).toBe(1);
+		expect(invalid.textTime.stderr).toContain("source 2 in");
+		expect(invalid.textTime.stderr).toContain(
+			"timeoutMs must be a whole number above 0",
+		);
+		expect(invalid.served).toBe(0);
+		expect(invalid.textTime.items).toBeNull();
+	});
 });
 
 describe("items left for describe.ts", () => {

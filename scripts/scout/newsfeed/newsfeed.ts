@@ -113,6 +113,12 @@ function sourceProblem(entry: unknown): string | null {
 	) {
 		return "max must be a whole number above 0";
 	}
+	if (
+		entry.timeoutMs !== undefined &&
+		!(Number.isInteger(entry.timeoutMs) && Number(entry.timeoutMs) > 0)
+	) {
+		return "timeoutMs must be a whole number above 0";
+	}
 	for (const key of ["categories", "excludeCategories", "tags"]) {
 		if (entry[key] !== undefined && !isTextList(entry[key])) {
 			return `${key} must be a list of names`;
@@ -187,18 +193,21 @@ async function readSource(source: Source, now: number): Promise<Item[]> {
 			}
 			break;
 		case "feed":
-			items = feedItems(await download(source.url), source.url);
+			items = feedItems(
+				await download(source.url, source.timeoutMs),
+				source.url,
+			);
 			break;
 		case "page":
 			items = pageItems(
-				await download(source.url),
+				await download(source.url, source.timeoutMs),
 				source.url,
 				source.links || "",
 			);
 			break;
 		case "openrouter":
 			items = releaseItems(
-				await download(source.url),
+				await download(source.url, source.timeoutMs),
 				source.providers || [],
 				now,
 			);
