@@ -3,7 +3,7 @@
 //        node scripts/deploy/sync.ts pull [--database] <digests file>
 //        node scripts/deploy/sync.ts log <run id> <YYYY-MM-DD>.md
 //        node scripts/deploy/sync.ts push-study <study file>
-//        node scripts/deploy/sync.ts pull-study <study file>
+//        node scripts/deploy/sync.ts pull-study [--database] <study file>
 // push sends the entries that are new or changed since the last pull, compared with digests.pulled.js next to the
 // digests file (every entry when there is none), to <LIMINAL_URL>/api/sync/push, in requests the Worker can answer
 // within D1's free limits (MAX_ENTRIES, MAX_BODY_BYTES in shared/push-protocol.ts). After every entry is accepted,
@@ -728,8 +728,12 @@ export async function pushStudies(
 	throw new Error("not implemented");
 }
 
-// Replace the study file with every study D1 holds, one per line.
-export async function pullStudies(_studyFile: string): Promise<void> {
+// Replace the study file with every study the site holds, one per line: from D1 with fromDatabase, else from the
+// public study files.
+export async function pullStudies(
+	_studyFile: string,
+	_fromDatabase: boolean,
+): Promise<void> {
 	throw new Error("not implemented");
 }
 

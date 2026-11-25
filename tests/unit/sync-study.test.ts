@@ -7,5 +7,8 @@ test.todo(
 	"a refused study is reported with its problems, and the other studies are still sent",
 );
 test.todo(
-	"pull-study writes every stored study to the study file, one per line",
+	"pull-study --database writes every stored study to the study file, one per line",
+);
+test.todo(
+	"pull-study without --database reads the public site's study files, so staging can show them",
 );

@@ -3,12 +3,13 @@
 // The pointer the tooltips need.
 export const HOVER_QUERY = "(hover: hover) and (pointer: fine)";
 
-// Wrap the words of each studied entry under root and open a word's tooltip on hover. studied holds the ids
-// data/index.json marks with study: true; fetchStudy reads an entry's built study file.
+// Open a word's tooltip when the pointer rests on it in a studied entry under root, without changing the entry's
+// text: the word under the pointer is found by its offset and shown with a CSS highlight. wordsFiles maps an entry's id
+// to its words file, as data/index.json names it; fetchJson reads a file of the site's own.
 export function startStudy(
 	_root: HTMLElement,
-	_studied: ReadonlySet<string>,
-	_fetchStudy: (entryId: string) => Promise<unknown>,
+	_wordsFiles: ReadonlyMap<string, string>,
+	_fetchJson: (path: string) => Promise<unknown>,
 ): void {
 	throw new Error("not implemented");
 }

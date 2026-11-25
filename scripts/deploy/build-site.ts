@@ -473,8 +473,8 @@ function fileHoldingApiKey(folder: string): string | null {
 	return null;
 }
 
-// The study files for a study file's text (one Study per line), by their path under the page's folder: one
-// study/<hash>.json per entry with the data of its own characters, and the licence files beside them.
+// The study files for a study file's text (one Study per line), by their path under the page's folder: one words
+// file per entry, one file per character in use (its strokes and its Make Me a Hanzi row), and the licence files.
 export function studyFiles(_studyText: string): Map<string, string> {
 	throw new Error("not implemented");
 }

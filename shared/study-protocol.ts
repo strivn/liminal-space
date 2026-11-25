@@ -24,6 +24,8 @@ export type Study = {
 // The request body, JSON, at most MAX_STUDY_BYTES bytes (413 beyond):
 //   {"study": {"id": "url:http://www.geekpark.net/news/374282", "title": [...], "description": [...]}}
 export const MAX_STUDY_BYTES = 200_000;
+// A meaning is plain text: no link, no control character.
+export const MAX_MEANING_CHARS = 80;
 export type StudyPush = { study: Study };
 
 // The answer, 200, JSON:

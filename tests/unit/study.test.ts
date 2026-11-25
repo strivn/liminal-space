@@ -2,7 +2,13 @@ import { test } from "vitest";
 
 test.todo("an entry counts as Chinese when its title has a Han character");
 test.todo(
-	"the words the model returns must join back into the exact title and description, or the entry gets no study",
+	"the words are cut from the stored text at the model's word boundaries, so a study always matches its entry",
+);
+test.todo(
+	"a description's trailing … and a word cut by it become text between words",
+);
+test.todo(
+	"pinyin is compared in dictionary tones, without tone changes for 一 and 不, and ignoring capitals",
 );
 test.todo("every word has one pinyin syllable for each of its Han characters");
 test.todo(
@@ -31,4 +37,7 @@ test.todo(
 );
 test.todo(
 	"security: the model's answer is checked against the study shape before it is written to the study file",
+);
+test.todo(
+	"security: a meaning longer than 80 characters, or holding a link or a control character, is refused",
 );
