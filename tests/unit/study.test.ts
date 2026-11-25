@@ -21,11 +21,11 @@ test.todo(
 	"a word's meaning is its CC-CEDICT senses for the chosen reading, as written, as many as fit in 80 characters",
 );
 test.todo(
-	"the model's meaning replaces the dictionary's only for a word the model marks as a name or a term, and is then marked as by Claude",
+	"the model's meaning is used only for a word CC-CEDICT does not list, or a term the model marks as meaning something the dictionary lacks, and is then marked as by Claude",
 );
 test.todo("a word CC-CEDICT does not list is marked as not in the dictionary");
 test.todo(
-	"a word CC-CEDICT reads only with a capital letter is marked as a name",
+	"only a name the model marks as written for its sound gets no character breakdown",
 );
 test.todo("an entry the study file already has is skipped");
 test.todo("a run studies at most 10 entries");
