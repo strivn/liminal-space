@@ -83,7 +83,7 @@ test("A mark is saved with its day and read back in the owner's state", async ()
 	});
 });
 
-test("Unmarking a paper takes it out of the owner's state", async () => {
+test("Unmarking a paper clears its mark day and keeps it in the owner's state", async () => {
 	const db = databaseWithEntries();
 	await post(db, mark(ENTRY));
 	const answer = await post(db, {
