@@ -707,7 +707,7 @@ test("a paper's rail holds its buttons in two columns, in the order a keyboard v
 		"OK",
 		"Like",
 		"Dislike",
-		"Shaped my thinking",
+		"Select",
 	]);
 	expect(railNames(article, 1)).toEqual([
 		"Discuss",

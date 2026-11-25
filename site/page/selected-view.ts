@@ -151,10 +151,10 @@ function paperRow(
 	);
 }
 
-// "Shaped my thinking", linking to Selected, in the public Feed's entry: in its kicker line, beside "Surprise" when it
+// "Selected", linking to Selected, in the public Feed's entry: in its kicker line, beside "Surprise" when it
 // has one.
 export function markKicker(article: HTMLElement): void {
-	const link = el("a", { href: "#selected" }, SELECTED_TEXT.mark);
+	const link = el("a", { href: "#selected" }, VIEW_NAMES.selected);
 	const kicker = article.querySelector(".entry__kicker");
 	if (kicker === null)
 		article.prepend(el("p", { class: "entry__kicker" }, link));

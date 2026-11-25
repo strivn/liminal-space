@@ -420,7 +420,7 @@ export function renderEntry(
 	return article;
 }
 
-// An entry's icon rail: Comment and its count, Copy; the read toggles; OK, Like and Dislike; Shaped my thinking in the
+// An entry's icon rail: Comment and its count, Copy; the read toggles; OK, Like and Dislike; Select in the
 // left column; Discuss, Talk about it and Takeaway; the tags in the right. A paper's left column has two buttons more (Abstract and Paper),
 // which style.css needs to centre the rail on the window.
 function entryRail(
