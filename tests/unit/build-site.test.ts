@@ -667,14 +667,18 @@ test("security: a line whose date isn't a real day stops the build before any fi
 	}
 });
 
-// Build a copy whose marked papers are `rows`, as sync.ts writes them beside the digests file; the page's data folder.
-function buildSelected(copy: ReturnType<typeof siteCopy>, rows: unknown) {
+// Build a copy with `rows` as its marked papers.
+function buildSelected(
+	copy: ReturnType<typeof siteCopy>,
+	rows: unknown,
+	env: Record<string, string> = {},
+) {
 	fs.writeFileSync(
 		path.join(path.dirname(copy.digests), "digests.standouts.json"),
 		JSON.stringify(rows),
 	);
 	execFileSync(process.execPath, [SCRIPT, copy.digests, copy.dist], {
-		env: { ...process.env, LIMINAL_SITE: copy.site },
+		env: { ...process.env, LIMINAL_SITE: copy.site, ...env },
 	});
 	return path.join(copy.dist, "liminal-space");
 }
@@ -715,18 +719,36 @@ test("privacy: the site data holds no comment, takeaway, tag, like or read mark 
 		feedback: "OWNER-LIKE-7f3a",
 		read: "OWNER-READ-7f3a",
 	};
+	// The owner's other files beside the digests file and in the cache folder.
+	const files = {
+		read: "arxiv:OWNER-READ-FILE-7f3a",
+		liked: "arxiv:OWNER-LIKED-FILE-7f3a",
+	};
 	fs.writeFileSync(
 		path.join(path.dirname(copy.digests), "digests.read.json"),
-		JSON.stringify(["arxiv:2610.00001"]),
+		JSON.stringify([files.read]),
 	);
-	const page = buildSelected(copy, [
-		{
-			entry: { id: "arxiv:2610.00001", type: "paper", title: "Marked" },
-			date: "2026-11-02",
-			note: "A public note",
-			...owner,
-		},
-	]);
+	const cache = path.join(path.dirname(copy.digests), "cache");
+	fs.mkdirSync(cache);
+	fs.writeFileSync(
+		path.join(cache, "feedback.json"),
+		JSON.stringify({
+			liked: [{ id: files.liked, title: "Liked", abstract: "A", date: "d" }],
+			disliked: [],
+		}),
+	);
+	const page = buildSelected(
+		copy,
+		[
+			{
+				entry: { id: "arxiv:2610.00001", type: "paper", title: "Marked" },
+				date: "2026-11-02",
+				note: "A public note",
+				...owner,
+			},
+		],
+		{ LIMINAL_CACHE: cache },
+	);
 	const selected = JSON.parse(
 		fs.readFileSync(path.join(page, "data", "selected.json"), "utf8"),
 	);
@@ -742,7 +764,7 @@ test("privacy: the site data holds no comment, takeaway, tag, like or read mark 
 	for (const file of published) {
 		if (!file.isFile()) continue;
 		const bytes = fs.readFileSync(path.join(file.parentPath, file.name));
-		for (const secret of Object.values(owner)) {
+		for (const secret of [...Object.values(owner), ...Object.values(files)]) {
 			assert.ok(!bytes.includes(secret), `${file.name} holds ${secret}`);
 		}
 	}

@@ -5,7 +5,7 @@ name: staging
 on:
   push:
     branches: [develop]
-  # The owner starts it by hand to see the marks they made on staging in its Selected view.
+  # Started by hand to publish staging's marks.
   workflow_dispatch:
 
 # One staging deploy at a time; a newer one waits. Its own group, so it never waits on production's.
@@ -34,9 +34,8 @@ jobs:
       - name: Pull production's entries
         run: node scripts/deploy/sync.ts pull site/digests.js
 
-      # As production's deploy does (deploy.yml), on staging's database: pending migrations before anything reads a table
-      # they add and before the Worker that needs them, the id pinned in env.staging. No Time Travel bookmark: staging's
-      # entries come back on every deploy.
+      # As production's deploy does (deploy.yml), on staging's database: pending migrations before the Worker that
+      # needs them, the id pinned in env.staging. No Time Travel bookmark: staging's entries come back on every deploy.
       - name: Migrate the database
         run: |
           node -e 'require("wrangler").experimental_patchConfig("wrangler.jsonc", { env: { staging: { d1_databases: [{ database_id: process.env.D1_DATABASE_ID }] } } }, false)'
@@ -50,8 +49,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
 
-      # The papers the owner marked on staging, from staging's own database: the entries above are production's, whose
-      # marks never reach staging.
+      # Marked papers from staging's own database.
       - name: Pull staging's marked papers
         run: node scripts/deploy/sync.ts standouts --database site/digests.js
         env:

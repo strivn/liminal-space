@@ -8,7 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import { afterEach, test, vi } from "vitest";
+import { afterEach, beforeAll, test, vi } from "vitest";
 import type * as SiteRequests from "../../scripts/deploy/site-requests.ts";
 import type * as Sync from "../../scripts/deploy/sync.ts";
 import type { JsonObject } from "../../shared/narrow.ts";
@@ -262,11 +262,9 @@ test("security: A redirect is never followed and counts as a failed try, so the 
 	}
 });
 
-// ---- pull --database and the marked papers ----
+// ---- the marked papers ----
 
-// pull --database run as the workflows run it, against a stand-in for Cloudflare's API that runs each statement on a
-// database of the real tables holding two papers: the first marked on 2026-11-20 with a note, the second unmarked with
-// a note it keeps. The file it wrote for the build, as parsed JSON.
+// The file pull wrote, from one marked and one unmarked paper.
 async function pulledStandouts() {
 	const db = migratedDatabase();
 	for (const [n, marked] of [
@@ -314,14 +312,18 @@ async function pulledStandouts() {
 	}
 }
 
-test("pull writes the marked papers and their notes for the build", async () => {
-	assert.deepEqual(JSON.parse(await pulledStandouts()), [
+let written: string;
+beforeAll(async () => {
+	written = await pulledStandouts();
+});
+
+test("pull writes the marked papers and their notes for the build", () => {
+	assert.deepEqual(JSON.parse(written), [
 		{ entry: paper(1), date: "2026-11-20", note: "Note on paper 1" },
 	]);
 });
 
-test("privacy: pull never writes an unmarked paper's note for the build", async () => {
-	const written = await pulledStandouts();
+test("privacy: pull never writes an unmarked paper's note for the build", () => {
 	assert.ok(!written.includes("Note on paper 2"));
 	assert.ok(!written.includes(String(paper(2).title)));
 });

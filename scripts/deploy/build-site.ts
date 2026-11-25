@@ -364,9 +364,7 @@ export function digestFiles(
 	return files;
 }
 
-// data/selected.json from the marked papers sync.ts wrote (a list of {entry, date, note}), newest mark first. Each
-// paper keeps its entry, mark day and note and nothing else the rows hold. Throws a BuildFailure for rows of another
-// shape.
+// The data/selected.json content.
 export function selectedFile(rows: unknown): SelectedFile {
 	const unreadable = new BuildFailure(
 		"the marked papers must be a list of {entry, date, note}",
@@ -387,7 +385,7 @@ export function selectedFile(rows: unknown): SelectedFile {
 		}
 		papers.push({ entry: row.entry, date: row.date, note: row.note });
 	}
-	// Dates compare as text, as YYYY-MM-DD sorts; a tie keeps the entries' ids in order.
+	// Newest mark first.
 	papers.sort(
 		(a, b) =>
 			b.date.localeCompare(a.date) ||
@@ -396,7 +394,7 @@ export function selectedFile(rows: unknown): SelectedFile {
 	return { papers: papers };
 }
 
-// A marked paper's id, which selectedFile has checked.
+// A checked entry's id.
 function entryId(entry: unknown): string {
 	if (isJsonObject(entry) && typeof entry.id === "string") {
 		return entry.id;
@@ -404,7 +402,7 @@ function entryId(entry: unknown): string {
 	return "";
 }
 
-// The marked papers beside the digests file, or none when sync.ts wrote no file.
+// The marked papers, or none.
 function readSelected(digestsFile: string): SelectedFile {
 	const file = standoutsPath(digestsFile);
 	let text: string;

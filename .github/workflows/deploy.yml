@@ -49,12 +49,12 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      # Pending migrations reach the database before the pull reads a table they add, and before the Worker that needs
-      # them. The id is pinned as in the deploy step, so the migrations run on the database the pull step reads. The
-      # bookmark is the point to restore the database to if a migration has to be undone: `wrangler d1 time-travel
-      # restore liminal --bookmark=<it>`. Wrangler stops at a failed migration and exits non-zero, which stops the job
-      # before the deploy, but it names only the migrations it was about to apply: the list after it shows the first
-      # still pending, which is the one that failed.
+      # Pending migrations reach the database before the Worker that needs them. The id is
+      # pinned as in the deploy step, so the migrations run on the database the pull step reads. The bookmark is the
+      # point to restore the database to if a migration has to be undone: `wrangler d1 time-travel restore liminal
+      # --bookmark=<it>`. Wrangler stops at a failed migration and exits non-zero, which stops the job before the
+      # deploy, but it names only the migrations it was about to apply: the list after it shows the first still
+      # pending, which is the one that failed.
       - name: Migrate the database
         run: |
           node -e 'require("wrangler").experimental_patchConfig("wrangler.jsonc", { d1_databases: [{ database_id: process.env.D1_DATABASE_ID }] }, false)'
@@ -69,7 +69,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
 
-      # Every entry, including those pushed since the last deploy, and the marked papers.
+      # Every entry, including those pushed since the last deploy.
       - name: Pull the database
         run: node scripts/deploy/sync.ts pull --database site/digests.js
         env:

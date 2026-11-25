@@ -612,8 +612,7 @@ export async function databaseFeedback(
 	return marks;
 }
 
-// The papers the owner marked, each with its entry, mark day and note: the rows with a day, through the entries'
-// primary key. An unmarked paper's note stays in the database.
+// The marked papers with their notes.
 export async function databaseStandouts(
 	query: DatabaseQuery,
 ): Promise<StandoutRow[]> {
@@ -686,7 +685,7 @@ export async function countPapersToday(
 	return papers;
 }
 
-// The token and the two ids of the database, from the environment.
+// The database's token and ids.
 function databaseAccessFromEnvironment(): DatabaseAccess {
 	return {
 		token: requiredEnvironment("CLOUDFLARE_API_TOKEN"),
@@ -702,8 +701,7 @@ async function count() {
 	console.log(`papers today: ${papers}`);
 }
 
-// The standouts command: only the database's marked papers, written beside the digests file for a build whose entries
-// come from elsewhere (staging's, which reads production's public files).
+// The standouts command.
 async function pullStandouts(file: string) {
 	const access = databaseAccessFromEnvironment();
 	const rows = await databaseStandouts(databaseQuery(access));
@@ -750,7 +748,7 @@ async function pull(file: string, fromDatabase: boolean) {
 		mkdirSync(dirname(feedbackPath()), { recursive: true });
 		replaceFile(feedbackPath(), `${JSON.stringify(feedback, null, 2)}\n`);
 	}
-	// The build publishes the marked papers and their notes.
+	// The build publishes these.
 	if (standoutRows !== null) {
 		replaceFile(standoutsPath(file), `${JSON.stringify(standoutRows)}\n`);
 	}
