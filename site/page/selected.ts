@@ -13,5 +13,9 @@ export const SELECTED_TEXT = {
 };
 
 export function openingView(hash: string, owner: boolean): View {
-	throw new Error(`not implemented: ${hash} ${owner}`);
+	if (hash === "#selected") return "selected";
+	// Any other address names a view or an entry, and an entry is in the Feed.
+	if (hash !== "") return "feed";
+	if (owner) return "feed";
+	return "selected";
 }

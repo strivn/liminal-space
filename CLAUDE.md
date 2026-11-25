@@ -18,7 +18,8 @@ GitHub Actions: scout.yml (daily), add.yml (connector requests)
   scripts/deploy/build-site.ts ─► dist/liminal-space/ (page, the owner's copy, data/index.json + data/months/*.json
                                                   + data/selected.json, the owner's marked papers with their public notes)
 Browser: site/app.ts + site/page/*.ts
-  public page ─GET data/*.json      owner page ─GET/POST the owner API ─► Worker ─► D1
+  public page ─GET data/*.json (the index, the months, selected.json)
+  owner page ─GET/POST the owner API ─► Worker ─► D1
 Worker crons ─► GitHub workflow_dispatch (scout.yml 22:00 and 23:00 UTC, add.yml every 15 min)
 claude.ai connector ─► Worker /liminal-space/mcp (search, get_digest, add requests that add.yml carries out)
 ```
@@ -97,7 +98,11 @@ pnpm exec bddgen && pnpm exec playwright test --grep "<scenario name>"
   of the page from `site/style/`, and the build bundles them into `style.css`, which is build output like `app.js`.
   `sw.ts` is the owner's service worker, built into `sw.js`. The same page serves the public copy and
   the owner's copy; it knows which from its address. `site/katex/` is vendored KaTeX for TeX in
-  titles and abstracts.
+  titles and abstracts. The page has two views, Feed (the days' entries) and Selected (the papers marked "Shaped my
+  thinking", by main OpenAlex topic, each with its public note). `site/page/selected.ts` names them and says which
+  opens first (the public page on Selected, the owner's on Feed, `#feed` and `#selected` either); `views.ts` shows
+  one, `selected-view.ts` draws Selected and `standout-board.ts` saves the owner's marks and notes. The public Selected
+  reads `data/selected.json`; the owner's reads their saved marks and loads the months that hold the marked papers.
 - `worker/src/`: the Cloudflare Worker (`wrangler.jsonc`): sync, owner, connector (MCP) and log routes, Access
   checks, and the crons that dispatch GitHub workflows. `index.ts` holds the route table (`ROUTES`), which
   `routes.ts` dispatches through the path, method, token and same-site checks in that order; each route's handler
@@ -134,7 +139,9 @@ and the same media query in `site/style/phone.css`. It has a sticky bar with the
 entry's buttons in a row, a swipe left that marks an entry read, and comments in a sheet from the bottom (the side
 panel's own dialog with the `comment-panel--sheet` class, set in `site/page/sheet.ts`). Every phone rule and
 gesture sits behind that query, so a window with a mouse keeps the desktop page; keep it that way when changing
-either. On any touch screen, Highlight and Comment sit in a bar at the bottom. The page runs under the iPhone's status
+either. The Feed / Selected tabs sit in the header's flow, full width, and scroll away with it; Selected hides the
+heatmap, the bar with the last 7 days and Contents, which are the Feed's. On any touch screen, Highlight and Comment sit
+in a bar at the bottom. The page runs under the iPhone's status
 bar and home indicator (`viewport-fit=cover`); phone rules keep clear of them with `env(safe-area-inset-*)`, which is
 0 on a desktop.
 

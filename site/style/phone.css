@@ -384,6 +384,9 @@
 	.entry__rail-col:first-child > :nth-child(3) {
 		order: 5;
 	}
+	.entry__rail-col:first-child > :nth-child(4) {
+		order: 6;
+	}
 	.entry__rail-group {
 		flex: none;
 		flex-direction: row;
@@ -438,6 +441,26 @@
 		clip-path: none;
 		visibility: visible;
 		opacity: 1;
+	}
+
+	/* Feed and Selected: two tabs across the page's width. Selected's papers stack the day marked over their text. */
+	.views li {
+		flex: 1;
+	}
+	.views a {
+		margin-right: 0;
+		padding: 12px 0;
+		text-align: center;
+	}
+	.label {
+		min-height: 44px;
+	}
+	.standout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.standout__date {
+		line-height: 18px;
+		margin-bottom: 2px;
 	}
 
 	/* A swipe left: the entry follows the finger (--swipe-x), and behind it the read colour shows the toggle it will

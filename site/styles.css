@@ -3,6 +3,7 @@
 @import "./style/header.css";
 @import "./style/days.css";
 @import "./style/entry.css";
+@import "./style/selected.css";
 @import "./style/contents.css";
 @import "./style/notice.css";
 @import "./style/sidebar.css";

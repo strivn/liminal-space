@@ -205,7 +205,7 @@ export function trackCurrent(box: HTMLElement) {
 		for (const link of box.querySelectorAll("a"))
 			linkById.set(hrefId(link), link);
 		entries = Array.from(
-			document.querySelectorAll<HTMLElement>("main article"),
+			document.querySelectorAll<HTMLElement>("main article.entry"),
 		);
 	}
 	collect();
@@ -260,12 +260,12 @@ export function trackCurrent(box: HTMLElement) {
 		return title.getBoundingClientRect().top;
 	}
 
-	// The entries of today and of unfolded days, less those the tag filter hides. Chrome still lays out the entries
-	// of a closed <details> (measured in Chrome 153 and 154), so their boxes can't tell a folded entry from a visible one.
+	// The entries of today and of unfolded days, less those the tag filter hides, and all of them while Selected shows.
+	// Chrome still lays out the entries of a closed <details> (measured in Chrome 153 and 154), so their boxes can't
+	// tell a folded entry from a visible one.
 	function unfoldedEntries() {
 		return entries.filter(
-			(entry) =>
-				!entry.hidden && !entry.closest("details:not([open]), .month-hidden"),
+			(entry) => !entry.closest("[hidden], details:not([open]), .month-hidden"),
 		);
 	}
 
