@@ -443,14 +443,10 @@
 		opacity: 1;
 	}
 
-	/* Feed and Selected: two tabs across the page's width. Selected's papers stack the day marked over their text. */
-	.views li {
-		flex: 1;
-	}
+	/* Taller menu taps; Selected's papers stack the day over their text. */
 	.views a {
-		margin-right: 0;
+		display: inline-block;
 		padding: 12px 0;
-		text-align: center;
 	}
 	.label {
 		min-height: 44px;

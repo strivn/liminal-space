@@ -1,20 +1,21 @@
 /* The Feed and Selected menu under the date, and the Selected view (site/page/views.ts, selected-view.ts). */
 
-/* The menu: two tabs along a hairline; on a wide window a vertical list like the contents'. */
+/* The menu: one line, "Feed / Selected". */
 .views {
 	display: flex;
-	gap: 4px;
+	align-items: baseline;
 	margin: 16px 0 0;
 	padding: 0;
 	list-style: none;
-	border-bottom: 1px solid var(--border);
+}
+.views li + li::before {
+	content: "/";
+	padding: 0 8px;
+	color: var(--text-secondary);
+	font-size: 15px;
 }
 .views a {
-	display: block;
-	padding: 6px 2px 8px;
-	margin-right: 16px;
-	margin-bottom: -1px;
-	border-bottom: 2px solid transparent;
+	padding: 6px 0;
 	color: var(--text-secondary);
 	font-size: 15px;
 	line-height: 20px;
@@ -27,24 +28,6 @@
 .views a[aria-current="page"] {
 	color: var(--text);
 	font-weight: 600;
-	border-bottom-color: var(--text);
-}
-@media (min-width: 1080px) {
-	.views {
-		flex-direction: column;
-		gap: 2px;
-		margin-top: 20px;
-		border-bottom: 0;
-	}
-	.views a {
-		margin: 0;
-		padding: 4px 0 4px 12px;
-		border-bottom: 0;
-		border-left: 2px solid var(--border);
-	}
-	.views a[aria-current="page"] {
-		border-left-color: var(--text);
-	}
 }
 
 /* Selected shows no heatmap, last 7 days or contents: they are the Feed's. */
