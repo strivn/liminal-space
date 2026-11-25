@@ -666,3 +666,10 @@ test("security: a line whose date isn't a real day stops the build before any fi
 		);
 	}
 });
+
+test.todo(
+	"The site data holds each marked paper with its mark day and note, newest mark first",
+);
+test.todo(
+	"privacy: the site data holds no comment, takeaway, tag, like or read mark of the owner",
+);

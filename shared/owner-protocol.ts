@@ -94,6 +94,12 @@ export type FeedbackChange = {
 	mark: Feedback | null;
 	date: string;
 };
+// A marked paper; public.
+export type Standout = { date: string; note: string };
+// POST /liminal-space/api/owner/standouts.
+export type StandoutChange =
+	| { id: string; marked: boolean; date: string }
+	| { id: string; note: string };
 // POST /liminal-space/api/owner/push: save this device's push subscription, as the browser's
 // PushSubscription.toJSON() gives it. The Worker answers 204 when saved, 400 for an endpoint off the known push
 // services. The page sends it after the owner allowed notifications.

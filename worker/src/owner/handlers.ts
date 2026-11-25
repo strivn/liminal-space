@@ -113,6 +113,11 @@ export const answerFeedback = ownerChange(async (body, env, log) => {
 	return json({});
 });
 
+// POST /liminal-space/api/owner/standouts.
+export const answerStandout = ownerChange(async (body) => {
+	throw new Error(`not implemented: ${typeof body}`);
+});
+
 // POST /liminal-space/api/owner/comments.
 export const answerComments = ownerChange(async (body, env, log) => {
 	await saveComments(env.DB, commentsChangeOf(body), counter(log));

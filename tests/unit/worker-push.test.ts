@@ -352,3 +352,7 @@ test("a pushed entry with a field over its cap is refused", async () => {
 	const count = sqlite.prepare("SELECT COUNT(*) AS n FROM entries").get();
 	assert.equal(count?.n, 1);
 });
+
+test.todo(
+	"A push adds openalex to a stored paper that has none and never changes one it has",
+);

@@ -1711,3 +1711,8 @@ test("A paper's camera_ready holds an https url, its venue and where it was read
 		);
 	}
 });
+
+test.todo(
+	"A paper's openalex holds its topics with field and score, and its keywords, within their caps",
+);
+test.todo("An openalex field on news, an article or a report is refused");
