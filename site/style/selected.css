@@ -1,6 +1,6 @@
 /* The Feed and Selected menu under the date, and the Selected view (site/page/views.ts, selected-view.ts). */
 
-/* The menu: one line, "Feed / Selected". */
+/* The menu: one line, "Selected / Feed". */
 .views {
 	display: flex;
 	align-items: baseline;

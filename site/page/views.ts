@@ -1,8 +1,8 @@
-// The Feed and Selected views: the menu under the date and which of the two shows.
+// The Selected and Feed views: the menu under the date and which of the two shows.
 import { el } from "./dom.ts";
 import { openingView, VIEW_NAMES, type View } from "./selected.ts";
 
-const VIEWS: View[] = ["feed", "selected"];
+const VIEWS: View[] = ["selected", "feed"];
 
 // Draw the menu and follow the address as it changes (a click on the menu, Back, a link to #selected), before the
 // Feed's own listeners, so an entry's link finds the Feed showing. `showOpening` shows the view the address opens.
