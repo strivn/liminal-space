@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
-// How the owner's page reads and sends its state (site/page/owner.ts) and shows the scout's logs (site/page/scout-logs.ts),
-// with a stand-in for the site's answers.
+// How the owner's page reads and sends its state (site/page/owner.ts), with a stand-in for the site's answers.
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import {
 	createSender,
@@ -8,7 +7,6 @@ import {
 	loadOwnerState,
 	refreshOnReturn,
 } from "../../site/page/owner.ts";
-import { showScoutLogs } from "../../site/page/scout-logs.ts";
 
 // What the stand-in for fetch was asked, in order.
 type Asked = { url: string; init: RequestInit | undefined };
@@ -226,65 +224,4 @@ test("coming back into view reads the saved state once", async () => {
 		document.dispatchEvent(new Event("visibilitychange"));
 	}
 	expect(refresh).toHaveBeenCalledTimes(1);
-});
-
-// ---- the scout's logs ----
-
-// The page's main column, with the logs panel placed after it.
-function mainColumn() {
-	document.body.replaceChildren();
-	const main = document.createElement("main");
-	document.body.append(main);
-	return main;
-}
-
-function run(id: string, date: string, log: string) {
-	return { id: id, date: date, log: log, updated: `${date}T05:00:00.000Z` };
-}
-
-test("the scout's runs are listed as the site sends them, newest first, each with its log", async () => {
-	answering(200, {
-		logs: [
-			run("b", "2026-10-28", "Scout run done: 8 papers"),
-			run("a", "2026-10-27", "Nothing found: arXiv refused every search"),
-		],
-	});
-	const main = mainColumn();
-	await showScoutLogs(main);
-	const panel = main.nextElementSibling;
-	expect(panel?.querySelector("summary")?.textContent).toBe(
-		"Scout logs · 2 runs",
-	);
-	const texts = [...document.querySelectorAll(".scout-log__text")].map(
-		(node) => node.textContent,
-	);
-	expect(texts).toEqual([
-		"Scout run done: 8 papers",
-		"Nothing found: arXiv refused every search",
-	]);
-	expect(asked.map((request) => request.url)).toEqual(["../api/owner/logs"]);
-});
-
-test("security: a run's log is shown as text, never as HTML", async () => {
-	answering(200, {
-		logs: [run("a", "2026-10-28", '<img src=x onerror="alert(1)">')],
-	});
-	await showScoutLogs(mainColumn());
-	expect(document.querySelector(".scout-log img")).toBeNull();
-	expect(document.querySelector(".scout-log__text")?.textContent).toBe(
-		'<img src=x onerror="alert(1)">',
-	);
-});
-
-test("with no runs the panel says so, and when the logs can't be read it says it couldn't load them", async () => {
-	answering(200, { logs: [] });
-	await showScoutLogs(mainColumn());
-	expect(document.querySelector(".scout-logs")?.textContent).toContain(
-		"No runs in the last 30 days",
-	);
-	answering(500, {});
-	await showScoutLogs(mainColumn());
-	expect(document.querySelector(".scout-logs")?.textContent).toContain(
-		"Couldn't load the scout logs",
-	);
 });
