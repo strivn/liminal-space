@@ -1,11 +1,12 @@
-# The checks every pull request runs, each as a job of its own so the pull request lists each result: the type check,
-# Biome and the unit tests, and on a pull request into develop or main the end-to-end scenarios. The unit job also runs
+# The checks a pull request into develop or main runs, each as a job of its own so the pull request lists each result:
+# the type check, Biome, the unit tests and the end-to-end scenarios. The unit job also runs
 # scripts/scout/web/fulltext.sh's tests, with poppler and w3m installed.
 # No job holds a secret.
 name: checks
 
 on:
   pull_request:
+    branches: [develop, main]
 
 # A newer push to the same pull request replaces the checks still running for the older one.
 concurrency:

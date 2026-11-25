@@ -159,8 +159,9 @@ bar and home indicator (`viewport-fit=cover`); phone rules keep clear of them wi
   root, site, service worker, tests and Worker projects) whenever a TypeScript, tsconfig or package.json file changes.
 - Tests run locally: while building, the ones a change adds or touches; before a merge into `develop`, the unit tests
   (`pnpm run test:unit`) and every scenario (`pnpm run test:e2e`, sandbox off), unless the owner says to skip a run.
-- On GitHub, every pull request runs the type check, Biome and the unit tests, and a pull request into `develop` or
-  `main` also runs the scenarios (`checks.yml`). Nothing merges into `develop` or `main` before all of them pass.
+- On GitHub, a pull request into `develop` or `main` runs the type check, Biome, the unit tests and the scenarios
+  (`checks.yml`); pull requests into a feature branch run none. Nothing merges into `develop` or `main` before all of
+  them pass.
 
 ## Branches and releases
 
