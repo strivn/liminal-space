@@ -248,7 +248,7 @@ test("The owner's Selected has a note box under each paper and no mark button", 
 		selectedView().querySelectorAll<HTMLTextAreaElement>("textarea");
 	expect([...boxes].map((box) => box.value)).toEqual(["", "Changed my mind"]);
 	expect(
-		selectedView().querySelector("button[aria-label='Shaped my thinking']"),
+		selectedView().querySelector("button[aria-label='Select']"),
 	).toBeNull();
 });
 
@@ -295,7 +295,7 @@ test("A mark or note the Worker refuses is undone and the page says it wasn't sa
 	site.statuses["api/owner/standouts"] = 500;
 	await openPage(site, { owner: true });
 	const mark = feedView().querySelector<HTMLButtonElement>(
-		"button[aria-label='Shaped my thinking']",
+		"button[aria-label='Select']",
 	);
 	if (mark === null) throw new Error("no mark button");
 	mark.click();
@@ -321,7 +321,7 @@ test("A mark or note the Worker refuses is undone and the page says it wasn't sa
 	);
 });
 
-test("A marked paper in the public Feed carries Shaped my thinking, linking to Selected", async () => {
+test("A marked paper in the public Feed carries Selected, linking to Selected", async () => {
 	const site = siteOf([{ date: TODAY, entries: [alignmentA, alignmentB] }]);
 	publicMarks(site, [{ entry: alignmentA, date: "2026-09-20" }]);
 	await openPage(site, { hash: "#feed" });
@@ -329,7 +329,7 @@ test("A marked paper in the public Feed carries Shaped my thinking, linking to S
 		document
 			.getElementById(id)
 			?.querySelector<HTMLAnchorElement>(".entry__kicker a");
-	expect(mark(alignmentA.id)?.textContent).toBe("Shaped my thinking");
+	expect(mark(alignmentA.id)?.textContent).toBe("Selected");
 	expect(mark(alignmentA.id)?.getAttribute("href")).toBe("#selected");
 	expect(mark(alignmentB.id)).toBeNull();
 });
@@ -358,7 +358,7 @@ test("A paper marked again shows the note it kept", async () => {
 	ownerMarks(site, { [alignmentA.id]: { date: null, note: "Kept" } });
 	await openPage(site, { owner: true });
 	const mark = feedView().querySelector<HTMLButtonElement>(
-		"button[aria-label='Shaped my thinking']",
+		"button[aria-label='Select']",
 	);
 	if (mark === null) throw new Error("no mark button");
 	expect(mark.getAttribute("aria-pressed")).toBe("false");

@@ -18,14 +18,14 @@ const SAVED = (response: { url(): string; request(): { method(): string } }) =>
 	response.request().method() === "POST";
 
 When(
-	/^(?:the owner )?marks today's (\d+)(?:st|nd|rd|th) paper as shaping their thinking$/,
+	/^(?:the owner )?selects today's (\d+)(?:st|nd|rd|th) paper$/,
 	async ({ world, browser }, position: string) => {
 		const page = await pageOf(world, browser, "owner");
 		const paper = nthPaper(world, world.today, Number(position));
 		const saved = page.waitForResponse(SAVED);
 		await page
 			.locator("article.entry", { hasText: paper.title })
-			.getByRole("button", { name: "Shaped my thinking" })
+			.getByRole("button", { name: "Select", exact: true })
 			.click();
 		expect((await saved).status()).toBe(200);
 		world.paper = paper;

@@ -1,4 +1,4 @@
-// Shaped my thinking: the mark in the icon rail's own band, and the note under each marked paper in Selected.
+// Select: the mark in the icon rail's own band, and the note under each marked paper in Selected.
 import type { StandoutChange } from "../../shared/owner-protocol.ts";
 import { jakartaToday } from "./days.ts";
 import { railToggles } from "./icons.ts";

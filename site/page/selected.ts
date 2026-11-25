@@ -6,7 +6,7 @@ export const VIEW_NAMES: Record<View, string> = {
 };
 
 export const SELECTED_TEXT = {
-	mark: "Shaped my thinking",
+	mark: "Select",
 	noTopic: "No topic yet",
 	note: "Note",
 	addNote: "Add a note",
