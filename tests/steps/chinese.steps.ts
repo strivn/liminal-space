@@ -137,11 +137,15 @@ Then(
 		const shownPinyin = tooltip(page).locator(".study-tip__pinyin");
 		await expect.soft(shownWord).toHaveText(text);
 		await expect.soft(shownPinyin).toHaveText(pinyin);
-		const word = await shownWord.boundingBox();
-		const under = await shownPinyin.boundingBox();
+		// Both boxes in one frame.
+		const [wordBottom, pinyinTop] = await tooltip(page).evaluate((tip) => [
+			tip.querySelector(".study-tip__word")?.getBoundingClientRect().bottom ??
+				0,
+			tip.querySelector(".study-tip__pinyin")?.getBoundingClientRect().top ?? 0,
+		]);
 		expect
-			.soft(under?.y ?? 0, "the pinyin's top")
-			.toBeGreaterThanOrEqual((word?.y ?? 0) + (word?.height ?? 0) - 1);
+			.soft(pinyinTop, "the pinyin's top")
+			.toBeGreaterThanOrEqual(wordBottom - 1);
 		const shownMeaning = tooltip(page).locator(".study-tip__meaning");
 		await expect.soft(shownMeaning).toContainText(meaning);
 		await expect.soft(shownMeaning).toHaveCSS("opacity", "1");
