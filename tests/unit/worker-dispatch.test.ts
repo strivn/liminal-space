@@ -358,7 +358,7 @@ function ownerRead(name: string): Policy {
 	};
 }
 
-// The 13 routes as the Worker answers them today.
+// The 14 routes as the Worker answers them today.
 const POLICIES: Policy[] = [
 	postFrom("/liminal-space/api/sync/push", "sync", FORBIDDEN),
 	{
@@ -378,6 +378,7 @@ const POLICIES: Policy[] = [
 	ownerChange("read"),
 	ownerChange("tags"),
 	ownerChange("feedback"),
+	ownerChange("standouts"),
 	ownerChange("comments"),
 	ownerChange("ask"),
 	{
@@ -538,7 +539,7 @@ async function policyOf(path: string): Promise<Policy> {
 	return policy;
 }
 
-test("each of the 13 routes answers with the methods, the caller's token and the owner POST headers listed for it", async () => {
+test("each of the 14 routes answers with the methods, the caller's token and the owner POST headers listed for it", async () => {
 	const policies: Policy[] = [];
 	for (const each of POLICIES) {
 		policies.push(await policyOf(each.path));
