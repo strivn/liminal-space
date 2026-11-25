@@ -11,6 +11,7 @@ site/.digests.js.*.tmp
 site/app.js
 site/style.css
 site/claude-markdown.js
+site/study-strokes.js
 site/sw.js
 # sync.ts's copy of the digests as last pulled or pushed, and the read marks pull --database read
 site/digests.pulled.js

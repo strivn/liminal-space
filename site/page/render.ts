@@ -53,6 +53,7 @@ import {
 } from "./reading-place.ts";
 import { showScoutLogs } from "./scout-logs.ts";
 import { createShelf } from "./shelf.ts";
+import { startStudy } from "./study.ts";
 import { createTagBoard } from "./tag-board.ts";
 import { createTakeawayBoard } from "./takeaway-board.ts";
 import { contentsGroups } from "./text.ts";
@@ -64,6 +65,25 @@ function narrowPage() {
 	const page = document.getElementById("page");
 	if (page === null) throw new Error("index.html has no #page");
 	page.classList.remove("page--with-contents");
+}
+
+// Each studied entry's id and its words file, as the index names them.
+function wordsFilesOf(index: SiteIndex): Map<string, string> {
+	const files = new Map<string, string>();
+	for (const day of index.days) {
+		for (const entry of day.entries) {
+			if (entry.study !== undefined) files.set(entry.id, entry.study);
+		}
+	}
+	return files;
+}
+
+// A file of the site's own as JSON; throws when it doesn't answer 200.
+async function readSiteFile(path: string): Promise<unknown> {
+	const answer = await fetchJson(path);
+	if (answer.status !== 200)
+		throw new Error(`${path} answered ${answer.status}`);
+	return answer.json;
 }
 
 // Read the index, then the newest month's file, and draw the page. Either failing says "Couldn't load digests".
@@ -127,7 +147,7 @@ async function drawFromData(main: HTMLElement, failed: () => void) {
 			// No storage, nothing to clear.
 		}
 	}
-	render(main, lines, olderMonthDays, loadMonth, owner);
+	render(main, lines, olderMonthDays, loadMonth, owner, wordsFilesOf(index));
 	// The logs come after the days are drawn, so a slow read never holds up the page.
 	if (owner !== null)
 		showScoutLogs(main).catch((error) =>
@@ -150,6 +170,7 @@ function render(
 	olderMonthDays: IndexDay[],
 	loadMonth: MonthLoader,
 	owner: OwnerData | null,
+	wordsFiles: ReadonlyMap<string, string>,
 ) {
 	// index.html has it.
 	const header = document.getElementById("freshness");
@@ -402,6 +423,7 @@ function render(
 		contents: contents,
 		onFilter: afterFilter,
 	});
+	startStudy(main, wordsFiles, readSiteFile);
 	// Last, so the contents, permalinks and arrow keys work even if drawing the heatmap fails.
 	redraw();
 	// The reading place: restored, then kept; entries begin at the phone bar's bottom edge, else at the window's top.

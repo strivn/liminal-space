@@ -44,8 +44,8 @@ Node 26 and pnpm 12 (`packageManager` in package.json).
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm run build                    # bundle site/app.ts, site/sw.ts and site/page/ into site/app.js, sw.js and claude-markdown.js,
-                                  # and site/styles.css with site/style/ into site/style.css
+pnpm run build                    # bundle site/app.ts, site/sw.ts and site/page/ into site/app.js, sw.js, claude-markdown.js and
+                                  # study-strokes.js (Hanzi Writer, fetched on the first tooltip), and site/styles.css with site/style/ into site/style.css
 pnpm run build:site               # build plus dist/ from site/digests.js
 pnpm run preview                  # build:site, then wrangler dev on port 8787
 pnpm run typecheck                # tsc on the root, site, service worker, tests and worker projects
@@ -91,7 +91,8 @@ pnpm exec bddgen && pnpm exec playwright test --grep "<scenario name>"
   of the page from `site/style/`, and the build bundles them into `style.css`, which is build output like `app.js`.
   `sw.ts` is the owner's service worker, built into `sw.js`. The same page serves the public copy and
   the owner's copy; it knows which from its address. `site/katex/` is vendored KaTeX for TeX in
-  titles and abstracts.
+  titles and abstracts. On a mouse, `site/page/study.ts` opens a tooltip for the word under the pointer in a Chinese
+  entry's title or description, from the words file the index names; it changes none of the entry's text.
 - `worker/src/`: the Cloudflare Worker (`wrangler.jsonc`): sync, owner, connector (MCP) and log routes, Access
   checks, and the crons that dispatch GitHub workflows. `index.ts` holds the route table (`ROUTES`), which
   `routes.ts` dispatches through the path, method, token and same-site checks in that order; each route's handler
