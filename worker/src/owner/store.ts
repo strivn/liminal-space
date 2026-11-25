@@ -6,6 +6,7 @@ import type {
 	FeedbackChange,
 	PageComment,
 	ReadChange,
+	StandoutChange,
 	TagsChange,
 	TakeawayChange,
 	TakeawaySource,
@@ -50,6 +51,15 @@ const UPSERT_FEEDBACK =
 	"INSERT INTO feedback (entry_id, mark, date) VALUES (?1, ?2, ?3) " +
 	"ON CONFLICT(entry_id) DO UPDATE SET mark = excluded.mark, date = excluded.date";
 const DELETE_FEEDBACK = "DELETE FROM feedback WHERE entry_id = ?1";
+// A mark on a stored entry (the SELECT finds no row for an unknown id, so nothing is written), written over the
+// paper's day through the primary key; an unmark clears the day and keeps the note; a note is set only on a marked
+// paper.
+const MARK_STANDOUT =
+	"INSERT INTO standouts (entry_id, date) SELECT id, ?2 FROM entries WHERE id = ?1 " +
+	"ON CONFLICT(entry_id) DO UPDATE SET date = excluded.date";
+const UNMARK_STANDOUT = "UPDATE standouts SET date = NULL WHERE entry_id = ?1";
+const SET_NOTE =
+	"UPDATE standouts SET note = ?2 WHERE entry_id = ?1 AND date IS NOT NULL";
 // A takeaway saved from the page, through the primary key: a new one is stored with its source; one already stored is
 // an edit, which changes only its words and edited, so it keeps its entry, created and source. saveTakeaway reads the
 // stored entry first (TAKEAWAY_ENTRY) and refuses an edit that names another one.
@@ -167,6 +177,36 @@ export async function saveFeedback(
 		db.prepare(UPSERT_FEEDBACK).bind(change.id, change.mark, change.date).run(),
 		count,
 	);
+}
+
+// POST standouts: mark a stored entry on a day, unmark it (the note stays), or set the note of a marked one. A mark
+// on an id no entry has, and a note on a paper that isn't marked, are refused (400) with nothing written.
+export async function saveStandout(
+	db: D1Database,
+	change: StandoutChange,
+	count: (cost: QueryCost) => void,
+): Promise<void> {
+	if ("note" in change) {
+		const answer = await countOne(
+			db.prepare(SET_NOTE).bind(change.id, change.note).run(),
+			count,
+		);
+		if (answer.meta.changes === 0) {
+			throw new BodyProblem("the paper is not marked");
+		}
+		return;
+	}
+	if (!change.marked) {
+		await countOne(db.prepare(UNMARK_STANDOUT).bind(change.id).run(), count);
+		return;
+	}
+	const answer = await countOne(
+		db.prepare(MARK_STANDOUT).bind(change.id, change.date).run(),
+		count,
+	);
+	if (answer.meta.changes === 0) {
+		throw new BodyProblem("no stored entry has that id");
+	}
 }
 
 // The entry the row `select` finds by primary key names (one row read), or null when no row has that id.

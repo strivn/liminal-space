@@ -10,6 +10,7 @@ import {
 	OWNER_TEXT_CHARS,
 	type PageComment,
 	type ReadChange,
+	type StandoutChange,
 	type TagsChange,
 	type TakeawayChange,
 	type ThreadPlace,
@@ -110,6 +111,44 @@ export function feedbackChangeOf(body: unknown): FeedbackChange {
 		throw new BodyProblem("date must be YYYY-MM-DD");
 	}
 	return { id: id, mark: mark, date: date };
+}
+
+// The body of POST standouts: {"id", "marked": true or false, "date": YYYY-MM-DD} or {"id", "note": text of at most
+// OWNER_TEXT_CHARS characters}, never both.
+export function standoutChangeOf(body: unknown): StandoutChange {
+	if (!isJsonObject(body)) {
+		throw new BodyProblem("body is not an object");
+	}
+	const id = field(body, "id");
+	const marked = field(body, "marked");
+	const note = field(body, "note");
+	if (!isId(id)) {
+		throw new BodyProblem(
+			`id must be text of at most ${MAX_ID_LENGTH} characters`,
+		);
+	}
+	if ((marked === undefined) === (note === undefined)) {
+		throw new BodyProblem("a standout change holds a mark or a note");
+	}
+	if (note !== undefined) {
+		if (typeof note !== "string") {
+			throw new BodyProblem("note must be text");
+		}
+		if (note.length > OWNER_TEXT_CHARS) {
+			throw new BodyProblem(
+				`a note is too long: at most ${OWNER_TEXT_CHARS} characters`,
+			);
+		}
+		return { id: id, note: note };
+	}
+	const date = field(body, "date");
+	if (typeof marked !== "boolean") {
+		throw new BodyProblem("marked must be true or false");
+	}
+	if (!isDay(date)) {
+		throw new BodyProblem("date must be YYYY-MM-DD");
+	}
+	return { id: id, marked: marked, date: date };
 }
 
 // The body of POST takeaways: {"entryId", "save": {"id", "text", "question", "created", "edited"}} or {"entryId",

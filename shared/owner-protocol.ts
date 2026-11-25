@@ -9,6 +9,7 @@ export type OwnerState = {
 	comments: Record<string, SiteThread[]>;
 	feedback: Record<string, FeedbackMark>;
 	takeaways: Record<string, Takeaway[]>;
+	standouts: Record<string, Standout>;
 };
 export type ReadMark = { depth: Depth; date: string };
 // The three depths a read mark can have.

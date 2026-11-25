@@ -29,6 +29,11 @@ const WELL_FORMED: Record<string, unknown> = {
 		mark: "like",
 		date: "2026-11-05",
 	},
+	standoutChangeOf: {
+		id: "arxiv:2601.00001",
+		marked: true,
+		date: "2026-11-05",
+	},
 	takeawayChangeOf: {
 		entryId: "arxiv:2601.00001",
 		save: { id: "k1", text: "a takeaway", question: null, created: CREATED },
