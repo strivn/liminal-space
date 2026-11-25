@@ -6,6 +6,7 @@ import {
 	type IndexDay,
 	type IndexEntry,
 	type SiteIndex,
+	STUDY_WORDS_PATH,
 } from "../../shared/site-data-shape.ts";
 
 // The owner's page is the same page in the owner's folder, behind Cloudflare Access: it reads and saves read
@@ -79,7 +80,10 @@ export function readIndex(json: unknown): SiteIndex | null {
 		for (const entry of listed) {
 			if (!isJsonObject(entry) || typeof entry.id !== "string") continue;
 			if (typeof entry.type !== "string") continue;
-			entries.push({ id: entry.id, type: entry.type });
+			const listed: IndexEntry = { id: entry.id, type: entry.type };
+			if (typeof entry.study === "string" && STUDY_WORDS_PATH.test(entry.study))
+				listed.study = entry.study;
+			entries.push(listed);
 		}
 		days.push({ date: day.date, month: day.month, entries: entries });
 	}

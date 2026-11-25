@@ -57,6 +57,7 @@ const PAGE_FILES = [
 	"index.html",
 	"app.js",
 	"claude-markdown.js",
+	"study-strokes.js",
 	"style.css",
 	"arxiv-logomark-small.svg",
 	"claude-sonnet.svg",
@@ -98,6 +99,7 @@ const KEEP_A_YEAR = "  Cache-Control: public, max-age=31536000, immutable";
 const KEPT_FILES = [
 	"app.js",
 	"claude-markdown.js",
+	"study-strokes.js",
 	"style.css",
 	"katex/",
 	"fonts/",

@@ -2,6 +2,7 @@
 	// The tests: Node code, plus browser types for the tests that run under jsdom
 	"extends": "../tsconfig.json",
 	"compilerOptions": {
+		"module": "preserve",
 		"lib": ["es2024", "dom", "dom.iterable"]
 	},
 	"include": [".", "../vitest.config.ts", "../playwright.config.ts"]
