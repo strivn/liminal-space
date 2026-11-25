@@ -17,7 +17,7 @@ export type IndexDay = {
 };
 // study names the entry's words file, STUDY_WORDS_PATH, relative to the page's folder, for an entry with a study.
 export type IndexEntry = { id: string; type: string; study?: string };
-export const STUDY_WORDS_PATH = /^study\/[0-9a-f]{16}\.json$/;
+export const STUDY_WORDS_PATH = /^study\/words\/[0-9a-f]{16}\.json$/;
 
 // data/months/YYYY-MM.<hash>.json: that month's digest lines as the digests file holds them, in file order, each
 // {"date", "entries"} with every field of every entry. <hash> is the first 12 hex digits of the SHA-256 of the

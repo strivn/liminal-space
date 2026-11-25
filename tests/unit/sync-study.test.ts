@@ -217,8 +217,8 @@ test("pull-study --database writes every stored study to the study file, one per
 test("pull-study without --database reads the public site's study files, so staging can show them", async () => {
 	const dir = folderFor();
 	const files: Record<string, unknown> = {
-		"/study/0123456789abcdef.json": study("url:b"),
-		"/study/fedcba9876543210.json": study("url:a"),
+		"/study/words/0123456789abcdef.json": study("url:b"),
+		"/study/words/fedcba9876543210.json": study("url:a"),
 	};
 	const index = {
 		days: [
@@ -226,9 +226,17 @@ test("pull-study without --database reads the public site's study files, so stag
 				date: "2026-11-21",
 				month: "2026-11",
 				entries: [
-					{ id: "url:b", type: "news", study: "study/0123456789abcdef.json" },
+					{
+						id: "url:b",
+						type: "news",
+						study: "study/words/0123456789abcdef.json",
+					},
 					{ id: "arxiv:2611.00001", type: "paper" },
-					{ id: "url:a", type: "news", study: "study/fedcba9876543210.json" },
+					{
+						id: "url:a",
+						type: "news",
+						study: "study/words/fedcba9876543210.json",
+					},
 				],
 			},
 		],
@@ -255,7 +263,7 @@ test("pull-study without --database reads the public site's study files, so stag
 	);
 	expect(asked.sort()).toEqual([
 		"/data/index.json",
-		"/study/0123456789abcdef.json",
-		"/study/fedcba9876543210.json",
+		"/study/words/0123456789abcdef.json",
+		"/study/words/fedcba9876543210.json",
 	]);
 });
