@@ -185,13 +185,20 @@ function pdfLinkOf(entry: Entry) {
 	return null;
 }
 
-// Where an entry's title links: a paper's published version, else its PDF, else its URL; null when it has none.
-export function titleUrlOf(entry: Entry): string | null {
+// Where an entry's title links: `title` is a paper's published version, else its PDF, else its URL, and null when it
+// has none. The three are returned too, since the page's other parts depend on which one the title took.
+export function titleLinksOf(entry: Entry) {
 	const isPaper = entry.type === "paper";
-	const publishedUrl = isPaper ? publishedVersionOf(entry) : null;
-	if (publishedUrl) return publishedUrl;
-	const pdfUrl = isPaper ? pdfLinkOf(entry) : null;
-	return pdfUrl ?? safeUrl(entry.url);
+	const published = isPaper ? publishedVersionOf(entry) : null;
+	let pdf: string | null = null;
+	if (isPaper && !published) pdf = pdfLinkOf(entry);
+	const url = safeUrl(entry.url);
+	return {
+		published: published,
+		pdf: pdf,
+		url: url,
+		title: published ?? pdf ?? url,
+	};
 }
 
 // arXiv's small logomark, linking to a paper's abstract page: the red and grey file in both themes. It is arXiv's own
@@ -274,7 +281,14 @@ export function renderEntry(
 	typesetting: Typesetting = "now",
 ) {
 	const isPaper = entry.type === "paper";
-	const url = safeUrl(entry.url);
+	// A paper's PDF link becomes its title link, so it isn't repeated in the links row. A link that isn't an
+	// object (null in a hand-edited list) is passed over, like one that isn't http(s).
+	const {
+		published: publishedUrl,
+		pdf: pdfUrl,
+		url,
+		title: titleUrl,
+	} = titleLinksOf(entry);
 	// The authors on one line and the published date ("9 October 2026") on the next, each only when the entry has it.
 	let byline: HTMLElement | null = null;
 	const authors = (entry.authors || []).join(", ");
@@ -286,11 +300,6 @@ export function renderEntry(
 			{ class: "entry__date" },
 			LONG_DATE.format(new Date(`${entry.published}T00:00:00Z`)),
 		);
-	// A paper's PDF link becomes its title link, so it isn't repeated in the links row. A link that isn't an
-	// object (null in a hand-edited list) is passed over, like one that isn't http(s).
-	const publishedUrl = isPaper ? publishedVersionOf(entry) : null;
-	let pdfUrl: string | null = null;
-	if (isPaper && !publishedUrl) pdfUrl = pdfLinkOf(entry);
 	const links: HTMLElement[] = [];
 	for (const link of entry.links || []) {
 		if (!isJsonObject(link)) continue;
@@ -330,9 +339,6 @@ export function renderEntry(
 	}
 
 	// A paper's title opens its PDF; the arXiv logomark after it opens the abstract page. Everything else keeps its URL.
-	let titleUrl = url;
-	if (pdfUrl) titleUrl = pdfUrl;
-	if (publishedUrl) titleUrl = publishedUrl;
 	let titleContent: string | HTMLElement = entry.title;
 	// draggable="false" with style.css's user-select lets a mouse drag select a title's words for a comment.
 	if (titleUrl)

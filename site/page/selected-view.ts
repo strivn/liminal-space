@@ -4,7 +4,7 @@ import { isJsonObject } from "../../shared/narrow.ts";
 import { OWNER_TEXT_CHARS } from "../../shared/owner-protocol.ts";
 import { SHORT_MONTHS } from "./days.ts";
 import { el } from "./dom.ts";
-import { titleUrlOf } from "./entry.ts";
+import { titleLinksOf } from "./entry.ts";
 import { SELECTED_TEXT, VIEW_NAMES } from "./selected.ts";
 import type { Entry } from "./types.ts";
 import { linkAddresses, typeset } from "./typeset.ts";
@@ -123,7 +123,7 @@ function paperRow(
 	saveNote: NoteSaver | null,
 ) {
 	const entry = paper.entry;
-	const url = titleUrlOf(entry);
+	const url = titleLinksOf(entry).title;
 	let titleContent: string | HTMLElement = entry.title;
 	if (url !== null) titleContent = el("a", { href: url }, entry.title);
 	const title = el("h3", { class: "standout__title" }, titleContent);
