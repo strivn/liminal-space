@@ -1712,7 +1712,87 @@ test("A paper's camera_ready holds an https url, its venue and where it was read
 	}
 });
 
-test.todo(
-	"A paper's openalex holds its topics with field and score, and its keywords, within their caps",
-);
-test.todo("An openalex field on news, an article or a report is refused");
+test("A paper's openalex holds its topics with field and score, and its keywords, within their caps", async () => {
+	const { entryProblems }: typeof EntryChecks = await import(CHECKS.href);
+	const topic = {
+		name: "Topic Modeling",
+		field: "Computer Science",
+		score: 0.2,
+	};
+	const openalex = { topics: [topic], keywords: ["transformer models"] };
+	assert.deepEqual(
+		entryProblems(paper(1, { openalex: openalex }), "check"),
+		[],
+	);
+	const text = (length: number) => "x".repeat(length);
+	const refused = [
+		{
+			value: "Topic Modeling",
+			reason: "openalex must hold topics and keywords",
+		},
+		{
+			value: { ...openalex, topics: [] },
+			reason: "openalex.topics must hold 1 to",
+		},
+		{
+			value: { ...openalex, topics: Array(11).fill(topic) },
+			reason: "openalex.topics must hold 1 to",
+		},
+		{
+			value: { ...openalex, topics: [{ ...topic, name: "" }] },
+			reason: "openalex.topics name must be text",
+		},
+		{
+			value: { ...openalex, topics: [{ ...topic, field: text(201) }] },
+			reason: "openalex.topics field must be text",
+		},
+		{
+			value: { ...openalex, topics: [{ ...topic, score: 1.5 }] },
+			reason: "openalex.topics score must be a number from 0 to 1",
+		},
+		{
+			value: { ...openalex, topics: [{ ...topic, score: "high" }] },
+			reason: "openalex.topics score must be a number from 0 to 1",
+		},
+		{
+			value: { ...openalex, keywords: Array(21).fill("a keyword") },
+			reason: "openalex.keywords must be a list of up to 20",
+		},
+		{
+			value: { ...openalex, keywords: [text(201)] },
+			reason: "openalex.keywords must be text",
+		},
+	];
+	for (const each of refused) {
+		assertHasReason(
+			entryProblems(paper(1, { openalex: each.value }), "check"),
+			each.reason,
+			JSON.stringify(each.value).slice(0, 60),
+		);
+	}
+	const atCaps = {
+		topics: Array(10).fill({ ...topic, name: text(200) }),
+		keywords: Array(20).fill(text(200)),
+	};
+	assert.deepEqual(entryProblems(paper(1, { openalex: atCaps }), "check"), []);
+});
+
+test("An openalex field on news, an article or a report is refused", async () => {
+	const { entryProblems }: typeof EntryChecks = await import(CHECKS.href);
+	const openalex = {
+		topics: [{ name: "Topic Modeling", field: "Computer Science", score: 0.2 }],
+		keywords: [],
+	};
+	for (const type of ["news", "article", "report"] as const) {
+		for (const mode of ["add", "check"] as const) {
+			assertHasReason(
+				entryProblems(
+					{ ...item(type, 1, "2026-10-04"), openalex: openalex },
+					mode,
+				),
+				'"openalex" is not in the schema',
+				`${type} in mode ${mode}`,
+			);
+		}
+	}
+});
