@@ -73,6 +73,9 @@ const RELATIVE_ADDRESS = /\b(href|src)="(?![a-zA-Z][a-zA-Z0-9+.-]*:|\/|#)/g;
 // it needs no Access cookie.
 const OWNER_MANIFEST_LINK =
 	'  <link rel="manifest" href="../manifest.webmanifest">\n</head>';
+// The public page preloads data/selected.json; the owner's Selected reads its own saved marks instead.
+const SELECTED_PRELOAD =
+	'  <link rel="preload" href="data/selected.json" as="fetch" crossorigin>\n';
 // The owner's page div gets page--owner, from the first frame: its column is wider by the rail's second column.
 const OWNER_PAGE_CLASS = {
 	from: 'class="page page--with-contents"',
@@ -478,6 +481,7 @@ function writeBuild(
 	writeFileSync(
 		join(page, OWNER_FOLDER, "index.html"),
 		html
+			.replace(SELECTED_PRELOAD, "")
 			.replace(RELATIVE_ADDRESS, '$1="../')
 			.replace("</head>", OWNER_MANIFEST_LINK)
 			.replace(OWNER_PAGE_CLASS.from, OWNER_PAGE_CLASS.to),

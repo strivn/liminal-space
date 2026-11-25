@@ -20,6 +20,7 @@
        index answers (the newest month, whose preload scripts/deploy/build-site.ts writes, since its name holds its hash).
        crossorigin matches fetch()'s own mode (cors, same-origin credentials) and a font's, so each preload is used. -->
   <link rel="preload" href="data/index.json" as="fetch" crossorigin>
+  <link rel="preload" href="data/selected.json" as="fetch" crossorigin>
   <link rel="preload" href="fonts/Manrope-Variable-latin.woff2" as="font" type="font/woff2" crossorigin>
   <!-- KaTeX 0.18.9, saved in site/katex so math renders offline -->
   <link rel="stylesheet" href="katex/katex.min.css">
@@ -45,6 +46,8 @@
         <p class="visually-hidden">A daily reading list. Plain-text digests: digests/index.md</p>
         <div id="freshness" class="masthead__meta"></div>
       </header>
+      <!-- Feed and Selected: the page draws the two links (site/page/views.ts). -->
+      <nav aria-label="Views"><ul id="views" class="views"></ul></nav>
       <aside id="heatmap" class="heatmap" aria-label="Reading heatmap"></aside>
       <!-- On a phone, the bar kept at the top: the last 7 days, Refresh and the contents; elsewhere no box (style.css). -->
       <div class="phone-bar">
@@ -57,6 +60,8 @@
     <div class="nosnippet" data-nosnippet>
       <!-- tabindex="-1": the skip link moves focus here, so the next Tab carries on in the digests. -->
       <main id="digests" tabindex="-1" aria-busy="true"></main>
+      <!-- Selected: the papers marked as shaping the owner's thinking, drawn when this view shows. -->
+      <main id="selected-view" hidden></main>
     </div>
   </div>
 

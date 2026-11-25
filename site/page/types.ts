@@ -3,6 +3,7 @@ import type {
 	CommentAuthor,
 	Depth,
 	FeedbackMark,
+	Standout,
 	TagName,
 	Takeaway,
 } from "../../shared/owner-protocol.ts";
@@ -28,6 +29,7 @@ export type Entry = {
 	figure?: unknown;
 	camera_ready?: unknown;
 	ad_hoc?: unknown;
+	openalex?: unknown;
 };
 
 // One day of entries: a checked digests line, or every line of one date merged.
@@ -97,11 +99,16 @@ export type FeedbackMarks = Record<string, FeedbackMark>;
 // Takeaways by entry id, each list newest first; an entry with none has no key.
 export type AllTakeaways = Record<string, Takeaway[]>;
 
-// The owner's state as the page holds it: read marks, tags, comments, likes and dislikes, and takeaways by entry id.
+// The marked papers by entry id: the day marked and the public note.
+export type Standouts = Record<string, Standout>;
+
+// The owner's state as the page holds it: read marks, tags, comments, likes and dislikes, takeaways and marked papers
+// by entry id.
 export type OwnerData = {
 	read: ReadState;
 	tags: Tags;
 	comments: AllComments;
 	feedback: FeedbackMarks;
 	takeaways: AllTakeaways;
+	standouts: Standouts;
 };

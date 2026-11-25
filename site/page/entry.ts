@@ -25,6 +25,7 @@ import {
 	railToggles,
 	showRailIcon,
 } from "./icons.ts";
+import type { StandoutBoard } from "./standout-board.ts";
 import { readCounts } from "./state.ts";
 import type { TagBoard } from "./tag-board.ts";
 import type { TakeawayBoard } from "./takeaway-board.ts";
@@ -184,6 +185,15 @@ function pdfLinkOf(entry: Entry) {
 	return null;
 }
 
+// Where an entry's title links: a paper's published version, else its PDF, else its URL; null when it has none.
+export function titleUrlOf(entry: Entry): string | null {
+	const isPaper = entry.type === "paper";
+	const publishedUrl = isPaper ? publishedVersionOf(entry) : null;
+	if (publishedUrl) return publishedUrl;
+	const pdfUrl = isPaper ? pdfLinkOf(entry) : null;
+	return pdfUrl ?? safeUrl(entry.url);
+}
+
 // arXiv's small logomark, linking to a paper's abstract page: the red and grey file in both themes. It is arXiv's own
 // file, unaltered, as its brand guidelines ask (no recolouring), and its light grey reads on the dark background too.
 // It sits in site/ so the page works offline.
@@ -233,6 +243,7 @@ export type EntryControls = {
 	board: CommentBoard;
 	tagBoard: TagBoard;
 	feedbackBoard: FeedbackBoard;
+	standoutBoard: StandoutBoard;
 	takeawayBoard: TakeawayBoard;
 };
 
@@ -403,8 +414,8 @@ export function renderEntry(
 	return article;
 }
 
-// An entry's icon rail: Comment and its count, Copy; the read toggles; OK, Like and Dislike in the left column; Discuss,
-// Talk about it and Takeaway; the tags in the right. A paper's left column has two buttons more (Abstract and Paper),
+// An entry's icon rail: Comment and its count, Copy; the read toggles; OK, Like and Dislike; Shaped my thinking in the
+// left column; Discuss, Talk about it and Takeaway; the tags in the right. A paper's left column has two buttons more (Abstract and Paper),
 // which style.css needs to centre the rail on the window.
 function entryRail(
 	entry: Entry,
@@ -471,6 +482,7 @@ function entryRail(
 				controls.toggleViews,
 			),
 			controls.feedbackBoard.toggles(entry),
+			controls.standoutBoard.toggles(entry),
 		),
 		el(
 			"div",
