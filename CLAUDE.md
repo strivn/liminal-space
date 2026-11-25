@@ -15,7 +15,8 @@ likes, comments, highlights and takeaways through the Worker.
 GitHub Actions: scout.yml (daily), add.yml (connector requests)
   scripts/scout/scout.ts ─► scripts/scout/arxiv/arxiv.ts, proceedings.ts, digests.ts, … ─► site/digests.js
   scripts/deploy/sync.ts push ─► Worker /liminal-space/api/sync/push ─► D1
-  scripts/deploy/build-site.ts ─► dist/liminal-space/ (page, the owner's copy, data/index.json + data/months/*.json)
+  scripts/deploy/build-site.ts ─► dist/liminal-space/ (page, the owner's copy, data/index.json + data/months/*.json
+                                                  + data/selected.json, the owner's marked papers with their public notes)
 Browser: site/app.ts + site/page/*.ts
   public page ─GET data/*.json      owner page ─GET/POST the owner API ─► Worker ─► D1
 Worker crons ─► GitHub workflow_dispatch (scout.yml 22:00 and 23:00 UTC, add.yml every 15 min)
@@ -36,8 +37,10 @@ The daily run, in the order `scout.yml` runs it:
    (every paper on Mondays). `topics.ts` adds OpenAlex's topics and keywords to the papers of the last 30 days (every
    paper on Mondays). Then `sync.ts push` sends the new lines to D1, `.cache/` is saved without `feedback.json`, and
    `sync.ts log` sends the scout's log.
-7. A last job calls `deploy.yml`, which applies the D1 migrations, runs `sync.ts pull` and `build-site.ts`, and
-   deploys the page.
+7. A last job calls `deploy.yml`, which applies the D1 migrations (before the pull, so a table a migration adds can be
+   read at once), runs `sync.ts pull` and `build-site.ts`, and deploys the page. The pull also writes the marked papers
+   (`digests.standouts.json`, beside `digests.js`), which the build publishes with their notes as `data/selected.json`;
+   marks and notes reach the public page with the next deploy.
 
 ## Commands
 
@@ -157,6 +160,9 @@ bar and home indicator (`viewport-fit=cover`); phone rules keep clear of them wi
 `develop` is staging and `main` is production. Work reaches `develop` only through pull requests, and every push to
 `develop` deploys staging. Production changes only through the pull request
 from `develop` into `main`. Its description follows `.github/PULL_REQUEST_TEMPLATE/release.md`.
+Staging reads production's entries from its public files, and builds its Selected data from the papers marked in
+staging's own database (`sync.ts standouts --database`), so the owner's marks there stay on staging. `staging.yml` also
+runs by hand (`workflow_dispatch`), to publish a mark made on staging without a push to `develop`.
 
 - Claude merges into `develop`, as `claude-ivn`, once the local tests and GitHub's checks pass. The owner then tries
   the change on staging, and decides between more fixes and a release. Never hand the owner local test commands.

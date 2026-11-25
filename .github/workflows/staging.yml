@@ -5,6 +5,8 @@ name: staging
 on:
   push:
     branches: [develop]
+  # The owner starts it by hand to see the marks they made on staging in its Selected view.
+  workflow_dispatch:
 
 # One staging deploy at a time; a newer one waits. Its own group, so it never waits on production's.
 concurrency:
@@ -32,13 +34,9 @@ jobs:
       - name: Pull production's entries
         run: node scripts/deploy/sync.ts pull site/digests.js
 
-      - name: Build the site
-        run: |
-          pnpm run build
-          node scripts/deploy/build-site.ts --staging "$GITHUB_SHA" site/digests.js dist
-
-      # As production's deploy does (deploy.yml), on staging's database: pending migrations before the Worker that
-      # needs them, the id pinned in env.staging. No Time Travel bookmark: staging's entries come back on every deploy.
+      # As production's deploy does (deploy.yml), on staging's database: pending migrations before anything reads a table
+      # they add and before the Worker that needs them, the id pinned in env.staging. No Time Travel bookmark: staging's
+      # entries come back on every deploy.
       - name: Migrate the database
         run: |
           node -e 'require("wrangler").experimental_patchConfig("wrangler.jsonc", { env: { staging: { d1_databases: [{ database_id: process.env.D1_DATABASE_ID }] } } }, false)'
@@ -51,6 +49,20 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+
+      # The papers the owner marked on staging, from staging's own database: the entries above are production's, whose
+      # marks never reach staging.
+      - name: Pull staging's marked papers
+        run: node scripts/deploy/sync.ts standouts --database site/digests.js
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+
+      - name: Build the site
+        run: |
+          pnpm run build
+          node scripts/deploy/build-site.ts --staging "$GITHUB_SHA" site/digests.js dist
 
       # The Worker's secrets (OWNER_EMAIL, SYNC_CLIENT_ID) stay on liminal-staging between deploys.
       - name: Deploy

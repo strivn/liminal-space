@@ -667,9 +667,83 @@ test("security: a line whose date isn't a real day stops the build before any fi
 	}
 });
 
-test.todo(
-	"The site data holds each marked paper with its mark day and note, newest mark first",
-);
-test.todo(
-	"privacy: the site data holds no comment, takeaway, tag, like or read mark of the owner",
-);
+// Build a copy whose marked papers are `rows`, as sync.ts writes them beside the digests file; the page's data folder.
+function buildSelected(copy: ReturnType<typeof siteCopy>, rows: unknown) {
+	fs.writeFileSync(
+		path.join(path.dirname(copy.digests), "digests.standouts.json"),
+		JSON.stringify(rows),
+	);
+	execFileSync(process.execPath, [SCRIPT, copy.digests, copy.dist], {
+		env: { ...process.env, LIMINAL_SITE: copy.site },
+	});
+	return path.join(copy.dist, "liminal-space");
+}
+
+test("The site data holds each marked paper with its mark day and note, newest mark first", () => {
+	const copy = siteCopy();
+	const older = { id: "arxiv:2610.00001", type: "paper", title: "Older" };
+	const newer = { id: "arxiv:2610.00002", type: "paper", title: "Newer" };
+	const page = buildSelected(copy, [
+		{ entry: older, date: "2026-11-02", note: "Changed how I read evals" },
+		{
+			entry: newer,
+			date: "2026-11-20",
+			note: "The reason I distrust leaderboards",
+		},
+	]);
+	const selected = JSON.parse(
+		fs.readFileSync(path.join(page, "data", "selected.json"), "utf8"),
+	);
+	assert.deepEqual(selected, {
+		papers: [
+			{
+				entry: newer,
+				date: "2026-11-20",
+				note: "The reason I distrust leaderboards",
+			},
+			{ entry: older, date: "2026-11-02", note: "Changed how I read evals" },
+		],
+	});
+});
+
+test("privacy: the site data holds no comment, takeaway, tag, like or read mark of the owner", () => {
+	const copy = siteCopy();
+	const owner = {
+		comments: "OWNER-COMMENT-7f3a",
+		takeaways: "OWNER-TAKEAWAY-7f3a",
+		tags: "OWNER-TAG-7f3a",
+		feedback: "OWNER-LIKE-7f3a",
+		read: "OWNER-READ-7f3a",
+	};
+	fs.writeFileSync(
+		path.join(path.dirname(copy.digests), "digests.read.json"),
+		JSON.stringify(["arxiv:2610.00001"]),
+	);
+	const page = buildSelected(copy, [
+		{
+			entry: { id: "arxiv:2610.00001", type: "paper", title: "Marked" },
+			date: "2026-11-02",
+			note: "A public note",
+			...owner,
+		},
+	]);
+	const selected = JSON.parse(
+		fs.readFileSync(path.join(page, "data", "selected.json"), "utf8"),
+	);
+	assert.deepEqual(Object.keys(selected.papers[0]).sort(), [
+		"date",
+		"entry",
+		"note",
+	]);
+	const published = fs.readdirSync(copy.dist, {
+		recursive: true,
+		withFileTypes: true,
+	});
+	for (const file of published) {
+		if (!file.isFile()) continue;
+		const bytes = fs.readFileSync(path.join(file.parentPath, file.name));
+		for (const secret of Object.values(owner)) {
+			assert.ok(!bytes.includes(secret), `${file.name} holds ${secret}`);
+		}
+	}
+});
