@@ -33,8 +33,9 @@ The daily run, in the order `scout.yml` runs it:
    `digests.ts`, and enriches them with `first-page.ts`, `figure.ts`, `describe.ts` and `fulltext.sh`.
 6. `abstracts.ts` adds Semantic Scholar's abstract to the day's DOI papers that came without one, and `camera-ready.ts`
    links today's conference papers to their published versions, read from the proceedings files in `interests.md`
-   (every paper on Mondays). Then `sync.ts push` sends the new lines to D1, `.cache/` is saved without `feedback.json`,
-   and `sync.ts log` sends the scout's log.
+   (every paper on Mondays). `topics.ts` adds OpenAlex's topics and keywords to the papers of the last 30 days (every
+   paper on Mondays). Then `sync.ts push` sends the new lines to D1, `.cache/` is saved without `feedback.json`, and
+   `sync.ts log` sends the scout's log.
 7. A last job calls `deploy.yml`, which applies the D1 migrations, runs `sync.ts pull` and `build-site.ts`, and
    deploys the page.
 
@@ -71,7 +72,8 @@ pnpm exec bddgen && pnpm exec playwright test --grep "<scenario name>"
   - `scout/`: the daily run. `scout.ts` runs the session with its instructions `scout.md`; `search.ts` fills the
     candidate pool (the plan's pieces in `plan/`), `score.ts` scores it and `surprise.ts` lists the surprise paper's
     candidates. One folder per source: `arxiv/` (`arxiv.ts` appends papers, `figure.ts` and `first-page.ts` read their
-    HTML), `proceedings/`, `newsfeed/`, `news/` (Google News), `hugging-face/`, and `web/` (`describe.ts` copies a
+    HTML), `proceedings/`, `openalex/` (`topics.ts` adds a paper's OpenAlex topics and keywords), `newsfeed/`, `news/`
+    (Google News), `hugging-face/`, and `web/` (`describe.ts` copies a
     publisher's description, `fulltext.sh` fetches an item's full text, checked by `fetch-guard.ts`).
   - `digests/`: `digests.ts` answers questions about the digests file, adds items to it and checks every line.
   - `deploy/`: building the site (`build-site.ts`), syncing with D1 (`sync.ts`) and the connector's add requests
@@ -83,7 +85,8 @@ pnpm exec bddgen && pnpm exec playwright test --grep "<scenario name>"
   only tests import from it.
 - `shared/`: the files the scripts, the Worker and the page all import, which import nothing from `scripts/`,
   `site/` or `worker/` (`tests/unit/layout.test.ts` checks it): `narrow.ts`, `entry-checks.ts` (what a digest line and
-  an entry may hold), `entry-groups.ts`, `entry-markdown.ts`, `arxiv-id.ts`, `local-address.ts`, `site-data-shape.ts`
+  an entry may hold), `openalex.ts` (a paper's OpenAlex topics and what a stored one may hold), `entry-groups.ts`,
+  `entry-markdown.ts`, `arxiv-id.ts`, `local-address.ts`, `site-data-shape.ts`
   and the Worker request shapes and limits in `owner-protocol.ts`, `push-protocol.ts`, `log-protocol.ts`,
   `connector-protocol.ts` and `notify-protocol.ts`.
 - `site/`: the page. `index.html`, `app.ts`, which esbuild bundles with the modules in `site/page/` (the comment
