@@ -47,11 +47,17 @@ const STUDY_KEYS = ["description", "id", "title"];
 const WORD_KEYS = [
 	"inDictionary",
 	"meaning",
+	"meaningFrom",
 	"name",
 	"pinyinChecked",
 	"syllables",
 	"text",
 ];
+
+// True for a meaning with no link and no control character.
+export function isPlainMeaning(meaning: string): boolean {
+	return !LINK.test(meaning) && !CONTROL_OR_HIDDEN.test(meaning);
+}
 
 function hasKeys(value: JsonObject, keys: string[]): boolean {
 	return Object.keys(value).sort().join() === keys.join();
@@ -76,8 +82,16 @@ function wordProblems(word: JsonObject, where: string): string[] {
 			`${where} does not have one pinyin syllable for each of its ${characters} characters`,
 		);
 	}
-	if (typeof meaning !== "string" || meaning.trim() === "") {
+	const noMeaningToShow = word.meaningFrom === "dictionary";
+	if (word.meaningFrom !== "dictionary" && word.meaningFrom !== "model") {
+		problems.push(`${where} has a meaningFrom that is not dictionary or model`);
+	}
+	if (typeof meaning !== "string") {
 		problems.push(`${where} has no meaning`);
+	} else if (meaning.trim() === "") {
+		if (!noMeaningToShow) {
+			problems.push(`${where} has no meaning`);
+		}
 	} else if ([...meaning].length > MAX_MEANING_CHARS) {
 		problems.push(
 			`${where} has a meaning over ${MAX_MEANING_CHARS} characters`,
