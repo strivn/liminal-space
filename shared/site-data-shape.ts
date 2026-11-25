@@ -23,6 +23,11 @@ export type IndexEntry = { id: string; type: string };
 export type MonthFile = { lines: MonthLine[] };
 export type MonthLine = { date: string; entries: unknown[] };
 
+// data/selected.json, newest mark first.
+export type SelectedFile = { papers: SelectedPaper[] };
+export type SelectedPaper = { entry: unknown; date: string; note: string };
+
 // Where the files sit under the published page folder (<output folder>/liminal-space/).
+export const SELECTED_PATH = "data/selected.json";
 export const INDEX_PATH = "data/index.json";
 export const MONTHS_FOLDER = "data/months";

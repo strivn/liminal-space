@@ -7,6 +7,7 @@ import { renderEntry } from "../../site/page/entry.ts";
 import { createFeedbackBoard } from "../../site/page/feedback-board.ts";
 import { createSender } from "../../site/page/owner.ts";
 import { createReadBoard } from "../../site/page/read-board.ts";
+import { createStandoutBoard } from "../../site/page/standout-board.ts";
 import { createTagBoard } from "../../site/page/tag-board.ts";
 import { createTakeawayBoard } from "../../site/page/takeaway-board.ts";
 import type { Entry, ReadState } from "../../site/page/types.ts";
@@ -682,6 +683,7 @@ function ownerEntry(entry: Entry) {
 			notice,
 		),
 		feedbackBoard: createFeedbackBoard(Object.create(null), sender, notice),
+		standoutBoard: createStandoutBoard(Object.create(null), sender, notice),
 		takeawayBoard: createTakeawayBoard(Object.create(null), sender),
 	});
 	document.body.append(article);
@@ -705,6 +707,7 @@ test("a paper's rail holds its buttons in two columns, in the order a keyboard v
 		"OK",
 		"Like",
 		"Dislike",
+		"Shaped my thinking",
 	]);
 	expect(railNames(article, 1)).toEqual([
 		"Discuss",

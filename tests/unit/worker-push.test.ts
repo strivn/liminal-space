@@ -352,3 +352,35 @@ test("a pushed entry with a field over its cap is refused", async () => {
 	const count = sqlite.prepare("SELECT COUNT(*) AS n FROM entries").get();
 	assert.equal(count?.n, 1);
 });
+
+test("A push adds openalex to a stored paper that has none and never changes one it has", async () => {
+	const { sqlite, push } = site();
+	const first = {
+		topics: [{ name: "Topic Modeling", field: "Computer Science", score: 0.2 }],
+		keywords: ["transformer models"],
+	};
+	const later = {
+		topics: [
+			{
+				name: "Ethics and Social Impacts of AI",
+				field: "Computer Science",
+				score: 0.9,
+			},
+		],
+		keywords: [],
+	};
+	await push([
+		item(paper("2610.00001")),
+		item(paper("2610.00002", { openalex: first })),
+	]);
+	const answer = await push([
+		item(paper("2610.00001", { openalex: first })),
+		item(paper("2610.00002", { openalex: later })),
+	]);
+	assert.deepEqual(answer.results, [
+		{ id: "arxiv:2610.00001", outcome: "filled", fields: ["openalex"] },
+		{ id: "arxiv:2610.00002", outcome: "already there" },
+	]);
+	assert.deepEqual(stored(sqlite, "arxiv:2610.00001").json.openalex, first);
+	assert.deepEqual(stored(sqlite, "arxiv:2610.00002").json.openalex, first);
+});

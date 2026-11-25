@@ -1,4 +1,5 @@
 // Read marks, likes and dislikes, tags and the read filter as the page holds them in memory.
+import { isDay } from "../../shared/entry-checks.ts";
 import { isJsonObject, type JsonObject } from "../../shared/narrow.ts";
 import {
 	type Depth,
@@ -11,6 +12,7 @@ import type {
 	FeedbackMarks,
 	ReadCounts,
 	ReadState,
+	Standouts,
 	Tags,
 } from "./types.ts";
 
@@ -135,6 +137,23 @@ export function feedbackOf(saved: JsonObject): FeedbackMarks {
 		marks[id] = { mark: value.mark, date: value.date };
 	}
 	return marks;
+}
+
+// ---- marked papers ----
+
+// The papers with a note or a mark from the saved state: { id: { date, note } }, a date of null for a paper no longer
+// marked. A value that isn't one is left out; saved state without the key (an older site) holds none.
+export function standoutsOf(saved: unknown): Standouts {
+	const rows: Standouts = Object.create(null);
+	if (!isJsonObject(saved)) return rows;
+	for (const id of Object.keys(saved)) {
+		const value = saved[id];
+		if (!isJsonObject(value)) continue;
+		if (value.date !== null && !isDay(value.date)) continue;
+		if (typeof value.note !== "string") continue;
+		rows[id] = { date: value.date, note: value.note };
+	}
+	return rows;
 }
 
 // ---- tags ----

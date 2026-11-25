@@ -5,7 +5,7 @@ import type { Day, Entry, Skipped } from "./types.ts";
 
 // Why an entry can't be drawn, as reasons for the header's warning; none when it can. These are the fields
 // renderEntry relies on: one that is missing or of another shape stops the whole day from drawing.
-function entryProblems(entry: unknown) {
+export function entryProblems(entry: unknown) {
 	if (!isJsonObject(entry)) return ["it isn't an object"];
 	const problems: string[] = [];
 	if (!hasText(entry.id)) problems.push("it has no id");

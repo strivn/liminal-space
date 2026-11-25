@@ -3,7 +3,13 @@
 import { isJsonObject } from "../../shared/narrow.ts";
 import { fetchJson } from "./data.ts";
 import { announce } from "./dom.ts";
-import { feedbackOf, readStateOf, tagsOf, takeawaysOf } from "./state.ts";
+import {
+	feedbackOf,
+	readStateOf,
+	standoutsOf,
+	tagsOf,
+	takeawaysOf,
+} from "./state.ts";
 import type { AllComments, OwnerData } from "./types.ts";
 
 // The owner routes, relative to the owner's page.
@@ -58,6 +64,7 @@ export async function loadOwnerState(): Promise<OwnerData | "refused" | null> {
 		comments: comments,
 		feedback: feedbackOf(json.feedback),
 		takeaways: takeawaysOf(json.takeaways),
+		standouts: standoutsOf(json.standouts),
 	};
 }
 
@@ -81,7 +88,8 @@ export type OwnerRoute =
 	| "tags"
 	| "feedback"
 	| "comments"
-	| "takeaways";
+	| "takeaways"
+	| "standouts";
 // What createSender hands the rest of the page.
 export type Sender = {
 	send: (
