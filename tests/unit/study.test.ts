@@ -2,26 +2,38 @@ import { test } from "vitest";
 
 test.todo("an entry counts as Chinese when its title has a Han character");
 test.todo(
-	"the words are cut from the stored text at the model's word boundaries, so a study always matches its entry",
+	"the model splits each sentence into words, and code cuts the pieces from the stored text, so a study always matches its entry",
 );
 test.todo(
 	"a description's trailing … and a word cut by it become text between words",
 );
 test.todo(
-	"pinyin is compared in dictionary tones, without tone changes for 一 and 不, and ignoring capitals",
+	"a word the model keeps whole that CC-CEDICT does not list, and that the model does not mark as a name or a term, is split again into the longest CC-CEDICT words",
+);
+test.todo(
+	"a word's pinyin is CC-CEDICT's reading when it lists one, the one pinyin-pro reads in the whole sentence when it lists several, and pinyin-pro's when it lists none",
 );
 test.todo("every word has one pinyin syllable for each of its Han characters");
 test.todo(
-	"a syllable pinyin-pro reads differently is asked about once more, then kept and marked as not confirmed",
+	"a word's pinyin is marked confirmed only when CC-CEDICT lists exactly one reading for it",
+);
+test.todo(
+	"a word's meaning is its CC-CEDICT senses for the chosen reading, as written, as many as fit in 80 characters",
+);
+test.todo(
+	"the model's meaning replaces the dictionary's only for a word the model marks as a name or a term, and is then marked as by Claude",
 );
 test.todo("a word CC-CEDICT does not list is marked as not in the dictionary");
-test.todo("an entry the study file already has is not sent to the model again");
-test.todo("a run sends at most 10 entries to the model");
+test.todo(
+	"a word CC-CEDICT reads only with a capital letter is marked as a name",
+);
+test.todo("an entry the study file already has is skipped");
+test.todo("a run studies at most 10 entries");
 test.todo(
 	"the model's calls for different entries go out together, not one after another",
 );
 test.todo(
-	"an answer that is not a study is refused, and the run goes on with the next entry",
+	"a model answer that does not fit its schema is refused, and the run goes on with the next entry",
 );
 test.todo(
 	"CC-CEDICT is downloaded at most once a week and read from the cache otherwise",
@@ -39,5 +51,5 @@ test.todo(
 	"security: the model's answer is checked against the study shape before it is written to the study file",
 );
 test.todo(
-	"security: a meaning longer than 80 characters, or holding a link or a control character, is refused",
+	"security: a meaning from the model longer than 80 characters, or holding a link or a control character, is refused",
 );

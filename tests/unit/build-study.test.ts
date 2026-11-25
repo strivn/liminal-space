@@ -22,3 +22,6 @@ test.todo(
 	"the study files ship with the Arphic, Make Me a Hanzi (with the GPL it refers to) and Hanzi Writer licence files beside them",
 );
 test.todo("the month files are the same with or without studies");
+test.todo(
+	"security: the build writes a character file only for a single Han character, so a study cannot name a path outside study/chars/",
+);

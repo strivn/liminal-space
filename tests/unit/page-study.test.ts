@@ -17,7 +17,7 @@ test.todo(
 	"with reduced motion the strokes show still until their box is clicked",
 );
 test.todo(
-	"a word not in the dictionary, or with pinyin not confirmed, is marked in its tooltip",
+	"a word not in the dictionary is marked in its tooltip, and a meaning from the model is labelled by Claude",
 );
 test.todo("Escape closes the tooltip");
 test.todo("on a touch screen no word tooltip opens");

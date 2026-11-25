@@ -6,6 +6,8 @@ export type StudyWord = {
 	text: string;
 	syllables: string[];
 	meaning: string;
+	// "model" only for a name or a term.
+	meaningFrom: "dictionary" | "model";
 	// Written for its sound: no character breakdown.
 	name: boolean;
 	inDictionary: boolean;
