@@ -28,10 +28,11 @@ function copyMarks(marks: Standouts): Standouts {
 	return copy;
 }
 
-// The owner's marks on papers and their notes. `saved` is the site's marks; each press and each note goes to the site
-// through `sender`, and one the site refuses is undone and `notice` says so. An unmarked paper keeps its note, which
-// comes back with the next mark, as the site keeps it. replace(fresh) takes the site's marks when the page reads its
-// state again; a paper with a change still on its way keeps what the page shows.
+// The owner's marks on papers and their notes. `saved` is the site's rows: a marked paper's date, an unmarked one's
+// null, each with its note. Each press and each note goes to the site through `sender`, and one the site refuses is
+// undone and `notice` says so. An unmarked paper keeps its note, which comes back with the next mark, as the site
+// keeps it. replace(fresh) takes the site's rows when the page reads its state again; a paper with a change still on
+// its way keeps what the page shows.
 export function createStandoutBoard(
 	saved: Standouts,
 	sender: Sender,
@@ -39,7 +40,6 @@ export function createStandoutBoard(
 ): StandoutBoard {
 	let marks = copyMarks(saved);
 	let siteMarks = copyMarks(saved);
-	const keptNotes = new Map<string, string>(); // an unmarked paper's note
 	const views: (() => void)[] = []; // each entry's toggle redraw
 	const listeners: (() => void)[] = [];
 
@@ -74,26 +74,21 @@ export function createStandoutBoard(
 
 	function press(id: string) {
 		const current = marks[id];
-		const date = jakartaToday(new Date());
-		if (current !== undefined) {
-			keptNotes.set(id, current.note);
-			delete marks[id];
-			send(id, { id: id, marked: false, date: date }, () => {
-				delete siteMarks[id];
-			});
-		} else {
-			const note = keptNotes.get(id) ?? "";
-			marks[id] = { date: date, note: note };
-			send(id, { id: id, marked: true, date: date }, () => {
-				siteMarks[id] = { date: date, note: note };
-			});
-		}
+		const today = jakartaToday(new Date());
+		// An unmarked paper keeps its row and note, as the site does.
+		const note = current?.note ?? "";
+		const date = current?.date ? null : today;
+		marks[id] = { date: date, note: note };
+		send(id, { id: id, marked: date !== null, date: today }, () => {
+			siteMarks[id] = { date: date, note: note };
+		});
 		changed();
 	}
 
 	function setNote(id: string, note: string) {
 		const current = marks[id];
-		if (current === undefined || current.note === note) return;
+		if (current === undefined || current.date === null) return;
+		if (current.note === note) return;
 		current.note = note;
 		send(id, { id: id, note: note }, () => {
 			const site = siteMarks[id];
@@ -107,7 +102,7 @@ export function createStandoutBoard(
 				{
 					icon: "shaped",
 					name: SELECTED_TEXT.mark,
-					pressed: () => marks[entry.id] !== undefined,
+					pressed: () => marks[entry.id]?.date != null,
 					press: () => press(entry.id),
 				},
 			],

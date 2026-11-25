@@ -51,7 +51,7 @@ export async function ownerMarkedPapers(
 	const monthOf = new Map<string, string>();
 	for (const day of index.days)
 		for (const entry of day.entries) monthOf.set(entry.id, day.month);
-	const ids = Object.keys(marks);
+	const ids = Object.keys(marks).filter((id) => marks[id]?.date);
 	const months = new Set<string>();
 	for (const id of ids) {
 		const month = monthOf.get(id);
@@ -73,7 +73,7 @@ export async function ownerMarkedPapers(
 	for (const id of ids) {
 		const entry = entries.get(id);
 		const mark = marks[id];
-		if (entry !== undefined && mark !== undefined)
+		if (entry !== undefined && mark?.date)
 			papers.push({ entry: entry, date: mark.date, note: mark.note });
 	}
 	return papers;

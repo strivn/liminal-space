@@ -141,18 +141,19 @@ export function feedbackOf(saved: JsonObject): FeedbackMarks {
 
 // ---- marked papers ----
 
-// The marked papers from the saved state: { id: { date, note } }. A value that isn't one is left out; saved state
-// without the key (an older site) holds none.
+// The papers with a note or a mark from the saved state: { id: { date, note } }, a date of null for a paper no longer
+// marked. A value that isn't one is left out; saved state without the key (an older site) holds none.
 export function standoutsOf(saved: unknown): Standouts {
-	const marked: Standouts = Object.create(null);
-	if (!isJsonObject(saved)) return marked;
+	const rows: Standouts = Object.create(null);
+	if (!isJsonObject(saved)) return rows;
 	for (const id of Object.keys(saved)) {
 		const value = saved[id];
 		if (!isJsonObject(value)) continue;
-		if (!isDay(value.date) || typeof value.note !== "string") continue;
-		marked[id] = { date: value.date, note: value.note };
+		if (value.date !== null && !isDay(value.date)) continue;
+		if (typeof value.note !== "string") continue;
+		rows[id] = { date: value.date, note: value.note };
 	}
-	return marked;
+	return rows;
 }
 
 // ---- tags ----
