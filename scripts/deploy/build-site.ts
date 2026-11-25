@@ -473,6 +473,12 @@ function fileHoldingApiKey(folder: string): string | null {
 	return null;
 }
 
+// The study files for a study file's text (one Study per line), by their path under the page's folder: one
+// study/<hash>.json per entry with the data of its own characters, and the licence files beside them.
+export function studyFiles(_studyText: string): Map<string, string> {
+	throw new Error("not implemented");
+}
+
 // Build into a new folder beside the output folder, then swap it in: the earlier build moves aside and is removed
 // only once the new one is in its place. If the swap fails, the earlier build goes back and the new one is removed.
 // Returns the line the script prints.
