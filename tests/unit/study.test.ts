@@ -48,6 +48,7 @@ const DICTIONARY = [
 	"亚马逊 亚马逊 [Ya4 ma3 xun4] /Amazon/",
 	"中国 中国 [Zhong1 guo2] /China/",
 	"平头哥 平头哥 [ping2 tou2 ge1] /honey badger/",
+	"富士康 富士康 [Fu4 shi4 kang1] /Foxconn/",
 	"元 元 [Yuan2] /surname Yuan/",
 	"元 元 [yuan2] /currency unit/",
 	"吞 吞 [tun1] /to swallow/",
@@ -320,7 +321,7 @@ test("a word's meaning is its CC-CEDICT senses for the chosen reading, as writte
 });
 
 test("the model's meaning is used only for a word CC-CEDICT does not list, or a term the model marks as meaning something the dictionary lacks, and is then marked as by Claude", async () => {
-	const title = "t9 贝佐斯银行平头哥亚马逊";
+	const title = "t9 贝佐斯银行平头哥亚马逊富士康";
 	const study = await studyOf(title, [
 		studyRule(
 			title,
@@ -328,6 +329,7 @@ test("the model's meaning is used only for a word CC-CEDICT does not list, or a 
 			word("银行", "word", "the model's meaning for a plain word"),
 			word("平头哥", "term", "Alibaba's chip unit"),
 			word("亚马逊", "name", "the online shop"),
+			word("富士康", "term", "the phone maker"),
 		),
 	]);
 
@@ -338,6 +340,7 @@ test("the model's meaning is used only for a word CC-CEDICT does not list, or a 
 			["bank", "dictionary"],
 			["Alibaba's chip unit", "model"],
 			["Amazon", "dictionary"],
+			["Foxconn", "dictionary"],
 		],
 	);
 });

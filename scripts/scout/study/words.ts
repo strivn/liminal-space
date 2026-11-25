@@ -2,6 +2,7 @@
 import type { StudyWord } from "../../../shared/study-protocol.ts";
 import {
 	type Dictionary,
+	isCapitalised,
 	meaningOf,
 	splitAgain,
 	toneSyllables,
@@ -42,11 +43,13 @@ export function studyWord(
 ): StudyWord {
 	const readings = usableReadings(dictionary, word.text);
 	const chosen = chooseReading(readings, inSentence, word.kind === "name");
-	const meaningReading = chosen ?? dictionary.get(word.text)?.[0];
+	const listed = dictionary.get(word.text);
+	const meaningReading = chosen ?? listed?.[0];
 	const fromModel =
 		word.meaning.trim() !== "" &&
-		(word.kind === "term" ||
-			(word.kind === "name" && !dictionary.has(word.text)));
+		(word.kind === "term" || word.kind === "name") &&
+		(listed === undefined ||
+			(word.kind === "term" && !listed.some(isCapitalised)));
 	let meaning = "";
 	if (fromModel) {
 		meaning = word.meaning;
