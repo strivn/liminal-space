@@ -158,6 +158,32 @@ test("a feedback mark is dislike, ok, like or null", () => {
 	);
 });
 
+test("a standout change holds a mark or a note, a mark's marked is true or false, and its date is a real day", () => {
+	assert.doesNotThrow(() =>
+		checks.standoutChangeOf?.({ id: "arxiv:2601.00001", note: "A note" }),
+	);
+	assert.doesNotThrow(() =>
+		checks.standoutChangeOf?.(
+			withChange("standoutChangeOf", { marked: false }),
+		),
+	);
+	const bodies: Record<string, unknown> = {
+		"a mark and a note": withChange("standoutChangeOf", { note: "A note" }),
+		"neither a mark nor a note": { id: "arxiv:2601.00001" },
+		"a marked that is not true or false": withChange("standoutChangeOf", {
+			marked: "yes",
+		}),
+		"a note that is not text": { id: "arxiv:2601.00001", note: 7 },
+		"a date that is not a real day": withChange("standoutChangeOf", {
+			date: "2026-02-30",
+		}),
+		"no date with a mark": { id: "arxiv:2601.00001", marked: true },
+	};
+	for (const [name, body] of Object.entries(bodies)) {
+		assert.equal(refusalOf("standoutChangeOf", body).status, 400, name);
+	}
+});
+
 // A comment of `length` characters in a comments change.
 function commentOfLength(length: number): unknown {
 	return withChange("commentsChangeOf", {

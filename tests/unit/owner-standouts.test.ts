@@ -30,7 +30,7 @@ afterAll(async () => {
 	await access.close();
 });
 
-// A database holding the entries ENTRY and OTHER.
+// A database holding two entries.
 function databaseWithEntries(): DatabaseSync {
 	const db = migratedDatabase();
 	for (const [seq, id] of [ENTRY, OTHER].entries()) {
@@ -41,7 +41,7 @@ function databaseWithEntries(): DatabaseSync {
 	return db;
 }
 
-// POST `body` to the standouts route as the owner's page sends it, or as `options` changes it.
+// POST to the standouts route.
 async function post(
 	db: DatabaseSync,
 	body: unknown,
@@ -57,7 +57,7 @@ async function post(
 	);
 }
 
-// The owner's state as GET state answers it.
+// The owner's state.
 async function stateOf(db: DatabaseSync): Promise<OwnerState> {
 	const worker = await loadWorker();
 	const answer = await worker.fetch(
@@ -92,7 +92,9 @@ test("Unmarking a paper takes it out of the owner's state", async () => {
 		date: "2026-11-25",
 	});
 	assert.equal(answer.status, 200);
-	assert.deepEqual((await stateOf(db)).standouts, {});
+	assert.deepEqual((await stateOf(db)).standouts, {
+		[ENTRY]: { date: null, note: "" },
+	});
 });
 
 test("A note on a marked paper is saved and read back", async () => {
@@ -113,7 +115,9 @@ test("Unmarking a paper keeps its note for when it is marked again", async () =>
 	await post(db, mark(ENTRY));
 	await post(db, { id: ENTRY, note: "Changed how I read evals" });
 	await post(db, { id: ENTRY, marked: false, date: "2026-11-25" });
-	assert.deepEqual((await stateOf(db)).standouts, {});
+	assert.deepEqual((await stateOf(db)).standouts, {
+		[ENTRY]: { date: null, note: "Changed how I read evals" },
+	});
 	await post(db, mark(ENTRY, "2026-11-26"));
 	assert.deepEqual((await stateOf(db)).standouts, {
 		[ENTRY]: { date: "2026-11-26", note: "Changed how I read evals" },

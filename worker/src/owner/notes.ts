@@ -81,9 +81,9 @@ function commentFromRow(row: Row, idColumn: "id" | "comment_id"): Comment {
 	};
 }
 
-// GET state: every read mark, tag, like or dislike, thread with its comments, takeaway (newest first) and marked
-// paper, in the shapes of shared/owner-protocol.ts. Seven reads in one batch, so the answer is one moment's state. Threads and comments come back in the order they were
-// stored (rowid): a thread's replies oldest first, as the page sent them.
+// GET state: every read mark, tag, like or dislike, thread with its comments, and takeaway (newest first), in the
+// shapes of shared/owner-protocol.ts. Seven reads in one batch, so the answer is one moment's state. Threads and
+// comments come back in the order they were stored (rowid): a thread's replies oldest first, as the page sent them.
 export async function readState(
 	db: D1Database,
 	count: (cost: QueryCost) => void,
@@ -103,9 +103,7 @@ export async function readState(
 			db.prepare(
 				`SELECT ${TAKEAWAY_COLUMNS} FROM takeaways ORDER BY created DESC`,
 			),
-			db.prepare(
-				"SELECT entry_id, date, note FROM standouts WHERE date IS NOT NULL",
-			),
+			db.prepare("SELECT entry_id, date, note FROM standouts"),
 		],
 		count,
 	);
@@ -139,7 +137,7 @@ export async function readState(
 	};
 	for (const row of standoutRows.results) {
 		state.standouts[String(row.entry_id)] = {
-			date: String(row.date),
+			date: row.date === null ? null : String(row.date),
 			note: String(row.note),
 		};
 	}

@@ -95,8 +95,8 @@ export type FeedbackChange = {
 	mark: Feedback | null;
 	date: string;
 };
-// A marked paper; public.
-export type Standout = { date: string; note: string };
+// A paper's note, public once marked; a null date is unmarked.
+export type Standout = { date: string | null; note: string };
 // POST /liminal-space/api/owner/standouts.
 export type StandoutChange =
 	| { id: string; marked: boolean; date: string }

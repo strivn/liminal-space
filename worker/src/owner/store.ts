@@ -51,9 +51,7 @@ const UPSERT_FEEDBACK =
 	"INSERT INTO feedback (entry_id, mark, date) VALUES (?1, ?2, ?3) " +
 	"ON CONFLICT(entry_id) DO UPDATE SET mark = excluded.mark, date = excluded.date";
 const DELETE_FEEDBACK = "DELETE FROM feedback WHERE entry_id = ?1";
-// A mark on a stored entry (the SELECT finds no row for an unknown id, so nothing is written), written over the
-// paper's day through the primary key; an unmark clears the day and keeps the note; a note is set only on a marked
-// paper.
+// Standouts: mark, unmark, note.
 const MARK_STANDOUT =
 	"INSERT INTO standouts (entry_id, date) SELECT id, ?2 FROM entries WHERE id = ?1 " +
 	"ON CONFLICT(entry_id) DO UPDATE SET date = excluded.date";
@@ -179,8 +177,7 @@ export async function saveFeedback(
 	);
 }
 
-// POST standouts: mark a stored entry on a day, unmark it (the note stays), or set the note of a marked one. A mark
-// on an id no entry has, and a note on a paper that isn't marked, are refused (400) with nothing written.
+// POST standouts.
 export async function saveStandout(
 	db: D1Database,
 	change: StandoutChange,

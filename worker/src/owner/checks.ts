@@ -113,8 +113,7 @@ export function feedbackChangeOf(body: unknown): FeedbackChange {
 	return { id: id, mark: mark, date: date };
 }
 
-// The body of POST standouts: {"id", "marked": true or false, "date": YYYY-MM-DD} or {"id", "note": text of at most
-// OWNER_TEXT_CHARS characters}, never both.
+// The body of POST standouts.
 export function standoutChangeOf(body: unknown): StandoutChange {
 	if (!isJsonObject(body)) {
 		throw new BodyProblem("body is not an object");
