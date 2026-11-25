@@ -18,7 +18,7 @@ export type TooltipEnv = {
 
 export type Tooltip = {
 	element: HTMLElement;
-	// Put the tooltip under the word's box (viewport coordinates), inside the column.
+	// Put the tooltip under or over the word's box (viewport coordinates), inside the column.
 	place: (word: DOMRect, column: DOMRect) => void;
 	close: () => void;
 };
@@ -186,6 +186,8 @@ export function createTooltip(word: StudyWord, env: TooltipEnv): Tooltip {
 	return {
 		element: element,
 		place: (anchor, column) => {
+			// The roomier side, never switched.
+			const above = anchor.top > window.innerHeight - anchor.bottom;
 			const put = () => {
 				const scrollX = window.scrollX;
 				const scrollY = window.scrollY;
@@ -193,13 +195,9 @@ export function createTooltip(word: StudyWord, env: TooltipEnv): Tooltip {
 				const width = element.offsetWidth;
 				const left = Math.min(anchor.left, column.right - width);
 				element.style.left = `${Math.max(column.left, left) + scrollX}px`;
-				let top = anchor.bottom + GAP_PX;
-				// Above the word when the window has no room below and some above.
-				if (
-					top + element.offsetHeight > window.innerHeight &&
-					anchor.top - GAP_PX - element.offsetHeight > 0
-				)
-					top = anchor.top - GAP_PX - element.offsetHeight;
+				const top = above
+					? anchor.top - GAP_PX - element.offsetHeight
+					: anchor.bottom + GAP_PX;
 				element.style.top = `${top + scrollY}px`;
 			};
 			place = put;

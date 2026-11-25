@@ -330,6 +330,47 @@ test("a word's pinyin shows at once and its meaning one second after the hover",
 	expect(meaning()?.textContent).toBe("valuation");
 });
 
+test("a tooltip stays on the side of the word it opened on while its characters load", async () => {
+	useClock();
+	// Tooltip grows per shown character.
+	vi.stubGlobal("innerHeight", 180);
+	vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(
+		function (this: HTMLElement) {
+			if (!this.classList.contains("study-tip")) return 0;
+			return (
+				40 + 20 * this.querySelectorAll(".study-char:not([hidden])").length
+			);
+		},
+	);
+	const wordTop = DESCRIPTION_TOP;
+	const wordBottom = DESCRIPTION_TOP + LINE_HEIGHT;
+	const side = () => {
+		const element = tip();
+		if (element === null) throw new Error("no tooltip");
+		const top = Number.parseFloat(element.style.top);
+		if (top >= wordBottom) return "below";
+		if (top + element.offsetHeight <= wordTop) return "above";
+		return "over the word";
+	};
+	const { description } = mount();
+	// 忍住: two characters.
+	const opening: string[] = [];
+	const observer = new MutationObserver(() => {
+		if (tip() !== null && opening.length === 0) opening.push(side());
+	});
+	observer.observe(document.body, {
+		childList: true,
+		attributes: true,
+		subtree: true,
+	});
+	await hover(description, 3);
+	observer.disconnect();
+	expect(document.querySelectorAll(".study-char:not([hidden])")).toHaveLength(
+		2,
+	);
+	expect(side()).toBe(opening[0]);
+});
+
 test("each character's strokes are drawn three times, two seconds apart", async () => {
 	useClock();
 	const drawings = watchDrawings();
