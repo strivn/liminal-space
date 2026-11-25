@@ -58,9 +58,9 @@ function publicMarks(
 // The owner's saved state with these marks.
 function ownerMarks(
 	site: FakeSite,
-	marks: Record<string, { date: string; note?: string }>,
+	marks: Record<string, { date: string | null; note?: string }>,
 ) {
-	const standouts: Record<string, { date: string; note: string }> = {};
+	const standouts: Record<string, { date: string | null; note: string }> = {};
 	for (const [id, mark] of Object.entries(marks))
 		standouts[id] = { date: mark.date, note: mark.note ?? "" };
 	site.owner = {
@@ -351,4 +351,23 @@ test("The owner's Selected lists a marked paper from a month the page has not lo
 	expect(site.requested).toContain("data/months/2026-07.json");
 	expect(listedTitles()).toEqual(["Old July paper"]);
 	expect(selectedView().querySelector("textarea")?.value).toBe("From July");
+});
+
+test("A paper marked again shows the note it kept", async () => {
+	const site = siteOf([{ date: TODAY, entries: [alignmentA] }]);
+	ownerMarks(site, { [alignmentA.id]: { date: null, note: "Kept" } });
+	await openPage(site, { owner: true });
+	const mark = feedView().querySelector<HTMLButtonElement>(
+		"button[aria-label='Shaped my thinking']",
+	);
+	if (mark === null) throw new Error("no mark button");
+	expect(mark.getAttribute("aria-pressed")).toBe("false");
+	mark.click();
+	await settle();
+	expect(site.posts.map((post) => post.body)).toEqual([
+		{ id: alignmentA.id, marked: true, date: TODAY },
+	]);
+	location.hash = "#selected";
+	await settle();
+	expect(selectedView().querySelector("textarea")?.value).toBe("Kept");
 });
