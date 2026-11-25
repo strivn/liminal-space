@@ -354,7 +354,7 @@ test("OpenAlex failing or not answering in time leaves the digests file as it wa
 	];
 	for (const [name, answer] of failures) {
 		const stand = await openAlex(answer);
-		const ran = await run(today(...many, ATTENTION_PAPER), stand.base, [], {
+		const ran = await run(today(ATTENTION_PAPER, ...many), stand.base, [], {
 			OPENALEX_TIMEOUT_MS: "300",
 		});
 		expect(ran.code, name).toBe(1);
@@ -405,7 +405,23 @@ test("security: an answer over the size cap, or not JSON, changes no paper", asy
 });
 
 test("A request asks OpenAlex for 50 results a page, so none is dropped", async () => {
-	const stand = await openAlex();
-	await run(today(ATTENTION_PAPER), stand.base);
-	expect(stand.asked[0]?.query.get("per_page")).toBe("50");
+	const fifty = Array.from({ length: 50 }, (_, n) =>
+		paper(`arxiv:2601.${String(n).padStart(5, "0")}`, `Paper ${n}`),
+	);
+	// Like OpenAlex, answer one page: 25 works unless per_page says more.
+	const stand = await openAlex((asked) => {
+		const page = Number(asked.query.get("per_page") ?? 25);
+		const results = asked.dois.slice(0, page).map((doi) => ({
+			...ATTENTION_WORK,
+			doi: `https://doi.org/${doi}`,
+			title: `Paper ${Number(doi.split(".").pop())}`,
+			locations: [],
+		}));
+		return { body: { results: results } };
+	});
+	const ran = await run(today(...fifty), stand.base);
+	expect(ran.stdout).toContain("OpenAlex topics: 50 of 50 papers");
+	expect(
+		ran.entries[0]?.filter((entry) => entry.openalex !== undefined),
+	).toHaveLength(50);
 });
