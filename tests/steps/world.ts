@@ -15,6 +15,7 @@ import { expect } from "@playwright/test";
 import { test as base, createBdd } from "playwright-bdd";
 import { daysBefore, jakartaToday } from "../../scripts/lib/run-date.ts";
 import type { ReadChange } from "../../shared/owner-protocol.ts";
+import type { Study } from "../../shared/study-protocol.ts";
 import { PHONE_QUERY } from "../../site/page/phone.ts";
 import { SITE_ORIGIN } from "../fixtures/worker-in-node.ts";
 import type { Cloud } from "../support/cloud.ts";
@@ -50,6 +51,19 @@ export type Paper = {
 	};
 };
 
+// A news entry in Chinese and the words its study holds.
+export type ChineseEntry = {
+	entry: {
+		id: string;
+		type: "news";
+		title: string;
+		published: string;
+		source: string;
+		url: string;
+	};
+	study: Study;
+};
+
 // The main OpenAlex topic of every seeded paper.
 export const OPENALEX_TOPIC = "Reinforcement learning";
 
@@ -59,6 +73,10 @@ export type World = {
 	yesterday: string;
 	// Each day's papers in the order the digest lists them.
 	days: Map<string, Paper[]>;
+	// The Chinese entry today's digest ends with, and its study: built into the site, as a deploy with --study does.
+	chinese: ChineseEntry | null;
+	// When the last step moved the mouse onto a word, in milliseconds.
+	hoveredAt: number;
 	// A digests file the morning scripts wrote and pushed, used instead of `days`.
 	digestsFile: string | null;
 	pendingReads: ReadChange[];
@@ -144,7 +162,13 @@ function seededDigests(world: World): string {
 	const file = path.join(world.dir, "digests.js");
 	const lines = [...world.days.entries()]
 		.sort(([a], [b]) => a.localeCompare(b))
-		.map(([date, entries]) => `digest(${JSON.stringify({ date, entries })});`);
+		.map(([date, entries]) => {
+			const listed: object[] = [...entries];
+			if (world.chinese !== null && date === world.today) {
+				listed.push(world.chinese.entry);
+			}
+			return `digest(${JSON.stringify({ date, entries: listed })});`;
+		});
 	fs.writeFileSync(file, `${lines.join("\n")}\n`);
 	return file;
 }
@@ -181,7 +205,17 @@ export async function ensureSite(world: World): Promise<void> {
 	// A Worker the morning scripts already started serves the build only after a reload.
 	const running = world.cloud.starting !== null;
 	const digests = world.digestsFile ?? seededDigests(world);
-	await runScript(world, "deploy/build-site.ts", [digests, distOf(world)]);
+	const studyArguments: string[] = [];
+	if (world.chinese !== null) {
+		const studyFile = path.join(world.dir, "study.jsonl");
+		fs.writeFileSync(studyFile, `${JSON.stringify(world.chinese.study)}\n`);
+		studyArguments.push("--study", studyFile);
+	}
+	await runScript(world, "deploy/build-site.ts", [
+		...studyArguments,
+		digests,
+		distOf(world),
+	]);
 	await startWorker(world.cloud);
 	if (running) {
 		await world.cloud.harness?.update((options) => options);
@@ -340,6 +374,8 @@ export const test = base.extend<{ world: World }>({
 			today,
 			yesterday: daysBefore(today, 1),
 			days: new Map(),
+			chinese: null,
+			hoveredAt: 0,
 			digestsFile: null,
 			pendingReads: [],
 			cloud,

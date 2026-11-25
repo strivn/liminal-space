@@ -371,6 +371,7 @@ const POLICIES: Policy[] = [
 		needsOrigin: [],
 	},
 	postFrom("/liminal-space/api/sync/logs", "sync", FORBIDDEN),
+	postFrom("/liminal-space/api/sync/study", "sync", FORBIDDEN),
 	postFrom("/liminal-space/mcp", "connector", UNAUTHORIZED),
 	ownerRead("state"),
 	ownerRead("logs"),

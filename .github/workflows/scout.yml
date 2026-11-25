@@ -1,11 +1,18 @@
 # The cloud scout: count today's papers in the database, and on a day that still needs the scout pull every entry,
 # run scripts/scout/scout.ts on the owner's subscription, push what it added, and deploy the site. The Worker's cron dispatches it
 # at 05:00 and 06:00 in Jakarta; it also runs by hand. The count comes first, so a skipped day installs and pulls
-# nothing.
+# nothing. After the scout, the Chinese entries of the day are studied (scripts/scout/study/study.ts) and their studies
+# pushed. A hand run with `since` runs no scout and studies the Chinese entries stored from that day on.
 name: scout
 
 on:
   workflow_dispatch:
+    inputs:
+      since:
+        description: "A day, YYYY-MM-DD: study the Chinese entries stored from that day on, and run no scout. Empty: the daily run."
+        required: false
+        default: ""
+        type: string
 
 # One scout at a time. A newer run waits for the running one instead of cancelling it halfway through.
 concurrency:
@@ -17,6 +24,7 @@ permissions:
 
 jobs:
   scout:
+    if: inputs.since == ''
     runs-on: ubuntu-latest
     environment: production
     # A whole run takes 9 minutes. A busy arXiv can add 15 minutes of retry waits twice, in the fill step and in the
@@ -99,6 +107,19 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
 
+      # The studies the site holds, so the study step below makes only the missing ones and push-study sends only
+      # what it made. Without them the study step must not run: it would study every Chinese entry again. A failure
+      # here (the study table before its migration) never stops the scout.
+      - name: Pull the studies
+        id: pull_study
+        if: steps.status.outputs.skip == 'false'
+        continue-on-error: true
+        run: node scripts/deploy/sync.ts pull-study --database site/study.jsonl
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+
       # Two jobs at once, both before the scout, which then looks only for news it missed and finds a pool to pick from.
       # The newsfeed (in the background): every new item from feeds.json's sources, copied as published, no model; a
       # source that can't be read is a warning, not a failed run. The fill (in the foreground): search.ts can wait out
@@ -157,6 +178,17 @@ jobs:
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
+      # The words, pinyin and meanings of today's Chinese entries, by the same subscription as the scout but a model call
+      # with no tools and none of the runner's setup. Only this step holds the token besides the scout's. Also after a
+      # scout that failed; a study that fails leaves the entry plain.
+      - name: Study the Chinese entries
+        id: study
+        if: always() && steps.status.outputs.skip == 'false' && steps.pull_study.outcome == 'success'
+        continue-on-error: true
+        run: node scripts/scout/study/study.ts site/digests.js site/study.jsonl
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
       # Crossref has no abstract for Elsevier's and Springer Nature's papers. The scout's commands never see this key
       # (Claude Code's env scrub removes it), so the day's DOI papers get Semantic Scholar's abstract here, before the
       # push; one that fails is a warning, and the push still runs.
@@ -196,6 +228,16 @@ jobs:
         id: push
         if: always() && steps.status.outputs.skip == 'false'
         run: node scripts/deploy/sync.ts push site/digests.js
+        env:
+          ACCESS_SYNC_ID: ${{ secrets.ACCESS_SYNC_ID }}
+          ACCESS_SYNC_SECRET: ${{ secrets.ACCESS_SYNC_SECRET }}
+
+      # After the entries: the site refuses a study whose entry it doesn't hold. A study it refuses is printed and the
+      # others still go; a failure here never fails the run, and the deploy shows whatever got in.
+      - name: Push the studies
+        if: always() && steps.status.outputs.skip == 'false' && steps.study.outcome != 'skipped'
+        continue-on-error: true
+        run: node scripts/deploy/sync.ts push-study site/study.jsonl
         env:
           ACCESS_SYNC_ID: ${{ secrets.ACCESS_SYNC_ID }}
           ACCESS_SYNC_SECRET: ${{ secrets.ACCESS_SYNC_SECRET }}
@@ -244,10 +286,76 @@ jobs:
           PAPERS: ${{ steps.status.outputs.papers }}
           LOG: ${{ steps.log.outcome }}
 
+  # A hand run with a day studies the Chinese entries stored from that day on and runs no scout. The study program
+  # studies at most 10 entries a run, so it runs again until none are left, at most 20 times.
+  backfill:
+    if: inputs.since != ''
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 60
+    outputs:
+      # "true" once a push was tried, as the scout's: the site is rebuilt with whatever got in.
+      pushed: ${{ steps.push_study.outcome == 'success' || steps.push_study.outcome == 'failure' }}
+    steps:
+      - name: Run only on main
+        run: |
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "This workflow changes production, which runs main: start it on main, not ${GITHUB_REF}." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - name: Pull the database
+        run: node scripts/deploy/sync.ts pull --database site/digests.js
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+
+      - name: Pull the studies
+        run: node scripts/deploy/sync.ts pull-study --database site/study.jsonl
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+
+      # The day reaches the program as an argument, and the program refuses anything but a real YYYY-MM-DD. A round
+      # that refuses an entry still counts: the next round studies the ones after it. bash with pipefail keeps the
+      # program's exit code through tee; a round that prints no "left for the next run" count (the dictionary could not
+      # be loaded) ends the loop.
+      - name: Study the Chinese entries
+        id: study
+        shell: bash
+        run: |
+          status=0
+          for round in $(seq 1 20); do
+            node scripts/scout/study/study.ts site/digests.js site/study.jsonl --since "$SINCE" | tee "$RUNNER_TEMP/study.txt" || status=$?
+            if ! grep -q ' [1-9][0-9]* left for the next run$' "$RUNNER_TEMP/study.txt"; then
+              break
+            fi
+          done
+          exit "$status"
+        env:
+          SINCE: ${{ inputs.since }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+      - name: Push the studies
+        id: push_study
+        if: always() && steps.study.outcome != 'skipped'
+        run: node scripts/deploy/sync.ts push-study site/study.jsonl
+        env:
+          ACCESS_SYNC_ID: ${{ secrets.ACCESS_SYNC_ID }}
+          ACCESS_SYNC_SECRET: ${{ secrets.ACCESS_SYNC_SECRET }}
+
   # The site shows the new entries once deploy.yml has built it from the database again.
   deploy:
-    needs: scout
-    if: always() && needs.scout.outputs.pushed == 'true'
+    needs: [scout, backfill]
+    if: always() && (needs.scout.outputs.pushed == 'true' || needs.backfill.outputs.pushed == 'true')
     uses: ./.github/workflows/deploy.yml
     # Values come from production.
     secrets:

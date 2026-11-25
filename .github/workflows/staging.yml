@@ -34,6 +34,11 @@ jobs:
       - name: Pull production's entries
         run: node scripts/deploy/sync.ts pull site/digests.js
 
+      # The studies production's public files hold, so staging shows the Chinese entries as production does. Production
+      # with no studies yet leaves the file empty.
+      - name: Pull production's studies
+        run: node scripts/deploy/sync.ts pull-study site/study.jsonl
+
       # As production's deploy does (deploy.yml), on staging's database: pending migrations before the Worker that
       # needs them, the id pinned in env.staging. No Time Travel bookmark: staging's entries come back on every deploy.
       - name: Migrate the database
@@ -60,7 +65,7 @@ jobs:
       - name: Build the site
         run: |
           pnpm run build
-          node scripts/deploy/build-site.ts --staging "$GITHUB_SHA" site/digests.js dist
+          node scripts/deploy/build-site.ts --staging "$GITHUB_SHA" --study site/study.jsonl site/digests.js dist
 
       # The Worker's secrets (OWNER_EMAIL, SYNC_CLIENT_ID) stay on liminal-staging between deploys.
       - name: Deploy

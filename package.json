@@ -6,7 +6,7 @@
 		"test:unit": "vitest run",
 		"test:e2e": "pnpm run build && bddgen && playwright test",
 		"typecheck": "tsc -p . && tsc -p site && tsc -p site/tsconfig.sw.json && tsc -p tests && tsc -p worker",
-		"build": "esbuild site/app.ts site/sw.ts --bundle --minify --format=iife --external:./claude-markdown.js --outdir=site && esbuild site/page/claude-markdown.ts --bundle --minify --format=esm --outfile=site/claude-markdown.js && esbuild site/styles.css --bundle --external:*.woff2 --outfile=site/style.css",
+		"build": "esbuild site/app.ts site/sw.ts --bundle --minify --format=iife --external:./claude-markdown.js --external:./study-strokes.js --outdir=site && esbuild site/page/claude-markdown.ts --bundle --minify --format=esm --outfile=site/claude-markdown.js && esbuild site/page/study-strokes.ts --bundle --minify --format=esm --outfile=site/study-strokes.js && esbuild site/styles.css --bundle --external:*.woff2 --outfile=site/style.css",
 		"build:site": "pnpm run build && node scripts/deploy/build-site.ts site/digests.js dist",
 		"preview": "pnpm run build:site && wrangler dev --port 8787"
 	},
@@ -16,6 +16,7 @@
 		"@playwright/test": "1.65.1",
 		"@types/node": "^26.6.6",
 		"esbuild": "0.28.2",
+		"hanzi-writer-data": "2.0.1",
 		"jsdom": "31.0.1",
 		"playwright-bdd": "9.2.1",
 		"typescript": "7.0.2",
@@ -29,9 +30,11 @@
 		"dompurify": "3.4.18",
 		"entities": "^9.0.0",
 		"fast-xml-parser": "5.12.1",
+		"hanzi-writer": "3.7.3",
 		"jose": "^6.2.18",
 		"marked": "18.2.1",
 		"pdfjs-dist": "^6.5.438",
+		"pinyin-pro": "3.29.5",
 		"undici": "8.12.4"
 	},
 	"packageManager": "pnpm@12.21.0",

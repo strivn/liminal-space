@@ -2,6 +2,8 @@
 // Usage: node scripts/deploy/sync.ts push <digests file>
 //        node scripts/deploy/sync.ts pull [--database] <digests file>
 //        node scripts/deploy/sync.ts log <run id> <YYYY-MM-DD>.md
+//        node scripts/deploy/sync.ts push-study <study file>
+//        node scripts/deploy/sync.ts pull-study [--database] <study file>
 // push sends the entries that are new or changed since the last pull, compared with digests.pulled.js next to the
 // digests file (every entry when there is none), to <LIMINAL_URL>/api/sync/push, in requests the Worker can answer
 // within D1's free limits (MAX_ENTRIES, MAX_BODY_BYTES in shared/push-protocol.ts). After every entry is accepted,
@@ -17,8 +19,13 @@
 // entries come from the hosted files (staging's).
 // log sends one cloud run's log, .scout-logs/<date>.md, to <LIMINAL_URL>/api/sync/logs, where only the owner's page
 // reads it (shared/log-protocol.ts).
+// push-study sends each study in the study file that study.pulled.jsonl, beside it, does not hold, one request each, to
+// <LIMINAL_URL>/api/sync/study (shared/study-protocol.ts); a refused study is printed and the others still go.
+// pull-study replaces the study file and study.pulled.jsonl with every study the site holds, one per line: from D1
+// with --database (the token and ids of pull --database), else from the words files data/index.json names, which
+// anyone can read.
 // Requests are retried after 1, 2, 4, 8 and 16 s. Messages name lines, entries and ids, never a token or a file's text.
-// Environment: ACCESS_SYNC_ID and ACCESS_SYNC_SECRET (push and log), Access service token "sync", sent as CF-Access-Client-Id
+// Environment: ACCESS_SYNC_ID and ACCESS_SYNC_SECRET (push, push-study and log), Access service token "sync", sent as CF-Access-Client-Id
 // and CF-Access-Client-Secret; CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and D1_DATABASE_ID (pull --database; the
 // ids are kept out of the repository) and CLOUDFLARE_API_BASE, default https://api.cloudflare.com/client/v4;
 // LIMINAL_URL, default https://ivan.wiryadi.com/liminal-space (tests point it elsewhere); SYNC_RETRY_SECOND_MS as the
@@ -55,7 +62,11 @@ import {
 	type PushItem,
 	type PushResult,
 } from "../../shared/push-protocol.ts";
-import type { MonthLine } from "../../shared/site-data-shape.ts";
+import {
+	type MonthLine,
+	STUDY_WORDS_PATH,
+} from "../../shared/site-data-shape.ts";
+import { MAX_STUDY_BYTES } from "../../shared/study-protocol.ts";
 import { digestLine } from "../digests/digests-file.ts";
 import {
 	FEEDBACK_DAYS,
@@ -68,7 +79,7 @@ import { type StandoutRow, standoutsPath } from "../lib/standouts.ts";
 import { requestWithRetry, SyncFailure, siteBase } from "./site-requests.ts";
 
 const USAGE =
-	"usage: node scripts/deploy/sync.ts push <digests file> | pull [--database] <digests file> | standouts --database <digests file> | count --database | log <run id> <YYYY-MM-DD>.md";
+	"usage: node scripts/deploy/sync.ts push <digests file> | pull [--database] <digests file> | standouts --database <digests file> | count --database | log <run id> <YYYY-MM-DD>.md | push-study <study file> | pull-study [--database] <study file>";
 // Cloudflare's API, for pull --database; CLOUDFLARE_API_BASE points tests at a stand-in.
 const DEFAULT_API_BASE = "https://api.cloudflare.com/client/v4";
 // The copy of the digests as last pulled or pushed, in the digests file's folder.
@@ -763,6 +774,230 @@ async function pull(file: string, fromDatabase: boolean) {
 	console.log(`pulled ${entryCount} entries over ${dates.size} days`);
 }
 
+// ---- studies ----
+
+// The copy of the study file as last pulled or pushed, in the study file's folder.
+const STUDY_PULLED_NAME = "study.pulled.jsonl";
+// Studies a request to D1 reads at a time, and public study files fetched at a time.
+const STUDY_ROWS_PER_QUERY = 200;
+const STUDY_FETCHES_AT_A_TIME = 8;
+
+// The text of a study file's line as every copy writes it, or null when the line is not a study.
+function studyLineOf(text: string): { id: string; line: string } | null {
+	const study = parseAnswer(text);
+	if (!isJsonObject(study) || typeof study.id !== "string") {
+		return null;
+	}
+	return { id: study.id, line: JSON.stringify(study) };
+}
+
+// The studies a file holds, in file order; a missing file holds none, a line that is not a study stops the run.
+function studiesOf(file: string): { id: string; line: string }[] {
+	let text: string;
+	try {
+		text = readFileSync(file, "utf8");
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") {
+			return [];
+		}
+		throw new SyncFailure(`can't read ${file} (${errorCode(error)})`);
+	}
+	const studies: { id: string; line: string }[] = [];
+	const lines = text.split("\n");
+	for (let k = 0; k < lines.length; k++) {
+		const content = lines[k] ?? "";
+		if (content === "") {
+			continue;
+		}
+		const study = studyLineOf(content);
+		if (study === null) {
+			throw new SyncFailure(`line ${k + 1} of ${file} is not a study`);
+		}
+		studies.push(study);
+	}
+	return studies;
+}
+
+// Send the studies changed since the last pull-study to <LIMINAL_URL>/api/sync/study, one per request. A study the
+// site refuses, or one over MAX_STUDY_BYTES, is reported and the others still go; the pulled copy becomes the study
+// file only when none was refused.
+export async function pushStudies(
+	studyFile: string,
+	clientId: string,
+	clientSecret: string,
+): Promise<void> {
+	const pulledPath = join(dirname(studyFile), STUDY_PULLED_NAME);
+	const pulled = new Set(studiesOf(pulledPath).map((study) => study.line));
+	const changed = studiesOf(studyFile).filter(
+		(study) => !pulled.has(study.line),
+	);
+	if (changed.length === 0) {
+		console.log("stored 0, refused 0");
+		return;
+	}
+	const url = `${siteBase()}/api/sync/study`;
+	const headers = {
+		"Content-Type": "application/json",
+		"CF-Access-Client-Id": clientId,
+		"CF-Access-Client-Secret": clientSecret,
+	};
+	let stored = 0;
+	let refused = 0;
+	for (const study of changed) {
+		const body = `{"study":${study.line}}`;
+		if (Buffer.byteLength(body) > MAX_STUDY_BYTES) {
+			refused += 1;
+			console.log(
+				`refused ${study.id}: the study is larger than ${MAX_STUDY_BYTES} bytes`,
+			);
+			continue;
+		}
+		// biome-ignore lint/performance/noAwaitInLoops: studies go one after another, as push sends its requests
+		const text = await requestWithRetry(
+			url,
+			{ method: "POST", headers: headers, body: body },
+			"push-study",
+			"the site",
+		);
+		const answer = parseAnswer(text);
+		if (isJsonObject(answer) && answer.outcome === "stored") {
+			stored += 1;
+			console.log(`stored ${study.id}`);
+		} else if (
+			isJsonObject(answer) &&
+			answer.outcome === "refused" &&
+			Array.isArray(answer.problems)
+		) {
+			refused += 1;
+			console.log(`refused ${study.id}: ${answer.problems.join("; ")}`);
+		} else {
+			throw new SyncFailure(
+				`push-study failed: the site's answer for ${study.id} can't be read`,
+			);
+		}
+	}
+	console.log(`stored ${stored}, refused ${refused}`);
+	if (refused > 0) {
+		process.exitCode = 1;
+		return;
+	}
+	replaceFile(pulledPath, readFileSync(studyFile));
+}
+
+// Every study D1 holds, in id order, a page of STUDY_ROWS_PER_QUERY rows at a time through the primary key.
+async function databaseStudies(
+	query: DatabaseQuery,
+): Promise<{ id: string; line: string }[]> {
+	const studies: { id: string; line: string }[] = [];
+	let after = "";
+	while (true) {
+		// biome-ignore lint/performance/noAwaitInLoops: each page starts where the one before it ended
+		const rows = await query(
+			`SELECT json FROM study WHERE id > ? ORDER BY id LIMIT ${STUDY_ROWS_PER_QUERY}`,
+			[after],
+		);
+		for (const row of rows) {
+			const study =
+				isJsonObject(row) && typeof row.json === "string"
+					? studyLineOf(row.json)
+					: null;
+			if (study === null) {
+				throw new SyncFailure(DATABASE_UNREADABLE);
+			}
+			studies.push(study);
+		}
+		const last = studies.at(-1);
+		if (rows.length < STUDY_ROWS_PER_QUERY || last === undefined) {
+			return studies;
+		}
+		after = last.id;
+	}
+}
+
+// Every study the public site holds: data/index.json, then the words file it names for each studied entry. The files
+// are what visitors get, so no token is needed.
+async function hostedStudies(): Promise<{ id: string; line: string }[]> {
+	const base = siteBase();
+	const get = { method: "GET", headers: {}, body: null };
+	const unreadable = "pull-study failed: the site's study files can't be read";
+	const index = parseAnswer(
+		await requestWithRetry(
+			`${base}/data/index.json`,
+			get,
+			"pull-study",
+			"the site",
+		),
+	);
+	if (!isJsonObject(index) || !Array.isArray(index.days)) {
+		throw new SyncFailure(unreadable);
+	}
+	const named: { id: string; file: string }[] = [];
+	for (const day of index.days) {
+		if (!isJsonObject(day) || !Array.isArray(day.entries)) {
+			throw new SyncFailure(unreadable);
+		}
+		for (const entry of day.entries) {
+			if (!isJsonObject(entry) || entry.study === undefined) {
+				continue;
+			}
+			if (
+				typeof entry.id !== "string" ||
+				typeof entry.study !== "string" ||
+				!STUDY_WORDS_PATH.test(entry.study)
+			) {
+				throw new SyncFailure(unreadable);
+			}
+			named.push({ id: entry.id, file: entry.study });
+		}
+	}
+	const studies: { id: string; line: string }[] = [];
+	for (let k = 0; k < named.length; k += STUDY_FETCHES_AT_A_TIME) {
+		const batch = named.slice(k, k + STUDY_FETCHES_AT_A_TIME);
+		// biome-ignore lint/performance/noAwaitInLoops: a few files at a time, not every file at once
+		const fetched = await Promise.all(
+			batch.map(async (one) => {
+				const text = await requestWithRetry(
+					`${base}/${one.file}`,
+					get,
+					"pull-study",
+					"the site",
+				);
+				const study = studyLineOf(text);
+				if (study === null || study.id !== one.id) {
+					throw new SyncFailure(unreadable);
+				}
+				return study;
+			}),
+		);
+		studies.push(...fetched);
+	}
+	return studies;
+}
+
+// Replace the study file with every study the site holds, one per line, in id order: from D1 with fromDatabase, else
+// from the public study files. The pulled copy becomes the same.
+export async function pullStudies(
+	studyFile: string,
+	fromDatabase: boolean,
+): Promise<void> {
+	let studies: { id: string; line: string }[];
+	if (fromDatabase) {
+		const access: DatabaseAccess = {
+			token: requiredEnvironment("CLOUDFLARE_API_TOKEN"),
+			accountId: requiredEnvironment("CLOUDFLARE_ACCOUNT_ID"),
+			databaseId: requiredEnvironment("D1_DATABASE_ID"),
+		};
+		studies = await databaseStudies(databaseQuery(access));
+	} else {
+		studies = await hostedStudies();
+	}
+	studies.sort((a, b) => (a.id < b.id ? -1 : 1));
+	const text = studies.map((study) => `${study.line}\n`).join("");
+	replaceFile(studyFile, text);
+	replaceFile(join(dirname(studyFile), STUDY_PULLED_NAME), text);
+	console.log(`pulled ${studies.length} studies`);
+}
+
 // Check the command line, then push or pull. A SyncFailure is printed as one line with exit code 1.
 async function main(args: string[]) {
 	const command = args[0];
@@ -791,6 +1026,10 @@ async function main(args: string[]) {
 	const isPull = command === "pull" && args.length === 2;
 	const isDatabasePull =
 		command === "pull" && args.length === 3 && args[1] === "--database";
+	const isPushStudy = command === "push-study" && args.length === 2;
+	const isPullStudy = command === "pull-study" && args.length === 2;
+	const isDatabasePullStudy =
+		command === "pull-study" && args.length === 3 && args[1] === "--database";
 	// log's date is its file's name, YYYY-MM-DD.md.
 	const runId = args[1] || "";
 	const logName = LOG_FILE_NAME.exec(basename(file || ""));
@@ -807,7 +1046,14 @@ async function main(args: string[]) {
 	if (
 		file === undefined ||
 		file.startsWith("--") ||
-		(!isPush && !isPull && !isDatabasePull && !isStandouts && !isLog)
+		(!isPush &&
+			!isPull &&
+			!isDatabasePull &&
+			!isStandouts &&
+			!isLog &&
+			!isPushStudy &&
+			!isPullStudy &&
+			!isDatabasePullStudy)
 	) {
 		console.error(USAGE);
 		process.exitCode = 1;
@@ -816,6 +1062,10 @@ async function main(args: string[]) {
 	try {
 		if (isPull || isDatabasePull) {
 			await pull(file, isDatabasePull);
+			return;
+		}
+		if (isPullStudy || isDatabasePullStudy) {
+			await pullStudies(file, isDatabasePullStudy);
 			return;
 		}
 		if (isStandouts) {
@@ -832,6 +1082,10 @@ async function main(args: string[]) {
 		}
 		if (isLog) {
 			await sendLog(runId, logDate, file, clientId, clientSecret);
+			return;
+		}
+		if (isPushStudy) {
+			await pushStudies(file, clientId, clientSecret);
 			return;
 		}
 		await push(file, clientId, clientSecret);
