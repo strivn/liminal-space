@@ -1,6 +1,7 @@
 # Adds from any Claude app: the connector's tools queue add requests in the database and the Worker dispatches this
 # workflow. It pulls every entry, appends what the queued requests ask for with the scout's own scripts, pushes,
-# reports each request's result, and deploys the site. No model runs here.
+# reports each request's result, and deploys the site. The only model call studies an added Chinese entry (one with a
+# Han character in its title); the entries are pushed before their studies.
 name: add
 
 on:
@@ -49,6 +50,17 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
 
+      # The studies the site holds, so the study step below makes only the missing ones. A failure here never stops
+      # the adds; the study step then doesn't run.
+      - name: Pull the studies
+        id: pull_study
+        continue-on-error: true
+        run: node scripts/deploy/sync.ts pull-study --database site/study.jsonl
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+
       # Reads the queue (with any request a run that died left running), marks each request running, and runs arxiv.ts
       # --ad-hoc and figure.ts, or digests.ts add --ad-hoc and describe.ts, with each id as an argument of its own and
       # links in a file: no request text reaches a shell, and the scripts get neither token. Each request's result goes
@@ -79,6 +91,25 @@ jobs:
         run: node scripts/deploy/add-requests.ts report "$RUNNER_TEMP/add-results.json" "$PUSH_OUTCOME" "$RUNNER_TEMP/push-output.txt"
         env:
           PUSH_OUTCOME: ${{ steps.push.outcome }}
+          ACCESS_SYNC_ID: ${{ secrets.ACCESS_SYNC_ID }}
+          ACCESS_SYNC_SECRET: ${{ secrets.ACCESS_SYNC_SECRET }}
+
+      # After the results are reported, so a study never delays them. Today's Chinese entries without a study, by a
+      # model call with no tools and none of the runner's setup; one that fails leaves the entry plain.
+      - name: Study the added Chinese entries
+        id: study
+        if: always() && steps.pull_study.outcome == 'success' && steps.push.outcome != 'skipped'
+        continue-on-error: true
+        run: node scripts/scout/study/study.ts site/digests.js site/study.jsonl
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+      # The entries went up in the push step, which the site needs: it refuses a study whose entry it doesn't hold.
+      - name: Push the studies
+        if: always() && steps.study.outcome != 'skipped'
+        continue-on-error: true
+        run: node scripts/deploy/sync.ts push-study site/study.jsonl
+        env:
           ACCESS_SYNC_ID: ${{ secrets.ACCESS_SYNC_ID }}
           ACCESS_SYNC_SECRET: ${{ secrets.ACCESS_SYNC_SECRET }}
 
