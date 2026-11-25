@@ -14,6 +14,7 @@ import {
 	answerOwnerState,
 	answerPushSubscription,
 	answerRead,
+	answerStandout,
 	answerTags,
 	answerTakeaway,
 } from "./owner/handlers.ts";
@@ -93,6 +94,11 @@ const ROUTES: Route[] = [
 		path: "/liminal-space/api/owner/feedback",
 		auth: "owner",
 		methods: { POST: { handler: answerFeedback } },
+	},
+	{
+		path: "/liminal-space/api/owner/standouts",
+		auth: "owner",
+		methods: { POST: { handler: answerStandout } },
 	},
 	{
 		path: "/liminal-space/api/owner/comments",

@@ -12,7 +12,9 @@
 // writes digests.read.json beside them: the
 // id of every entry with a read mark, for bringing unread papers back later;
 // and feedback.json in the cache folder, the owner's Dislike, OK and Like marks on papers in the last 30 days
-// (scripts/lib/feedback.ts).
+// (scripts/lib/feedback.ts); and digests.standouts.json, the marked papers with their mark day and note, for the build
+// (scripts/lib/standouts.ts). standouts --database <digests file> writes only that last file, for a build whose
+// entries come from the hosted files (staging's).
 // log sends one cloud run's log, .scout-logs/<date>.md, to <LIMINAL_URL>/api/sync/logs, where only the owner's page
 // reads it (shared/log-protocol.ts).
 // Requests are retried after 1, 2, 4, 8 and 16 s. Messages name lines, entries and ids, never a token or a file's text.
@@ -62,10 +64,11 @@ import {
 	feedbackPath,
 } from "../lib/feedback.ts";
 import { daysBefore, jakartaToday } from "../lib/run-date.ts";
+import { type StandoutRow, standoutsPath } from "../lib/standouts.ts";
 import { requestWithRetry, SyncFailure, siteBase } from "./site-requests.ts";
 
 const USAGE =
-	"usage: node scripts/deploy/sync.ts push <digests file> | pull [--database] <digests file> | count --database | log <run id> <YYYY-MM-DD>.md";
+	"usage: node scripts/deploy/sync.ts push <digests file> | pull [--database] <digests file> | standouts --database <digests file> | count --database | log <run id> <YYYY-MM-DD>.md";
 // Cloudflare's API, for pull --database; CLOUDFLARE_API_BASE points tests at a stand-in.
 const DEFAULT_API_BASE = "https://api.cloudflare.com/client/v4";
 // The copy of the digests as last pulled or pushed, in the digests file's folder.
@@ -609,6 +612,34 @@ export async function databaseFeedback(
 	return marks;
 }
 
+// The marked papers with their notes.
+export async function databaseStandouts(
+	query: DatabaseQuery,
+): Promise<StandoutRow[]> {
+	const rows = await query(
+		"SELECT standouts.date, standouts.note, entries.json FROM standouts " +
+			"JOIN entries ON entries.id = standouts.entry_id WHERE standouts.date IS NOT NULL",
+		[],
+	);
+	const marked: StandoutRow[] = [];
+	for (const row of rows) {
+		if (
+			!isJsonObject(row) ||
+			typeof row.date !== "string" ||
+			typeof row.note !== "string" ||
+			typeof row.json !== "string"
+		) {
+			throw new SyncFailure(DATABASE_UNREADABLE);
+		}
+		marked.push({
+			entry: parseAnswer(row.json),
+			date: row.date,
+			note: row.note,
+		});
+	}
+	return marked;
+}
+
 // The id of every entry D1 holds a read mark for, at any depth, sorted, read through `query` as databaseLines reads
 // the entries. pull --database writes them to digests.read.json beside the digests file, for bringing unread papers back later.
 export async function readMarkIds(query: DatabaseQuery): Promise<string[]> {
@@ -654,15 +685,28 @@ export async function countPapersToday(
 	return papers;
 }
 
-// Print "papers today: <n>" for the database, with the same token and ids as pull --database.
-async function count() {
-	const access: DatabaseAccess = {
+// The database's token and ids.
+function databaseAccessFromEnvironment(): DatabaseAccess {
+	return {
 		token: requiredEnvironment("CLOUDFLARE_API_TOKEN"),
 		accountId: requiredEnvironment("CLOUDFLARE_ACCOUNT_ID"),
 		databaseId: requiredEnvironment("D1_DATABASE_ID"),
 	};
+}
+
+// Print "papers today: <n>" for the database, with the same token and ids as pull --database.
+async function count() {
+	const access = databaseAccessFromEnvironment();
 	const papers = await countPapersToday(databaseQuery(access), jakartaToday());
 	console.log(`papers today: ${papers}`);
+}
+
+// The standouts command.
+async function pullStandouts(file: string) {
+	const access = databaseAccessFromEnvironment();
+	const rows = await databaseStandouts(databaseQuery(access));
+	replaceFile(standoutsPath(file), `${JSON.stringify(rows)}\n`);
+	console.log(`wrote ${rows.length} marked papers`);
 }
 
 // Replace the digests file with what the site holds (the hosted files, or the database with --database), whatever it
@@ -671,22 +715,20 @@ async function pull(file: string, fromDatabase: boolean) {
 	// The token and the two ids are checked before anything is read.
 	let access: DatabaseAccess | null = null;
 	if (fromDatabase) {
-		access = {
-			token: requiredEnvironment("CLOUDFLARE_API_TOKEN"),
-			accountId: requiredEnvironment("CLOUDFLARE_ACCOUNT_ID"),
-			databaseId: requiredEnvironment("D1_DATABASE_ID"),
-		};
+		access = databaseAccessFromEnvironment();
 	}
 
 	const pulledPath = join(dirname(file), PULLED_NAME);
 	let lines: MonthLine[];
 	let readIds: string[] | null = null;
 	let feedbackRows: FeedbackRow[] | null = null;
+	let standoutRows: StandoutRow[] | null = null;
 	if (access !== null) {
 		const query = databaseQuery(access);
 		lines = await databaseLines(query);
 		readIds = await readMarkIds(query);
 		feedbackRows = await databaseFeedback(query);
+		standoutRows = await databaseStandouts(query);
 	} else {
 		lines = await hostedLines();
 	}
@@ -705,6 +747,10 @@ async function pull(file: string, fromDatabase: boolean) {
 		const feedback = feedbackFileOf(feedbackRows);
 		mkdirSync(dirname(feedbackPath()), { recursive: true });
 		replaceFile(feedbackPath(), `${JSON.stringify(feedback, null, 2)}\n`);
+	}
+	// The build publishes these.
+	if (standoutRows !== null) {
+		replaceFile(standoutsPath(file), `${JSON.stringify(standoutRows)}\n`);
 	}
 
 	// Count what was written: entries, and days (one line each).
@@ -739,6 +785,8 @@ async function main(args: string[]) {
 		return;
 	}
 	const file = args[args.length - 1];
+	const isStandouts =
+		command === "standouts" && args.length === 3 && args[1] === "--database";
 	const isPush = command === "push" && args.length === 2;
 	const isPull = command === "pull" && args.length === 2;
 	const isDatabasePull =
@@ -759,7 +807,7 @@ async function main(args: string[]) {
 	if (
 		file === undefined ||
 		file.startsWith("--") ||
-		(!isPush && !isPull && !isDatabasePull && !isLog)
+		(!isPush && !isPull && !isDatabasePull && !isStandouts && !isLog)
 	) {
 		console.error(USAGE);
 		process.exitCode = 1;
@@ -768,6 +816,10 @@ async function main(args: string[]) {
 	try {
 		if (isPull || isDatabasePull) {
 			await pull(file, isDatabasePull);
+			return;
+		}
+		if (isStandouts) {
+			await pullStandouts(file);
 			return;
 		}
 		// The token is checked before any file is read.

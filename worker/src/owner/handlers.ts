@@ -17,6 +17,7 @@ import {
 	commentsChangeOf,
 	feedbackChangeOf,
 	readChangeOf,
+	standoutChangeOf,
 	tagsChangeOf,
 	takeawayChangeOf,
 } from "./checks.ts";
@@ -25,6 +26,7 @@ import {
 	saveComments,
 	saveFeedback,
 	saveRead,
+	saveStandout,
 	saveTags,
 	saveTakeaway,
 } from "./store.ts";
@@ -114,8 +116,9 @@ export const answerFeedback = ownerChange(async (body, env, log) => {
 });
 
 // POST /liminal-space/api/owner/standouts.
-export const answerStandout = ownerChange(async (body) => {
-	throw new Error(`not implemented: ${typeof body}`);
+export const answerStandout = ownerChange(async (body, env, log) => {
+	await saveStandout(env.DB, standoutChangeOf(body), counter(log));
+	return json({});
 });
 
 // POST /liminal-space/api/owner/comments.
