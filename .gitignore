@@ -1,5 +1,7 @@
 node_modules/
 site/digests.js
+# the studies of Chinese entries, one per line, made by scripts/scout/study/study.ts
+site/study.jsonl
 # a script's temporary copy of it, which it renames over the file; left only when a run is killed before the rename
 site/.digests.js.*.tmp
 .remember/
