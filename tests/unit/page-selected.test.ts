@@ -5,7 +5,7 @@ import { test } from "vitest";
 test.todo("The public page opens on Selected and the owner's page on Feed");
 test.todo("A link to #feed or #selected opens that view on either page");
 test.todo(
-	"Selected has one label per OpenAlex topic of a marked paper, with its count, and one is always picked",
+	"Selected has one label per main OpenAlex topic of the marked papers, with its count, and one is always picked",
 );
 test.todo(
 	"Selected lists only the marked papers of the picked topic, newest mark first",
@@ -22,4 +22,7 @@ test.todo(
 );
 test.todo(
 	"A marked paper in the public Feed carries Shaped my thinking, linking to Selected",
+);
+test.todo(
+	"The owner's Selected lists a marked paper from a month the page has not loaded",
 );

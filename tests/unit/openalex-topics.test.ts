@@ -11,7 +11,7 @@ test.todo(
 	"A matched paper gets OpenAlex's topics, with their field and score, and its keywords",
 );
 test.todo(
-	"A paper whose OpenAlex title does not start like its own gets nothing and is named on stderr",
+	"A paper whose OpenAlex title differs from its own, once case, TeX, HTML and punctuation are set aside, gets nothing and is named on stderr",
 );
 test.todo(
 	"A paper OpenAlex has not classified gets no openalex field, so a later run fills it",
@@ -28,3 +28,4 @@ test.todo("privacy: a request names no email, name or address of the owner");
 test.todo(
 	"security: an answer over the size cap, or not JSON, changes no paper",
 );
+test.todo("A request asks OpenAlex for 50 results a page, so none is dropped");

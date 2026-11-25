@@ -257,3 +257,4 @@ test("security: A redirect is never followed and counts as a failed try, so the 
 });
 
 test.todo("pull writes the marked papers and their notes for the build");
+test.todo("privacy: pull never writes an unmarked paper's note for the build");
