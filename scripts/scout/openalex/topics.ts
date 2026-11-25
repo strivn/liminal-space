@@ -1,8 +1,5 @@
 // Add OpenAlex topics to papers.
 // Usage: node scripts/scout/openalex/topics.ts <digests file> [--all]
-// Papers added in the last 30 days, or every paper with --all. A paper OpenAlex has not classified, or whose title
-// differs, is left as it is. Any OpenAlex failure leaves the file unchanged and exits 1.
-// Environment: OPENALEX_API, OPENALEX_PAUSE_MS and OPENALEX_TIMEOUT_MS (stand-ins for tests).
 import { setTimeout as sleep } from "node:timers/promises";
 import { isArxivId, normalizeId } from "../../../shared/arxiv-id.ts";
 import { isJsonObject, type JsonObject } from "../../../shared/narrow.ts";
@@ -28,21 +25,19 @@ const PAUSE_MS = Number(
 const TIMEOUT_MS = Number(
 	process.env.OPENALEX_TIMEOUT_MS || CONSTANTS.requestTimeoutMs,
 );
-// OpenAlex answers 50 papers in about 100 KB.
 const MAX_ANSWER_BYTES = 5 * 1024 * 1024;
-// OpenAlex's default page is 25 and it drops the rest without a word.
 const PER_PAGE = 50;
 const RECENT_DAYS = 30;
 const SELECT = "title,doi,primary_topic,topics,keywords,locations";
 const ARXIV_DOI_PREFIX = "10.48550/arXiv.";
-// An arXiv page or PDF address, with or without its version.
+// An arXiv paper's address.
 const ARXIV_ADDRESS =
 	/^https?:\/\/(?:www\.)?arxiv\.org\/(?:abs|pdf)\/(.+?)(?:v\d+)?(?:\.pdf)?$/i;
 
-// A paper to ask about: its id, its title and the DOI to ask for.
+// A paper asked about.
 export type OpenAlexQuestion = { id: string; title: string; doi: string };
 
-// A title with case, TeX, HTML tags and punctuation set aside.
+// Title without case, TeX, punctuation.
 function titleKey(title: string) {
 	return htmlToText(title)
 		.normalize("NFKC")
@@ -82,7 +77,7 @@ function topicOf(value: unknown): OpenAlexTopic | null {
 	};
 }
 
-// The main topic first, then the others, without a topic twice.
+// Main topic first.
 function topicsOf(work: JsonObject) {
 	const listed = Array.isArray(work.topics) ? work.topics : [];
 	const topics: OpenAlexTopic[] = [];
@@ -103,8 +98,7 @@ function keywordsOf(work: JsonObject) {
 	return [...new Set(names)].slice(0, OPENALEX_CAPS.keywords);
 }
 
-// The arXiv ids a work is held at: OpenAlex merges a preprint with its published version, so the work's own DOI may
-// be the published one.
+// arXiv ids of a work.
 function arxivIdsOf(work: JsonObject) {
 	const ids: string[] = [];
 	for (const location of Array.isArray(work.locations) ? work.locations : []) {
@@ -128,8 +122,7 @@ function doiOf(work: JsonObject) {
 	return work.doi.replace(/^https?:\/\/doi\.org\//i, "").toLowerCase();
 }
 
-// The paper each work of an answer is, by its DOI or its arXiv address, with the topics and keywords it brings.
-// A work whose title differs from the paper's, or that has no topics, brings nothing.
+// Topics for each matched paper.
 export function topicsFromAnswer(
 	questions: OpenAlexQuestion[],
 	answer: unknown,
@@ -171,14 +164,14 @@ export function topicsFromAnswer(
 	return found;
 }
 
-// A paper to ask about, and every entry of it in the file.
+// A paper's entries.
 type Target = {
 	question: OpenAlexQuestion;
 	entries: JsonObject[];
 	lines: number[];
 };
 
-// The DOI to ask for, or null when the id is no arXiv paper or DOI, or the DOI would break the filter.
+// The DOI to ask for.
 function doiToAsk(id: string) {
 	let doi: string | null = null;
 	if (id.startsWith("arxiv:") && isArxivId(normalizeId(id))) {
@@ -301,7 +294,6 @@ async function main(args: string[]) {
 	console.log(`OpenAlex topics: ${found.size} of ${questions.length} papers`);
 }
 
-// Run only when called as a script, not when imported.
 if (import.meta.main) {
 	await main(process.argv.slice(2));
 }

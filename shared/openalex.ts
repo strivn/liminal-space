@@ -1,4 +1,4 @@
-// A paper's OpenAlex topics and what a stored one may hold, with nothing from Node, so the Worker can check them too.
+// A paper's OpenAlex topics.
 import { isJsonObject } from "./narrow.ts";
 
 export type EntryOpenAlex = {
@@ -7,7 +7,6 @@ export type EntryOpenAlex = {
 };
 export type OpenAlexTopic = { name: string; field: string; score: number };
 
-// OpenAlex gives a work 3 topics and under 10 keywords.
 export const OPENALEX_CAPS = { topics: 10, keywords: 20, text: 200 };
 
 function isText(value: unknown) {
@@ -39,7 +38,7 @@ function topicProblems(topic: unknown) {
 	return problems;
 }
 
-// What is wrong with an entry's openalex field, as reason phrases; [] when nothing is.
+// What an openalex field breaks.
 export function openalexProblems(value: unknown): string[] {
 	if (!isJsonObject(value)) {
 		return ["openalex must hold topics and keywords"];
