@@ -46,7 +46,7 @@
         <p class="visually-hidden">A daily reading list. Plain-text digests: digests/index.md</p>
         <div id="freshness" class="masthead__meta"></div>
       </header>
-      <!-- Feed and Selected: the page draws the two links (site/page/views.ts). -->
+      <!-- Selected, Feed and, on the owner.s copy, Logs: the page draws the links (site/page/views.ts). -->
       <nav aria-label="Views"><ul id="views" class="views"></ul></nav>
       <aside id="heatmap" class="heatmap" aria-label="Reading heatmap"></aside>
       <!-- On a phone, the bar kept at the top: the last 7 days, Refresh and the contents; elsewhere no box (style.css). -->
@@ -60,8 +60,10 @@
     <div class="nosnippet" data-nosnippet>
       <!-- tabindex="-1": the skip link moves focus here, so the next Tab carries on in the digests. -->
       <main id="digests" tabindex="-1" aria-busy="true"></main>
-      <!-- Selected: the papers marked as shaping the owner's thinking, drawn when this view shows. -->
+      <!-- Selected: the papers the owner selected, drawn when this view shows. -->
       <main id="selected-view" tabindex="-1" hidden></main>
+      <!-- Logs, the owner's only: the scout's runs, drawn when this view first shows. -->
+      <main id="logs-view" tabindex="-1" hidden></main>
     </div>
   </div>
 

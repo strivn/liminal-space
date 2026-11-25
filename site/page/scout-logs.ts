@@ -1,11 +1,11 @@
-// The scout's logs on the owner's page: one folded "Scout logs" panel below the days, each stored run's log as the
-// scout wrote it, newest first. The public page never asks for them.
+// The owner's Logs view: each stored run's log as the scout wrote it, newest first. The public page never asks for them.
 
 import type { ScoutLog } from "../../shared/log-protocol.ts";
 import { isJsonObject } from "../../shared/narrow.ts";
 import { fetchJson } from "./data.ts";
 import { dayLabel } from "./days.ts";
 import { el, status } from "./dom.ts";
+import { VIEW_NAMES } from "./selected.ts";
 
 // The owner route, relative to the owner's page.
 const LOGS_PATH = "../api/owner/logs";
@@ -49,8 +49,8 @@ function runNode(run: ScoutLog): HTMLElement {
 	);
 }
 
-// The panel's rows: every run, or why there are none.
-function panelBody(runs: ScoutLog[] | null): HTMLElement[] {
+// Every run, or why there are none.
+function body(runs: ScoutLog[] | null): HTMLElement[] {
 	if (runs === null) return [status("warning", "Couldn't load the scout logs")];
 	if (runs.length === 0)
 		return [
@@ -59,22 +59,8 @@ function panelBody(runs: ScoutLog[] | null): HTMLElement[] {
 	return runs.map(runNode);
 }
 
-// Read the logs and put the folded panel right after `main`, below the days in the same column: it moves nothing, and
-// main holds only days.
-export async function showScoutLogs(main: HTMLElement): Promise<void> {
+// Read the logs and draw them in `root`.
+export async function showScoutLogs(root: HTMLElement): Promise<void> {
 	const runs = await loadScoutLogs();
-	let count = "";
-	if (runs !== null && runs.length === 1) count = " · 1 run";
-	if (runs !== null && runs.length > 1) count = ` · ${runs.length} runs`;
-	const panel = el(
-		"div",
-		{ class: "scout-logs" },
-		el(
-			"details",
-			null,
-			el("summary", null, `Scout logs${count}`),
-			...panelBody(runs),
-		),
-	);
-	main.after(panel);
+	root.replaceChildren(el("h2", null, VIEW_NAMES.logs), ...body(runs));
 }
