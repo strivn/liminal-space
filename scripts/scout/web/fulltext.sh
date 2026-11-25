@@ -237,7 +237,7 @@ html_to_text() {
   local txt=$3
   if [[ $(uname -s) == Darwin ]]; then
     # textutil is told the character set; -noload fetches nothing the page names.
-    textutil -noload -format html -inputencoding "$charset" -convert txt -output "$txt" "$page" >/dev/null
+    textutil -noload -format html -inputencoding "$charset" -convert txt -stdout "$page" > "$txt"
   else
     # w3m on Linux: the page comes on standard input, so its path is never read as an address.
     local status=0

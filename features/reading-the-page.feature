@@ -6,13 +6,24 @@ Feature: Reading the page
     And today has 15 papers
     And 3 of today's papers are read to the Abstract
     And 1 of today's papers is read to the Paper
+    And today has an entry in Chinese, "估值 410 亿美元，贝佐斯打造「物理世界的 OpenAI」", with its words prepared
 
-  Scenario: Both pages show the same papers, and only the owner's shows the reading
+  Scenario: Both pages show the same papers, only the owner's shows the reading, and Chinese words can be studied
     When a visitor opens the public page and the owner opens their page
     Then both show today's 15 papers in the same order
     And only the owner's page has Abstract, Paper, OK, Like, Dislike and Comment buttons
     And only the owner's page says today's square has 4 of 15 read, with a crown
     And only the owner's page says yesterday's square has 0 of 10 read, with no crown
+    When the visitor hovers "估值" in the Chinese entry's title
+    Then the visitor sees "gūzhí" under "估值", and a second later "valuation"
+    And the visitor sees "估" drawn with "gū" under it and "值" drawn with "zhí" under it
+    And the visitor sees that "亻" gives "估" its meaning and "古" its sound
+    When the visitor hovers "贝佐斯" in the Chinese entry's title
+    Then the visitor sees "Bèizuǒsī" and "Bezos", with no drawn characters
+    When the visitor hovers a word in the title of today's 1st paper
+    Then no word tooltip opens
+    When the visitor clicks "估值" in the Chinese entry's title
+    Then the Chinese entry's article opens
 
   @owner
   Scenario: Clicking a title in Contents brings that paper to the top
@@ -65,3 +76,12 @@ Feature: Reading the page
     Given the window is 500px wide
     When the owner opens their page
     Then the page has no bar with the last 7 days
+
+  @owner
+  Scenario: A paper the owner selects shows with their note on the public page's Selected
+    When the owner opens their page
+    And selects today's 2nd paper
+    And writes the note "Changed how I read monitor results." on it in Selected
+    And a visitor opens the public page the next morning
+    Then the public page opens on Selected
+    And Selected lists today's 2nd paper under its OpenAlex topic, with the note "Changed how I read monitor results."

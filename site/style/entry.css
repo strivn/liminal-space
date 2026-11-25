@@ -83,14 +83,14 @@ details.day:nth-last-child(1 of details.day:not([hidden])) {
    cell), but never leaves its grid cell, the row of the entry's text: no higher than the text's top, no lower than
    its bottom. An entry whose text is shorter than the rail is as tall as the rail.
    Sticky can't centre on its own height, so the height is written out from the taller, left column: a band of n
-   buttons is 34px * n + 10px, three bands with two 8px gaps make 34px * n + 46px. Its n is 5 for a news item, article
-   or report, 6 for a paper, and the comment count adds one below 1386px when it shows.
+   buttons is 34px * n + 10px, four bands with three 8px gaps make 34px * n + 64px. Its n is 6 for a news item, article
+   or report, 8 for a paper, and the comment count adds one below 1386px when it shows.
    z-index 1 keeps it above the comment cards, which come later in the page, so a label sliding right isn't hidden
    under them. */
 .entry__rail {
-	--rail-left: 5;
+	--rail-left: 6;
 	--rail-count: 0;
-	--rail-height: calc(34px * (var(--rail-left) + var(--rail-count)) + 46px);
+	--rail-height: calc(34px * (var(--rail-left) + var(--rail-count)) + 64px);
 	position: sticky;
 	top: calc(50dvh - var(--rail-height) / 2);
 	bottom: calc(50dvh - var(--rail-height) / 2);
@@ -102,7 +102,7 @@ details.day:nth-last-child(1 of details.day:not([hidden])) {
 	gap: 6px;
 }
 .entry__rail--paper {
-	--rail-left: 7;
+	--rail-left: 8;
 }
 @media (max-width: 1385px) {
 	.entry__rail:has(.comment-count:not([hidden])) {

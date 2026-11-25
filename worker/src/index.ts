@@ -14,6 +14,7 @@ import {
 	answerOwnerState,
 	answerPushSubscription,
 	answerRead,
+	answerStandout,
 	answerTags,
 	answerTakeaway,
 } from "./owner/handlers.ts";
@@ -22,6 +23,7 @@ import { answerQueued, answerRequestUpdate, retryAdds } from "./requests.ts";
 import { refuse } from "./respond.ts";
 import { dispatch, type Route } from "./routes.ts";
 import { runSchedule } from "./schedule.ts";
+import { answerStudyPush } from "./study.ts";
 
 // The answer with "X-Content-Type-Options: nosniff", so a browser never guesses a type the Worker didn't state. The
 // static files get theirs from the _headers that scripts/deploy/build-site.ts writes; every Worker answer, refusals and 404s
@@ -60,6 +62,11 @@ const ROUTES: Route[] = [
 		methods: { POST: { handler: answerLogs } },
 	},
 	{
+		path: "/liminal-space/api/sync/study",
+		auth: "sync",
+		methods: { POST: { handler: answerStudyPush } },
+	},
+	{
 		path: "/liminal-space/mcp",
 		auth: "connector",
 		methods: { POST: { handler: answerMcpMessage } },
@@ -93,6 +100,11 @@ const ROUTES: Route[] = [
 		path: "/liminal-space/api/owner/feedback",
 		auth: "owner",
 		methods: { POST: { handler: answerFeedback } },
+	},
+	{
+		path: "/liminal-space/api/owner/standouts",
+		auth: "owner",
+		methods: { POST: { handler: answerStandout } },
 	},
 	{
 		path: "/liminal-space/api/owner/comments",

@@ -52,11 +52,22 @@ import {
 	startSavingPlace,
 } from "./reading-place.ts";
 import { showScoutLogs } from "./scout-logs.ts";
+import type { View } from "./selected.ts";
+import { fetchMarkedPapers, ownerMarkedPapers } from "./selected-data.ts";
+import {
+	createSelectedView,
+	type MarkedPaper,
+	markKicker,
+	type NoteSaver,
+} from "./selected-view.ts";
 import { createShelf } from "./shelf.ts";
+import { createStandoutBoard } from "./standout-board.ts";
+import { startStudy } from "./study.ts";
 import { createTagBoard } from "./tag-board.ts";
 import { createTakeawayBoard } from "./takeaway-board.ts";
 import { contentsGroups } from "./text.ts";
 import type { Day, OwnerData, ReadState, Skipped } from "./types.ts";
+import { createViews } from "./views.ts";
 
 // A page with no contents to list keeps one centred column: index.html draws the sidebar layout from the first frame,
 // and this takes it away.
@@ -64,6 +75,25 @@ function narrowPage() {
 	const page = document.getElementById("page");
 	if (page === null) throw new Error("index.html has no #page");
 	page.classList.remove("page--with-contents");
+}
+
+// Each studied entry's id and its words file, as the index names them.
+function wordsFilesOf(index: SiteIndex): Map<string, string> {
+	const files = new Map<string, string>();
+	for (const day of index.days) {
+		for (const entry of day.entries) {
+			if (entry.study !== undefined) files.set(entry.id, entry.study);
+		}
+	}
+	return files;
+}
+
+// A file of the site's own as JSON; throws when it doesn't answer 200.
+async function readSiteFile(path: string): Promise<unknown> {
+	const answer = await fetchJson(path);
+	if (answer.status !== 200)
+		throw new Error(`${path} answered ${answer.status}`);
+	return answer.json;
 }
 
 // Read the index, then the newest month's file, and draw the page. Either failing says "Couldn't load digests".
@@ -91,7 +121,10 @@ export async function start() {
 // saved state alongside and draws with it; when the state can't be read it draws the public page and says so.
 async function drawFromData(main: HTMLElement, failed: () => void) {
 	let ownerLoad: Promise<OwnerData | "refused" | null> = Promise.resolve(null);
+	// The public page's marked papers load alongside the index; the owner's come from their saved state.
+	let markedLoad: Promise<MarkedPaper[]> = Promise.resolve([]);
 	if (isOwnerPage()) ownerLoad = loadOwnerState();
+	else markedLoad = fetchMarkedPapers();
 	const answer = await fetchJson(siteFile(INDEX_PATH));
 	let index: SiteIndex | null = null;
 	if (answer.status === 200) index = readIndex(answer.json);
@@ -127,12 +160,18 @@ async function drawFromData(main: HTMLElement, failed: () => void) {
 			// No storage, nothing to clear.
 		}
 	}
-	render(main, lines, olderMonthDays, loadMonth, owner);
-	// The logs come after the days are drawn, so a slow read never holds up the page.
-	if (owner !== null)
-		showScoutLogs(main).catch((error) =>
-			console.error("The scout logs failed:", error),
-		);
+	render(
+		main,
+		lines,
+		olderMonthDays,
+		loadMonth,
+		owner,
+		{
+			index: index,
+			papers: await markedLoad,
+		},
+		wordsFilesOf(index),
+	);
 	if (isOwnerPage() && owner === null) {
 		const header = document.getElementById("freshness");
 		if (header === null) throw new Error("index.html has no #freshness");
@@ -143,13 +182,16 @@ async function drawFromData(main: HTMLElement, failed: () => void) {
 // Draw the page: the newest month's `lines` as days (today open, the rest folded with their entries), then the days
 // of older months from the index as folded rows whose entries are drawn when their month loads. With `owner` (the
 // owner's page, its saved state) each entry gets its icon rail and comments, and the sidebar its heatmap and chips;
-// without (the public page) the page shows entries only.
+// without (the public page) the page shows entries only. `marked` is the index and the public page's marked papers
+// (none on the owner's page, which reads its own marks).
 function render(
 	main: HTMLElement,
 	lines: unknown[],
 	olderMonthDays: IndexDay[],
 	loadMonth: MonthLoader,
 	owner: OwnerData | null,
+	marked: { index: SiteIndex; papers: MarkedPaper[] },
+	wordsFiles: ReadonlyMap<string, string>,
 ) {
 	// index.html has it.
 	const header = document.getElementById("freshness");
@@ -216,6 +258,7 @@ function render(
 		comments: Object.create(null),
 		feedback: Object.create(null),
 		takeaways: Object.create(null),
+		standouts: Object.create(null),
 	};
 	if (owner !== null) saved = owner;
 	const readState: ReadState = saved.read;
@@ -236,6 +279,7 @@ function render(
 	);
 	const feedbackBoard = createFeedbackBoard(saved.feedback, sender, notice);
 	const takeawayBoard = createTakeawayBoard(saved.takeaways, sender);
+	const standoutBoard = createStandoutBoard(saved.standouts, sender, notice);
 	const redraw = () => {
 		for (const showPressed of toggleViews) showPressed();
 		tagBoard.showCounts();
@@ -291,14 +335,20 @@ function render(
 			board: board,
 			tagBoard: tagBoard,
 			feedbackBoard: feedbackBoard,
+			standoutBoard: standoutBoard,
 			takeawayBoard: takeawayBoard,
 		};
 	}
 	// A day's entries in the contents' order, papers first, so the page reads in the same order as the contents.
+	const publicMarks = new Set(marked.papers.map((paper) => paper.entry.id));
 	const dayEntries = (day: Day, typesetting: Typesetting) =>
 		contentsGroups(day.entries)
 			.flatMap((group) => group.entries)
-			.map((entry) => renderEntry(entry, controls, typesetting));
+			.map((entry) => {
+				const article = renderEntry(entry, controls, typesetting);
+				if (owner === null && publicMarks.has(entry.id)) markKicker(article);
+				return article;
+			});
 	// tracker is declared below; the months call it only once a month has loaded.
 	const { drawDays, fillMonth, showDayError, loadSelectedMonths } =
 		createMonths(model, {
@@ -339,10 +389,54 @@ function render(
 		tagBoard.replace(fresh.tags);
 		feedbackBoard.replace(fresh.feedback);
 		takeawayBoard.replace(fresh.takeaways);
+		standoutBoard.replace(fresh.standouts);
 		board.replace(fresh.comments);
 		redraw();
 	}
 	const refreshState = createStateRefresh(sender, applyState);
+
+	// Selected is drawn each time it shows, and again when a mark or a note the site refused is undone while it shows.
+	// The Feed's own listeners (the contents, the permalinks) come after the menu's, so a link to an entry finds the
+	// Feed showing; the Feed measures itself again when it comes back.
+	const selectedRoot = document.getElementById("selected-view");
+	if (selectedRoot === null)
+		throw new Error("index.html has no #selected-view");
+	let saveNote: NoteSaver | null = null;
+	if (owner !== null) saveNote = standoutBoard.setNote;
+	const selectedView = createSelectedView(selectedRoot, saveNote);
+	const reportSelected = (error: unknown) =>
+		console.error("Selected not drawn:", error);
+	let drawing = 0;
+	async function drawSelected() {
+		const drawn = ++drawing;
+		let papers = marked.papers;
+		if (owner !== null)
+			papers = await ownerMarkedPapers(
+				standoutBoard.marks(),
+				marked.index,
+				loadMonth,
+			);
+		if (drawn === drawing) selectedView.draw(papers);
+	}
+	let shownView: View = "feed";
+	standoutBoard.onChange(() => {
+		if (shownView === "selected") drawSelected().catch(reportSelected);
+	});
+	// Logs is read once, the first time it shows.
+	let logsDrawn = false;
+	const views = createViews(owner !== null, (view) => {
+		shownView = view;
+		if (view === "selected") drawSelected().catch(reportSelected);
+		else if (view === "feed") afterFilter();
+		else if (!logsDrawn) {
+			logsDrawn = true;
+			const logsRoot = document.getElementById("logs-view");
+			if (logsRoot === null) throw new Error("index.html has no #logs-view");
+			showScoutLogs(logsRoot).catch((error) =>
+				console.error("The scout logs failed:", error),
+			);
+		}
+	});
 
 	// The owner's page: the chips.
 	let chips: HTMLElement[] = [];
@@ -394,6 +488,7 @@ function render(
 		tracker.update();
 		board.placeAll();
 	};
+	views.showOpening();
 	tagBoard.start({
 		main: main,
 		newest: newest,
@@ -402,6 +497,7 @@ function render(
 		contents: contents,
 		onFilter: afterFilter,
 	});
+	startStudy(main, wordsFiles, readSiteFile);
 	// Last, so the contents, permalinks and arrow keys work even if drawing the heatmap fails.
 	redraw();
 	// The reading place: restored, then kept; entries begin at the phone bar's bottom edge, else at the window's top.

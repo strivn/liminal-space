@@ -2,6 +2,7 @@
 // What the page needs to draw an entry, and the schema news, articles and reports follow (scripts/scout/scout.md).
 import { isLabFigure } from "./lab-figures.ts";
 import { isJsonObject, type JsonObject } from "./narrow.ts";
+import { openalexProblems } from "./openalex.ts";
 
 const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}$/;
 // The shortest real description held 11 words; "Introduction" and link lists held 1-3.
@@ -595,6 +596,11 @@ function pageProblems(entry: JsonObject) {
 	}
 	if (entry.camera_ready !== undefined) {
 		for (const problem of cameraReadyProblems(entry.camera_ready)) {
+			problems.push(problem);
+		}
+	}
+	if (entry.openalex !== undefined) {
+		for (const problem of openalexProblems(entry.openalex)) {
 			problems.push(problem);
 		}
 	}

@@ -7,6 +7,8 @@
 
 Liminal space is a personal research feed. Every morning an AI agent, the scout, searches arXiv, this year's conference acceptance lists and the news for a short list of topics, and adds what it picks to a web page. The owner reads the page in a browser or on a phone, marks it up, and asks Claude about any entry. Claude then reads the paper's full text and discusses it.
 
+The page has two views. Selected holds the papers the owner selected, grouped by their main OpenAlex topic, each with the owner's note. Feed holds the days' entries. The public page opens on Selected and the owner's copy on Feed. The owner's copy also has Logs, the scout's runs.
+
 A day's digest holds:
 
 - at least ten papers on the interested topics,

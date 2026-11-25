@@ -1,8 +1,11 @@
 // Build the folder Cloudflare serves for ivan.wiryadi.com/liminal-space/ from a digests file.
-// Usage: node scripts/deploy/build-site.ts <digests file> <output folder>
+// Usage: node scripts/deploy/build-site.ts [--staging <commit>] [--study <study file>] <digests file> <output folder>
+// --study adds study/ (words files, character files and the licences they ship with) and names each studied entry's
+// words file in data/index.json; the month files are the same with or without it.
 // Writes <output folder>/liminal-space/: the page's own files from site/, the owner's copy of the page in owner/
 // (Access guards that path; the page knows it is the owner's from where it was opened), data/index.json with
-// data/months/*.json (shapes in shared/site-data-shape.ts), and digests/ with one Markdown file a day and index.md for
+// data/months/*.json and data/selected.json, the owner's marked papers with their notes, from digests.standouts.json
+// beside the digests file (none when it isn't there; shapes in shared/site-data-shape.ts), and digests/ with one Markdown file a day and index.md for
 // agents (entries only, never the owner's notes), and sitemap.xml. Beside it, _headers, _redirects
 // and robots.txt from HEADERS, REDIRECTS and ROBOTS below.
 // site/app.js must be built first (pnpm run build). The new build is written beside the output folder and moved over
@@ -31,13 +34,24 @@ import {
 	type JsonObject,
 } from "../../shared/narrow.ts";
 import {
+	type CharDictionaryRow,
+	type CharDrawing,
+	type CharFile,
+	type CharPart,
+	charFilePath,
 	INDEX_PATH,
 	type IndexDay,
 	type IndexEntry,
 	MONTHS_FOLDER,
 	type MonthLine,
+	SELECTED_PATH,
+	type SelectedFile,
+	type SelectedPaper,
 	type SiteIndex,
+	STUDY_CHARS_FOLDER,
+	STUDY_FOLDER,
 } from "../../shared/site-data-shape.ts";
+import { standoutsPath } from "../lib/standouts.ts";
 
 // The page's own files in site/ (or LIMINAL_SITE), copied: files, then whole folders. versionReferences then rewrites
 // the kept files' addresses in the HTML and CSS.
@@ -48,6 +62,7 @@ const PAGE_FILES = [
 	"index.html",
 	"app.js",
 	"claude-markdown.js",
+	"study-strokes.js",
 	"style.css",
 	"arxiv-logomark-small.svg",
 	"claude-sonnet.svg",
@@ -68,6 +83,9 @@ const RELATIVE_ADDRESS = /\b(href|src)="(?![a-zA-Z][a-zA-Z0-9+.-]*:|\/|#)/g;
 // it needs no Access cookie.
 const OWNER_MANIFEST_LINK =
 	'  <link rel="manifest" href="../manifest.webmanifest">\n</head>';
+// The public page preloads data/selected.json; the owner's Selected reads its own saved marks instead.
+const SELECTED_PRELOAD =
+	'  <link rel="preload" href="data/selected.json" as="fetch" crossorigin>\n';
 // The owner's page div gets page--owner, from the first frame: its column is wider by the rail's second column.
 const OWNER_PAGE_CLASS = {
 	from: 'class="page page--with-contents"',
@@ -89,6 +107,7 @@ const KEEP_A_YEAR = "  Cache-Control: public, max-age=31536000, immutable";
 const KEPT_FILES = [
 	"app.js",
 	"claude-markdown.js",
+	"study-strokes.js",
 	"style.css",
 	"katex/",
 	"fonts/",
@@ -108,6 +127,12 @@ const HEADERS = [
 	`/${PAGE_PATH}/${MONTHS_FOLDER}/*`,
 	KEEP_A_YEAR,
 	`/${PAGE_PATH}/${INDEX_PATH}`,
+	"  Cache-Control: no-cache",
+	`/${PAGE_PATH}/${STUDY_FOLDER}/words/*`,
+	"  Cache-Control: no-cache",
+	`/${PAGE_PATH}/${STUDY_CHARS_FOLDER}/*`,
+	KEEP_A_YEAR,
+	`/${PAGE_PATH}/${SELECTED_PATH}`,
 	"  Cache-Control: no-cache",
 	...KEPT_FILES.flatMap((kept) => [
 		`/${PAGE_PATH}/${kept.replace(/\/$/, "/*")}`,
@@ -357,6 +382,65 @@ export function digestFiles(
 	return files;
 }
 
+// The data/selected.json content.
+export function selectedFile(rows: unknown): SelectedFile {
+	const unreadable = new BuildFailure(
+		"the marked papers must be a list of {entry, date, note}",
+	);
+	if (!Array.isArray(rows)) {
+		throw unreadable;
+	}
+	const papers: SelectedPaper[] = [];
+	for (const row of rows) {
+		if (
+			!isJsonObject(row) ||
+			!isJsonObject(row.entry) ||
+			typeof row.entry.id !== "string" ||
+			!isDay(row.date) ||
+			typeof row.note !== "string"
+		) {
+			throw unreadable;
+		}
+		papers.push({ entry: row.entry, date: row.date, note: row.note });
+	}
+	// Newest mark first.
+	papers.sort(
+		(a, b) =>
+			b.date.localeCompare(a.date) ||
+			entryId(a.entry).localeCompare(entryId(b.entry)),
+	);
+	return { papers: papers };
+}
+
+// A checked entry's id.
+function entryId(entry: unknown): string {
+	if (isJsonObject(entry) && typeof entry.id === "string") {
+		return entry.id;
+	}
+	return "";
+}
+
+// The marked papers, or none.
+function readSelected(digestsFile: string): SelectedFile {
+	const file = standoutsPath(digestsFile);
+	let text: string;
+	try {
+		text = readFileSync(file, "utf8");
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") {
+			return { papers: [] };
+		}
+		throw new BuildFailure(`can't read ${file} (${errorCode(error)})`);
+	}
+	let rows: unknown;
+	try {
+		rows = JSON.parse(text);
+	} catch {
+		throw new BuildFailure(`${file} is not JSON`);
+	}
+	return selectedFile(rows);
+}
+
 // The <link rel="preload"> line for the newest month's file, which index.html can't name itself since the name holds
 // the file's hash; "" for a site with no days. crossorigin as index.html's other fetch preload says.
 export function preloadLinks(index: SiteIndex): string {
@@ -371,7 +455,9 @@ export function preloadLinks(index: SiteIndex): string {
 function writeBuild(
 	folder: string,
 	data: ReturnType<typeof siteData>,
+	selected: SelectedFile,
 	staging: StagingBuild | null,
+	study: Map<string, string> | null,
 ) {
 	const page = join(folder, PAGE_PATH);
 	mkdirSync(join(page, MONTHS_FOLDER), { recursive: true });
@@ -411,6 +497,7 @@ function writeBuild(
 	writeFileSync(
 		join(page, OWNER_FOLDER, "index.html"),
 		html
+			.replace(SELECTED_PRELOAD, "")
 			.replace(RELATIVE_ADDRESS, '$1="../')
 			.replace("</head>", OWNER_MANIFEST_LINK)
 			.replace(OWNER_PAGE_CLASS.from, OWNER_PAGE_CLASS.to),
@@ -419,12 +506,17 @@ function writeBuild(
 	// register it.
 	cpSync(join(SITE_FOLDER, "sw.js"), join(page, OWNER_FOLDER, "sw.js"));
 	writeFileSync(join(page, INDEX_PATH), JSON.stringify(data.index));
+	writeFileSync(join(page, SELECTED_PATH), JSON.stringify(selected));
 	data.months.forEach((json, name) => {
 		writeFileSync(join(page, "data", name), json);
 	});
 	mkdirSync(join(page, DIGESTS_FOLDER));
 	digestFiles(data).forEach((text, name) => {
 		writeFileSync(join(page, DIGESTS_FOLDER, name), text);
+	});
+	study?.forEach((text, path) => {
+		mkdirSync(join(page, dirname(path)), { recursive: true });
+		writeFileSync(join(page, path), text);
 	});
 	writeFileSync(join(folder, "_redirects"), REDIRECTS);
 	if (staging !== null) {
@@ -473,13 +565,172 @@ function fileHoldingApiKey(folder: string): string | null {
 	return null;
 }
 
+// The data folders of the packages the character files come from, and the licence files beside the study files.
+const HANZI_FOLDER = fileURLToPath(new URL("../lib/hanzi/", import.meta.url));
+const HANZI_WRITER_DATA = dirname(
+	fileURLToPath(import.meta.resolve("hanzi-writer-data/package.json")),
+);
+const HANZI_WRITER = dirname(
+	fileURLToPath(import.meta.resolve("hanzi-writer/package.json")),
+);
+const STUDY_LICENCES: Record<string, string> = {
+	"arphic.txt": join(HANZI_WRITER_DATA, "ARPHICPL.TXT"),
+	"make-me-a-hanzi.txt": join(HANZI_FOLDER, "COPYING"),
+	"lgpl-3.0.txt": join(HANZI_FOLDER, "LGPL"),
+	"gpl-3.0.txt": join(HANZI_FOLDER, "GPL"),
+	"hanzi-writer.txt": join(HANZI_WRITER, "LICENSE"),
+};
+// The marks of an ideographic description, which join components and are none themselves, and the dictionary's
+// placeholder for a component it doesn't know.
+const DESCRIPTION_MARK = /[⿰-⿿㇯？]/u;
+
+// Make Me a Hanzi's rows by character, read when the first study is built.
+let dictionaryRows: Map<string, CharDictionaryRow> | null = null;
+function dictionaryRow(character: string): CharDictionaryRow | null {
+	if (dictionaryRows === null) {
+		dictionaryRows = new Map();
+		const text = readFileSync(join(HANZI_FOLDER, "dictionary.txt"), "utf8");
+		for (const line of text.split("\n")) {
+			if (line !== "") {
+				const row: CharDictionaryRow = JSON.parse(line);
+				dictionaryRows.set(row.character, row);
+			}
+		}
+	}
+	return dictionaryRows.get(character) ?? null;
+}
+
+// Hanzi Writer's data for a character, or null when hanzi-writer-data has none.
+function characterDrawing(character: string): CharDrawing | null {
+	try {
+		return JSON.parse(
+			readFileSync(join(HANZI_WRITER_DATA, `${character}.json`), "utf8"),
+		);
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") {
+			return null;
+		}
+		throw error;
+	}
+}
+
+// The components of a row's decomposition in order, each with its own row's pinyin and definition and the role the
+// row's etymology gives it.
+function characterParts(row: CharDictionaryRow | null): CharPart[] {
+	if (row === null) {
+		return [];
+	}
+	const parts: CharPart[] = [];
+	for (const component of row.decomposition) {
+		if (DESCRIPTION_MARK.test(component)) {
+			continue;
+		}
+		const part: CharPart = { character: component };
+		const own = dictionaryRow(component);
+		if (own !== null) {
+			part.pinyin = own.pinyin;
+			if (own.definition !== undefined) {
+				part.definition = own.definition;
+			}
+		}
+		if (row.etymology?.semantic === component) {
+			part.role = "semantic";
+		} else if (row.etymology?.phonetic === component) {
+			part.role = "phonetic";
+		}
+		parts.push(part);
+	}
+	return parts;
+}
+
+// The words file of an entry, relative to the page's folder: study/words/ and 16 hex digits of the id's SHA-256.
+export function wordsPath(entryId: string): string {
+	const hash = createHash("sha256").update(entryId, "utf8").digest("hex");
+	return `${STUDY_FOLDER}/words/${hash.slice(0, 16)}.json`;
+}
+
+// The studies a study file's text holds, one per line, each as the JSON text of its line. Throws "line <n> isn't a
+// study" for a line that is not an object with an id, a title and a description.
+function studiesIn(studyText: string): { id: string; study: JsonObject }[] {
+	const studies: { id: string; study: JsonObject }[] = [];
+	const lines = studyText.split("\n");
+	for (let k = 0; k < lines.length; k++) {
+		if (lines[k] === "") {
+			continue;
+		}
+		let study: unknown;
+		try {
+			study = JSON.parse(lines[k] ?? "");
+		} catch {
+			study = null;
+		}
+		if (
+			!isJsonObject(study) ||
+			typeof study.id !== "string" ||
+			!Array.isArray(study.title) ||
+			!Array.isArray(study.description)
+		) {
+			throw new BuildFailure(`line ${k + 1} of the study file isn't a study`);
+		}
+		studies.push({ id: study.id, study: study });
+	}
+	return studies;
+}
+
+// The Han characters of a study's words.
+function wordCharacters(study: JsonObject, into: Set<string>) {
+	for (const field of [study.title, study.description]) {
+		if (!Array.isArray(field)) {
+			continue;
+		}
+		for (const piece of field) {
+			if (isJsonObject(piece) && "syllables" in piece) {
+				for (const character of String(piece.text)) {
+					// Only a Han character names a file.
+					if (/^\p{Script=Han}$/u.test(character)) {
+						into.add(character);
+					}
+				}
+			}
+		}
+	}
+}
+
+// The study files for a study file's text (one Study per line), by their path under the page's folder: one words
+// file per entry (the study as it is), one file per character in use (its strokes and its Make Me a Hanzi row), and
+// the licence files.
+export function studyFiles(studyText: string): Map<string, string> {
+	const files = new Map<string, string>();
+	const characters = new Set<string>();
+	for (const { id, study } of studiesIn(studyText)) {
+		files.set(wordsPath(id), JSON.stringify(study));
+		wordCharacters(study, characters);
+	}
+	for (const character of characters) {
+		const row = dictionaryRow(character);
+		const file: CharFile = {
+			character: character,
+			drawing: characterDrawing(character),
+			dictionary: row,
+			parts: characterParts(row),
+		};
+		files.set(charFilePath(character), JSON.stringify(file));
+	}
+	for (const [name, source] of Object.entries(STUDY_LICENCES)) {
+		files.set(`${STUDY_FOLDER}/licences/${name}`, readFileSync(source, "utf8"));
+	}
+	return files;
+}
+
 // Build into a new folder beside the output folder, then swap it in: the earlier build moves aside and is removed
 // only once the new one is in its place. If the swap fails, the earlier build goes back and the new one is removed.
+// With a study file (one Study per line), the studied entries get their study files and a "study" in the index.
 // Returns the line the script prints.
 export function build(
 	digestsFile: string,
 	outputFolder: string,
 	staging: StagingBuild | null = null,
+	studyFile: string | null = null,
 ): string {
 	if (staging !== null && !COMMIT_ID.test(staging.commit)) {
 		throw new BuildFailure(
@@ -503,11 +754,31 @@ export function build(
 		}
 		throw error;
 	}
+	const selected = readSelected(digestsFile);
 	for (const built of ["app.js", "sw.js"]) {
 		if (!existsSync(join(SITE_FOLDER, built))) {
 			throw new BuildFailure(
 				`site/${built} doesn't exist: run pnpm run build first`,
 			);
+		}
+	}
+	let study: Map<string, string> | null = null;
+	if (studyFile !== null) {
+		let studyText: string;
+		try {
+			studyText = readFileSync(studyFile, "utf8");
+		} catch (error) {
+			throw new BuildFailure(`can't read ${studyFile} (${errorCode(error)})`);
+		}
+		study = studyFiles(studyText);
+		// The index names the words file of each entry that has a study.
+		for (const day of data.index.days) {
+			for (const entry of day.entries) {
+				const words = wordsPath(entry.id);
+				if (study.has(words)) {
+					entry.study = words;
+				}
+			}
 		}
 	}
 
@@ -516,7 +787,7 @@ export function build(
 	const fresh = join(dirname(target), `.${basename(target)}.${suffix}.new`);
 	const old = join(dirname(target), `.${basename(target)}.${suffix}.old`);
 	try {
-		writeBuild(fresh, data, staging);
+		writeBuild(fresh, data, selected, staging, study);
 	} catch (error) {
 		rmSync(fresh, { recursive: true, force: true });
 		throw new BuildFailure(`couldn't write the build (${errorCode(error)})`);
@@ -550,15 +821,32 @@ export function build(
 		throw new BuildFailure(failure);
 	}
 	rmSync(old, { recursive: true, force: true });
-	return `built ${outputFolder}: ${data.index.days.length} days in ${data.months.size} month files`;
+	let built = `built ${outputFolder}: ${data.index.days.length} days in ${data.months.size} month files`;
+	if (study !== null) {
+		const studied = data.index.days
+			.flatMap((day) => day.entries)
+			.filter((entry) => entry.study !== undefined);
+		built += `, ${studied.length} studied entries`;
+	}
+	return built;
 }
 
 function main(args: string[]) {
 	let staging: StagingBuild | null = null;
+	let studyFile: string | null = null;
 	let rest = args;
-	if (args[0] === "--staging" && args[1] !== undefined) {
-		staging = { commit: args[1] };
-		rest = args.slice(2);
+	// The options come first, in either order.
+	while (rest[0] === "--staging" || rest[0] === "--study") {
+		const value = rest[1];
+		if (value === undefined) {
+			break;
+		}
+		if (rest[0] === "--staging") {
+			staging = { commit: value };
+		} else {
+			studyFile = value;
+		}
+		rest = rest.slice(2);
 	}
 	const digestsFile = rest[0];
 	const outputFolder = rest[1];
@@ -568,13 +856,13 @@ function main(args: string[]) {
 		outputFolder === undefined
 	) {
 		console.error(
-			"usage: node scripts/deploy/build-site.ts [--staging <commit>] <digests file> <output folder>",
+			"usage: node scripts/deploy/build-site.ts [--staging <commit>] [--study <study file>] <digests file> <output folder>",
 		);
 		process.exitCode = 1;
 		return;
 	}
 	try {
-		console.log(build(digestsFile, outputFolder, staging));
+		console.log(build(digestsFile, outputFolder, staging, studyFile));
 	} catch (error) {
 		if (!(error instanceof BuildFailure)) {
 			throw error;

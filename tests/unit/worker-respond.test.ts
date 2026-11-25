@@ -13,6 +13,7 @@ import {
 } from "../../shared/log-protocol.ts";
 import { MAX_OWNER_BODY_BYTES } from "../../shared/owner-protocol.ts";
 import { MAX_BODY_BYTES } from "../../shared/push-protocol.ts";
+import { MAX_STUDY_BYTES } from "../../shared/study-protocol.ts";
 import {
 	type Cloud,
 	connectorToken,
@@ -62,6 +63,12 @@ const ROUTES: Route[] = [
 		path: "/liminal-space/api/sync/logs",
 		caller: "sync",
 		maxBytes: MAX_LOG_BYTES + MAX_LOG_BODY_EXTRA,
+		invalid: "[]",
+	},
+	{
+		path: "/liminal-space/api/sync/study",
+		caller: "sync",
+		maxBytes: MAX_STUDY_BYTES,
 		invalid: "[]",
 	},
 	{
@@ -153,6 +160,7 @@ function ownerChangeRows(name: string, invalidReason: string): Row[] {
 const PUSH = "/liminal-space/api/sync/push";
 const REQUESTS = "/liminal-space/api/sync/requests";
 const LOGS = "/liminal-space/api/sync/logs";
+const STUDY = "/liminal-space/api/sync/study";
 const MCP = "/liminal-space/mcp";
 const ASK = "/liminal-space/api/owner/ask";
 const ASK_IDS = "body is not an entry id and a thread id";
@@ -205,6 +213,22 @@ const TABLE: Row[] = [
 		400,
 		"body is not a JSON object",
 		"body is not a JSON object",
+	),
+	expected(
+		STUDY,
+		"one byte over",
+		413,
+		"too large",
+		`body is larger than ${MAX_STUDY_BYTES} bytes`,
+	),
+	expected(STUDY, "not JSON", 400, "body is not JSON", "body is not JSON"),
+	expected(STUDY, "bad UTF-8", 400, "body is not JSON", "body is not JSON"),
+	expected(
+		STUDY,
+		"fails the check",
+		400,
+		"bad request",
+		'body has no "study" object',
 	),
 	expected(
 		MCP,

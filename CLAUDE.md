@@ -15,9 +15,11 @@ likes, comments, highlights and takeaways through the Worker.
 GitHub Actions: scout.yml (daily), add.yml (connector requests)
   scripts/scout/scout.ts ─► scripts/scout/arxiv/arxiv.ts, proceedings.ts, digests.ts, … ─► site/digests.js
   scripts/deploy/sync.ts push ─► Worker /liminal-space/api/sync/push ─► D1
-  scripts/deploy/build-site.ts ─► dist/liminal-space/ (page, the owner's copy, data/index.json + data/months/*.json)
+  scripts/deploy/build-site.ts ─► dist/liminal-space/ (page, the owner's copy, data/index.json + data/months/*.json
+                                                  + data/selected.json, the owner's marked papers with their public notes)
 Browser: site/app.ts + site/page/*.ts
-  public page ─GET data/*.json      owner page ─GET/POST the owner API ─► Worker ─► D1
+  public page ─GET data/*.json (the index, the months, selected.json)
+  owner page ─GET/POST the owner API ─► Worker ─► D1
 Worker crons ─► GitHub workflow_dispatch (scout.yml 22:00 and 23:00 UTC, add.yml every 15 min)
 claude.ai connector ─► Worker /liminal-space/mcp (search, get_digest, add requests that add.yml carries out)
 ```
@@ -33,10 +35,13 @@ The daily run, in the order `scout.yml` runs it:
    `digests.ts`, and enriches them with `first-page.ts`, `figure.ts`, `describe.ts` and `fulltext.sh`.
 6. `abstracts.ts` adds Semantic Scholar's abstract to the day's DOI papers that came without one, and `camera-ready.ts`
    links today's conference papers to their published versions, read from the proceedings files in `interests.md`
-   (every paper on Mondays). Then `sync.ts push` sends the new lines to D1, `.cache/` is saved without `feedback.json`,
-   and `sync.ts log` sends the scout's log.
-7. A last job calls `deploy.yml`, which applies the D1 migrations, runs `sync.ts pull` and `build-site.ts`, and
-   deploys the page.
+   (every paper on Mondays). `topics.ts` adds OpenAlex's topics and keywords to the papers of the last 30 days (every
+   paper on Mondays). Then `sync.ts push` sends the new lines to D1, `.cache/` is saved without `feedback.json`, and
+   `sync.ts log` sends the scout's log.
+7. A last job calls `deploy.yml`, which applies the D1 migrations (before the pull, so a table a migration adds can be
+   read at once), runs `sync.ts pull` and `build-site.ts`, and deploys the page. The pull also writes the marked papers
+   (`digests.standouts.json`, beside `digests.js`), which the build publishes with their notes as `data/selected.json`;
+   marks and notes reach the public page with the next deploy.
 
 ## Commands
 
@@ -44,8 +49,8 @@ Node 26 and pnpm 12 (`packageManager` in package.json).
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm run build                    # bundle site/app.ts, site/sw.ts and site/page/ into site/app.js, sw.js and claude-markdown.js,
-                                  # and site/styles.css with site/style/ into site/style.css
+pnpm run build                    # bundle site/app.ts, site/sw.ts and site/page/ into site/app.js, sw.js, claude-markdown.js and
+                                  # study-strokes.js (Hanzi Writer, fetched on the first tooltip), and site/styles.css with site/style/ into site/style.css
 pnpm run build:site               # build plus dist/ from site/digests.js
 pnpm run preview                  # build:site, then wrangler dev on port 8787
 pnpm run typecheck                # tsc on the root, site, service worker, tests and worker projects
@@ -71,7 +76,8 @@ pnpm exec bddgen && pnpm exec playwright test --grep "<scenario name>"
   - `scout/`: the daily run. `scout.ts` runs the session with its instructions `scout.md`; `search.ts` fills the
     candidate pool (the plan's pieces in `plan/`), `score.ts` scores it and `surprise.ts` lists the surprise paper's
     candidates. One folder per source: `arxiv/` (`arxiv.ts` appends papers, `figure.ts` and `first-page.ts` read their
-    HTML), `proceedings/`, `newsfeed/`, `news/` (Google News), `hugging-face/`, and `web/` (`describe.ts` copies a
+    HTML), `proceedings/`, `openalex/` (`topics.ts` adds a paper's OpenAlex topics and keywords), `newsfeed/`, `news/`
+    (Google News), `hugging-face/`, and `web/` (`describe.ts` copies a
     publisher's description, `fulltext.sh` fetches an item's full text, checked by `fetch-guard.ts`).
   - `digests/`: `digests.ts` answers questions about the digests file, adds items to it and checks every line.
   - `deploy/`: building the site (`build-site.ts`), syncing with D1 (`sync.ts`) and the connector's add requests
@@ -83,7 +89,8 @@ pnpm exec bddgen && pnpm exec playwright test --grep "<scenario name>"
   only tests import from it.
 - `shared/`: the files the scripts, the Worker and the page all import, which import nothing from `scripts/`,
   `site/` or `worker/` (`tests/unit/layout.test.ts` checks it): `narrow.ts`, `entry-checks.ts` (what a digest line and
-  an entry may hold), `entry-groups.ts`, `entry-markdown.ts`, `arxiv-id.ts`, `local-address.ts`, `site-data-shape.ts`
+  an entry may hold), `openalex.ts` (a paper's OpenAlex topics and what a stored one may hold), `entry-groups.ts`,
+  `entry-markdown.ts`, `arxiv-id.ts`, `local-address.ts`, `site-data-shape.ts`
   and the Worker request shapes and limits in `owner-protocol.ts`, `push-protocol.ts`, `log-protocol.ts`,
   `connector-protocol.ts` and `notify-protocol.ts`.
 - `site/`: the page. `index.html`, `app.ts`, which esbuild bundles with the modules in `site/page/` (the comment
@@ -91,7 +98,14 @@ pnpm exec bddgen && pnpm exec playwright test --grep "<scenario name>"
   of the page from `site/style/`, and the build bundles them into `style.css`, which is build output like `app.js`.
   `sw.ts` is the owner's service worker, built into `sw.js`. The same page serves the public copy and
   the owner's copy; it knows which from its address. `site/katex/` is vendored KaTeX for TeX in
-  titles and abstracts.
+  titles and abstracts. On a mouse, `site/page/study.ts` opens a tooltip for the word under the pointer in a Chinese
+  entry's title or description, from the words file the index names; it changes none of the entry's text. The page has the views Selected (the papers the owner
+  selected, by main OpenAlex topic, each with its public note), Feed (the days' entries) and, on the owner's copy
+  only, Logs (the scout's runs, read when Logs first shows). `site/page/selected.ts` names them and says which opens
+  first (the public page on Selected, the owner's on Feed, `#feed` and `#selected` either, `#logs` on the owner's);
+  `views.ts` shows one, `selected-view.ts` draws Selected, `scout-logs.ts` draws Logs and `standout-board.ts` saves
+  the owner's marks and notes. The public Selected
+  reads `data/selected.json`; the owner's reads their saved marks and loads the months that hold the marked papers.
 - `worker/src/`: the Cloudflare Worker (`wrangler.jsonc`): sync, owner, connector (MCP) and log routes, Access
   checks, and the crons that dispatch GitHub workflows. `index.ts` holds the route table (`ROUTES`), which
   `routes.ts` dispatches through the path, method, token and same-site checks in that order; each route's handler
@@ -128,7 +142,9 @@ and the same media query in `site/style/phone.css`. It has a sticky bar with the
 entry's buttons in a row, a swipe left that marks an entry read, and comments in a sheet from the bottom (the side
 panel's own dialog with the `comment-panel--sheet` class, set in `site/page/sheet.ts`). Every phone rule and
 gesture sits behind that query, so a window with a mouse keeps the desktop page; keep it that way when changing
-either. On any touch screen, Highlight and Comment sit in a bar at the bottom. The page runs under the iPhone's status
+either. The Selected / Feed (/ Logs) menu sits on one line in the header's flow and scrolls away with it; Selected and Logs hide the
+heatmap, the bar with the last 7 days and Contents, which are the Feed's. On any touch screen, Highlight and Comment sit
+in a bar at the bottom. The page runs under the iPhone's status
 bar and home indicator (`viewport-fit=cover`); phone rules keep clear of them with `env(safe-area-inset-*)`, which is
 0 on a desktop.
 
@@ -146,14 +162,18 @@ bar and home indicator (`viewport-fit=cover`); phone rules keep clear of them wi
   root, site, service worker, tests and Worker projects) whenever a TypeScript, tsconfig or package.json file changes.
 - Tests run locally: while building, the ones a change adds or touches; before a merge into `develop`, the unit tests
   (`pnpm run test:unit`) and every scenario (`pnpm run test:e2e`, sandbox off), unless the owner says to skip a run.
-- On GitHub, every pull request runs the type check, Biome and the unit tests, and a pull request into `develop` or
-  `main` also runs the scenarios (`checks.yml`). Nothing merges into `develop` or `main` before all of them pass.
+- On GitHub, a pull request into `develop` or `main` runs the type check, Biome, the unit tests and the scenarios
+  (`checks.yml`); pull requests into a feature branch run none. Nothing merges into `develop` or `main` before all of
+  them pass.
 
 ## Branches and releases
 
 `develop` is staging and `main` is production. Work reaches `develop` only through pull requests, and every push to
 `develop` deploys staging. Production changes only through the pull request
 from `develop` into `main`. Its description follows `.github/PULL_REQUEST_TEMPLATE/release.md`.
+Staging reads production's entries from its public files, and builds its Selected data from the papers marked in
+staging's own database (`sync.ts standouts --database`), so the owner's marks there stay on staging. `staging.yml` also
+runs by hand (`workflow_dispatch`), to publish a mark made on staging without a push to `develop`.
 
 - Claude merges into `develop`, as `claude-ivn`, once the local tests and GitHub's checks pass. The owner then tries
   the change on staging, and decides between more fixes and a release. Never hand the owner local test commands.
