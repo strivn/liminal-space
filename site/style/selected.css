@@ -1,6 +1,6 @@
 /* The Feed and Selected menu under the date, and the Selected view (site/page/views.ts, selected-view.ts). */
 
-/* The menu: one line, "Selected / Feed". */
+/* The menu: one line, "Selected / Feed / Logs". */
 .views {
 	display: flex;
 	align-items: baseline;
@@ -30,9 +30,11 @@
 	font-weight: 600;
 }
 
-/* Selected shows no heatmap, last 7 days or contents: they are the Feed's. */
+/* Selected and Logs show no heatmap, last 7 days or contents: they are the Feed's. */
 .page--selected .heatmap,
-.page--selected .phone-bar {
+.page--selected .phone-bar,
+.page--logs .heatmap,
+.page--logs .phone-bar {
 	display: none;
 }
 

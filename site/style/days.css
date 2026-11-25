@@ -61,24 +61,7 @@ details.day > summary:hover,
 	}
 }
 
-/* The owner's scout logs: one folded row below the days, each run's log as plain text that wraps. On wide windows it
-   is the grid's second item after main: column 2 puts it under the reading column, never in the comments' track. */
-.scout-logs {
-	grid-column: 2;
-	margin-bottom: 64px;
-}
-.scout-logs > details {
-	border-top: 1px solid var(--border);
-	border-bottom: 1px solid var(--border);
-}
-.scout-logs summary {
-	padding: 16px 0;
-	font-weight: 500;
-	cursor: pointer;
-}
-.scout-logs summary:hover {
-	background: var(--surface);
-}
+/* Logs: each run's log as plain text that wraps. */
 .scout-log {
 	padding: 16px 0;
 	border-top: 1px solid var(--border);
@@ -98,6 +81,6 @@ details.day > summary:hover,
 	overflow-wrap: anywhere;
 }
 .scout-logs__none {
-	margin: 0 0 16px;
+	margin: 16px 0;
 	color: var(--text-secondary);
 }

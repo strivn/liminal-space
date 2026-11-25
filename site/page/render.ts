@@ -172,11 +172,6 @@ async function drawFromData(main: HTMLElement, failed: () => void) {
 		},
 		wordsFilesOf(index),
 	);
-	// The logs come after the days are drawn, so a slow read never holds up the page.
-	if (owner !== null)
-		showScoutLogs(main).catch((error) =>
-			console.error("The scout logs failed:", error),
-		);
 	if (isOwnerPage() && owner === null) {
 		const header = document.getElementById("freshness");
 		if (header === null) throw new Error("index.html has no #freshness");
@@ -427,10 +422,20 @@ function render(
 	standoutBoard.onChange(() => {
 		if (shownView === "selected") drawSelected().catch(reportSelected);
 	});
+	// Logs is read once, the first time it shows.
+	let logsDrawn = false;
 	const views = createViews(owner !== null, (view) => {
 		shownView = view;
 		if (view === "selected") drawSelected().catch(reportSelected);
-		else afterFilter();
+		else if (view === "feed") afterFilter();
+		else if (!logsDrawn) {
+			logsDrawn = true;
+			const logsRoot = document.getElementById("logs-view");
+			if (logsRoot === null) throw new Error("index.html has no #logs-view");
+			showScoutLogs(logsRoot).catch((error) =>
+				console.error("The scout logs failed:", error),
+			);
+		}
 	});
 
 	// The owner's page: the chips.
