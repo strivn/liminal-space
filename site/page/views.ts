@@ -28,6 +28,15 @@ export function createViews(
 	}
 	let showing: View | null = null;
 	let feedScroll = 0;
+	// The skip link names the Feed; while Selected shows it moves focus to Selected instead, since an address other than
+	// #selected would open the Feed.
+	document
+		.querySelector<HTMLAnchorElement>(".skip-link")
+		?.addEventListener("click", (event) => {
+			if (showing !== "selected") return;
+			event.preventDefault();
+			selected.focus();
+		});
 
 	function show(view: View) {
 		if (view === showing) return;
