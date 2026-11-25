@@ -379,6 +379,7 @@ const POLICIES: Policy[] = [
 	ownerChange("read"),
 	ownerChange("tags"),
 	ownerChange("feedback"),
+	ownerChange("standouts"),
 	ownerChange("comments"),
 	ownerChange("ask"),
 	{

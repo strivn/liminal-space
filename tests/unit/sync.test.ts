@@ -3,11 +3,17 @@
 // split into requests.
 
 import assert from "node:assert/strict";
-import { afterEach, test, vi } from "vitest";
+import { execFile } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
+import { afterEach, beforeAll, test, vi } from "vitest";
 import type * as SiteRequests from "../../scripts/deploy/site-requests.ts";
 import type * as Sync from "../../scripts/deploy/sync.ts";
 import type { JsonObject } from "../../shared/narrow.ts";
 import { MAX_BODY_BYTES, MAX_ENTRIES } from "../../shared/push-protocol.ts";
+import { migratedDatabase } from "../fixtures/worker-in-node.ts";
 import { closeServers, serve } from "./local-server.ts";
 
 const SCRIPT = new URL("../../scripts/deploy/sync.ts", import.meta.url);
@@ -254,4 +260,70 @@ test("security: A redirect is never followed and counts as a failed try, so the 
 	} finally {
 		told.mockRestore();
 	}
+});
+
+// ---- the marked papers ----
+
+// The file pull wrote, from one marked and one unmarked paper.
+async function pulledStandouts() {
+	const db = migratedDatabase();
+	for (const [n, marked] of [
+		[1, "'2026-11-20'"],
+		[2, "NULL"],
+	] as const) {
+		const id = `arxiv:2610.0000${n}`;
+		db.prepare(
+			"INSERT INTO entries (id, date, seq, json, updated) VALUES (?, '2026-11-01', ?, ?, 'x')",
+		).run(id, n, JSON.stringify(paper(n)));
+		db.prepare(
+			`INSERT INTO standouts (entry_id, date, note) VALUES (?, ${marked}, ?)`,
+		).run(id, `Note on paper ${n}`);
+	}
+	const base = await serve((incoming, out) => {
+		const chunks: Buffer[] = [];
+		incoming.on("data", (chunk: Buffer) => chunks.push(chunk));
+		incoming.on("end", () => {
+			const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+			const results = db.prepare(body.sql).all(...body.params);
+			out.writeHead(200, { "content-type": "application/json" });
+			out.end(JSON.stringify({ success: true, result: [{ results }] }));
+		});
+	});
+	const folder = fs.mkdtempSync(path.join(os.tmpdir(), "liminal-sync-test-"));
+	try {
+		await promisify(execFile)(
+			process.execPath,
+			[SCRIPT.pathname, "pull", "--database", path.join(folder, "digests.js")],
+			{
+				env: {
+					...process.env,
+					CLOUDFLARE_API_BASE: base,
+					CLOUDFLARE_API_TOKEN: "api-token",
+					CLOUDFLARE_ACCOUNT_ID: "account",
+					D1_DATABASE_ID: "database",
+					LIMINAL_CACHE: path.join(folder, "cache"),
+					SYNC_RETRY_SECOND_MS: "1",
+				},
+			},
+		);
+		return fs.readFileSync(path.join(folder, "digests.standouts.json"), "utf8");
+	} finally {
+		fs.rmSync(folder, { recursive: true, force: true });
+	}
+}
+
+let written: string;
+beforeAll(async () => {
+	written = await pulledStandouts();
+});
+
+test("pull writes the marked papers and their notes for the build", () => {
+	assert.deepEqual(JSON.parse(written), [
+		{ entry: paper(1), date: "2026-11-20", note: "Note on paper 1" },
+	]);
+});
+
+test("privacy: pull never writes an unmarked paper's note for the build", () => {
+	assert.ok(!written.includes("Note on paper 2"));
+	assert.ok(!written.includes(String(paper(2).title)));
 });

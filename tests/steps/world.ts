@@ -45,6 +45,10 @@ export type Paper = {
 	source: string;
 	url: string;
 	abstract: string;
+	openalex: {
+		topics: { name: string; field: string; score: number }[];
+		keywords: string[];
+	};
 };
 
 // A news entry in Chinese and the words its study holds.
@@ -59,6 +63,9 @@ export type ChineseEntry = {
 	};
 	study: Study;
 };
+
+// The main OpenAlex topic of every seeded paper.
+export const OPENALEX_TOPIC = "Reinforcement learning";
 
 export type World = {
 	dir: string;
@@ -111,6 +118,10 @@ export function paperOn(date: string, day: number, n: number): Paper {
 		source: "arXiv Machine Learning",
 		url: `https://arxiv.org/abs/${number}`,
 		abstract: `${FIRST_SENTENCE} ${SECOND_SENTENCE}`,
+		openalex: {
+			topics: [{ name: OPENALEX_TOPIC, field: "Computer Science", score: 0.9 }],
+			keywords: [],
+		},
 	};
 }
 
@@ -289,11 +300,14 @@ async function contextFor(
 	return context;
 }
 
-// Open `reader`'s page (the owner's copy or the public one) and wait for today's papers to draw.
+// Open `reader`'s page (the owner's copy or the public one) on its Feed, and wait for today's papers to draw. A visitor
+// opens on Selected unless the address says #feed; `opening` "own" leaves the address as a visitor finds it, and the
+// caller waits for what it expects.
 export async function openPage(
 	world: World,
 	browser: Browser,
 	reader: Reader,
+	opening: "feed" | "own" = "feed",
 ): Promise<Page> {
 	await ensureSite(world);
 	const context = await contextFor(world, browser, reader);
@@ -310,15 +324,17 @@ export async function openPage(
 	page.on("pageerror", (error) => {
 		world.errors.push(`${reader}: ${error.message}`);
 	});
-	const response = await page.goto(
-		reader === "owner" ? OWNER_PAGE : PUBLIC_PAGE,
-	);
+	let address = OWNER_PAGE;
+	if (reader === "visitor")
+		address = opening === "feed" ? `${PUBLIC_PAGE}#feed` : PUBLIC_PAGE;
+	const response = await page.goto(address);
 	// The page carries the site's policy, so a policy violation reaches the After hook as a console error.
 	expect(
 		response?.headers()["content-security-policy"],
 		"the page's Content-Security-Policy",
 	).toContain("default-src 'none'");
-	await expect(page.locator("article.entry").first()).toBeVisible();
+	if (opening === "feed")
+		await expect(page.locator("article.entry").first()).toBeVisible();
 	world.pages.set(reader, page);
 	return page;
 }

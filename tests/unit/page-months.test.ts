@@ -71,10 +71,9 @@ async function fold(date: string) {
 test("opening the page requests the index and the newest month, and no other month file", async () => {
 	const site = threeMonths();
 	await openPage(site);
-	expect(site.requested).toEqual([
-		"data/index.json",
-		"data/months/2026-10.json",
-	]);
+	expect(
+		site.requested.filter((path) => path !== "data/selected.json"),
+	).toEqual(["data/index.json", "data/months/2026-10.json"]);
 	const rows = [...document.querySelectorAll("main details.day")].map((day) =>
 		day.getAttribute("data-date"),
 	);
@@ -204,7 +203,7 @@ test("every day is an h2 holding its date, the older ones inside their summary, 
 		{ date: "2026-10-13", entries: [paperEntry("2610.00003", "Earlier")] },
 	]);
 	await openPage(site);
-	expect(texts("main h2")).toEqual([
+	expect(texts("#digests h2")).toEqual([
 		"Friday 16 October",
 		"Thursday 15 October",
 		"Tuesday 13 October",

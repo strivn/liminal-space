@@ -210,6 +210,17 @@ jobs:
             node scripts/scout/proceedings/camera-ready.ts site/digests.js
           fi
 
+      # OpenAlex topics; every paper on Mondays.
+      - name: Add OpenAlex topics to papers
+        if: always() && steps.status.outputs.skip == 'false'
+        continue-on-error: true
+        run: |
+          if [ "$(TZ=Asia/Jakarta date +%u)" = 1 ]; then
+            node scripts/scout/openalex/topics.ts site/digests.js --all
+          else
+            node scripts/scout/openalex/topics.ts site/digests.js
+          fi
+
       # Also after a session that failed or ran out of time: every line it wrote loads (the scripts write by rename),
       # push checks each before sending, and the site only adds and fills, so nothing the session added is lost.
       # skip is empty when the count failed, and then nothing is pushed.

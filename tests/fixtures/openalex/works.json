@@ -1,0 +1,198 @@
+{
+	"meta": {
+		"notice": "No API key, so this request shares one free daily budget ($0.10) with everyone on your network's IP address. Get a free key with its own $1/day at https://openalex.org/settings/api and add api_key=YOUR_KEY to your requests. An AI agent can get one for its user in one call: POST https://api.openalex.org/api-keys with {\"email\": \"<your user's email>\"}; we email them a link, and the key works once they click it. Docs for agents: https://help.openalex.org/llms.txt",
+		"count": 2,
+		"page": 1,
+		"per_page": 50,
+		"cost_usd": 0.0001
+	},
+	"results": [
+		{
+			"doi": "https://doi.org/10.48550/arxiv.1706.03762",
+			"title": "Attention Is All You Need",
+			"primary_topic": {
+				"id": "https://openalex.org/T10181",
+				"display_name": "Natural Language Processing Techniques",
+				"score": 0.7821999788284302,
+				"subfield": {
+					"id": "https://openalex.org/subfields/1702",
+					"display_name": "Artificial Intelligence"
+				},
+				"field": {
+					"id": "https://openalex.org/fields/17",
+					"display_name": "Computer Science"
+				},
+				"domain": {
+					"id": "https://openalex.org/domains/3",
+					"display_name": "Physical Sciences"
+				}
+			},
+			"topics": [
+				{
+					"id": "https://openalex.org/T10181",
+					"display_name": "Natural Language Processing Techniques",
+					"score": 0.7821999788284302,
+					"subfield": {
+						"id": "https://openalex.org/subfields/1702",
+						"display_name": "Artificial Intelligence"
+					},
+					"field": {
+						"id": "https://openalex.org/fields/17",
+						"display_name": "Computer Science"
+					},
+					"domain": {
+						"id": "https://openalex.org/domains/3",
+						"display_name": "Physical Sciences"
+					}
+				},
+				{
+					"id": "https://openalex.org/T10028",
+					"display_name": "Topic Modeling",
+					"score": 0.19449999928474426,
+					"subfield": {
+						"id": "https://openalex.org/subfields/1702",
+						"display_name": "Artificial Intelligence"
+					},
+					"field": {
+						"id": "https://openalex.org/fields/17",
+						"display_name": "Computer Science"
+					},
+					"domain": {
+						"id": "https://openalex.org/domains/3",
+						"display_name": "Physical Sciences"
+					}
+				},
+				{
+					"display_name": "Speech Recognition and Synthesis",
+					"score": 0.0052999998442828655,
+					"subfield": {
+						"id": "https://openalex.org/subfields/1702",
+						"display_name": "Artificial Intelligence"
+					},
+					"field": {
+						"id": "https://openalex.org/fields/17",
+						"display_name": "Computer Science"
+					},
+					"domain": {
+						"id": "https://openalex.org/domains/3",
+						"display_name": "Physical Sciences"
+					}
+				}
+			],
+			"keywords": [
+				{
+					"id": "https://openalex.org/keywords/transformer",
+					"display_name": "transformer models",
+					"score": 0.91
+				},
+				{
+					"id": "https://openalex.org/keywords/attention-mechanism",
+					"display_name": "attention mechanism",
+					"score": 0.887
+				},
+				{
+					"id": "https://openalex.org/keywords/machine-translation",
+					"display_name": "machine translation",
+					"score": 0.898
+				}
+			],
+			"locations": [
+				{
+					"id": "pmh:oai:proceedings.neurips.cc:2017/3f5ee243547dee91fbd053c1c4a845aa",
+					"doi": null,
+					"landing_page_url": "https://proceedings.neurips.cc/paper_files/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html",
+					"pdf_url": null
+				},
+				{
+					"id": "pmh:oai:arXiv.org:1706.03762",
+					"doi": "https://doi.org/10.48550/arxiv.1706.03762",
+					"landing_page_url": "http://arxiv.org/abs/1706.03762",
+					"pdf_url": "https://arxiv.org/pdf/1706.03762"
+				},
+				{
+					"id": "mag:2963403868",
+					"doi": null,
+					"landing_page_url": "https://arxiv.org/pdf/1706.03762v5",
+					"pdf_url": null
+				}
+			]
+		},
+		{
+			"doi": "https://doi.org/10.48550/arxiv.2507.11473",
+			"title": "Chain of Thought Monitorability: A New and Fragile Opportunity for AI Safety",
+			"primary_topic": {
+				"id": "https://openalex.org/T10883",
+				"display_name": "Ethics and Social Impacts of AI",
+				"score": 0.9599999785423279,
+				"subfield": {
+					"id": "https://openalex.org/subfields/1702",
+					"display_name": "Artificial Intelligence"
+				},
+				"field": {
+					"id": "https://openalex.org/fields/17",
+					"display_name": "Computer Science"
+				},
+				"domain": {
+					"id": "https://openalex.org/domains/3",
+					"display_name": "Physical Sciences"
+				}
+			},
+			"topics": [
+				{
+					"id": "https://openalex.org/T10883",
+					"display_name": "Ethics and Social Impacts of AI",
+					"score": 0.9599999785423279,
+					"subfield": {
+						"id": "https://openalex.org/subfields/1702",
+						"display_name": "Artificial Intelligence"
+					},
+					"field": {
+						"id": "https://openalex.org/fields/17",
+						"display_name": "Computer Science"
+					},
+					"domain": {
+						"id": "https://openalex.org/domains/3",
+						"display_name": "Physical Sciences"
+					}
+				},
+				{
+					"id": "https://openalex.org/T13295",
+					"display_name": "Safety Systems Engineering in Autonomy",
+					"score": 0.016000000759959221,
+					"subfield": {
+						"id": "https://openalex.org/subfields/2215",
+						"display_name": "Building and Construction"
+					},
+					"field": {
+						"id": "https://openalex.org/fields/22",
+						"display_name": "Engineering"
+					},
+					"domain": {
+						"id": "https://openalex.org/domains/3",
+						"display_name": "Physical Sciences"
+					}
+				}
+			],
+			"keywords": [
+				{
+					"id": "https://openalex.org/keywords/ai-safety",
+					"display_name": "AI safety",
+					"score": 0.907
+				},
+				{
+					"id": "https://openalex.org/keywords/large-language-models",
+					"display_name": "large language models",
+					"score": 0.746
+				}
+			],
+			"locations": [
+				{
+					"id": "pmh:oai:arXiv.org:2507.11473",
+					"doi": "https://doi.org/10.48550/arxiv.2507.11473",
+					"landing_page_url": "http://arxiv.org/abs/2507.11473",
+					"pdf_url": "https://arxiv.org/pdf/2507.11473"
+				}
+			]
+		}
+	]
+}

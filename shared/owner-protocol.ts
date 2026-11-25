@@ -9,6 +9,7 @@ export type OwnerState = {
 	comments: Record<string, SiteThread[]>;
 	feedback: Record<string, FeedbackMark>;
 	takeaways: Record<string, Takeaway[]>;
+	standouts: Record<string, Standout>;
 };
 export type ReadMark = { depth: Depth; date: string };
 // The three depths a read mark can have.
@@ -94,6 +95,12 @@ export type FeedbackChange = {
 	mark: Feedback | null;
 	date: string;
 };
+// A paper's note, public once marked; a null date is unmarked.
+export type Standout = { date: string | null; note: string };
+// POST /liminal-space/api/owner/standouts.
+export type StandoutChange =
+	| { id: string; marked: boolean; date: string }
+	| { id: string; note: string };
 // POST /liminal-space/api/owner/push: save this device's push subscription, as the browser's
 // PushSubscription.toJSON() gives it. The Worker answers 204 when saved, 400 for an endpoint off the known push
 // services. The page sends it after the owner allowed notifications.

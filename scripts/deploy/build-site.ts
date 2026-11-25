@@ -4,7 +4,8 @@
 // words file in data/index.json; the month files are the same with or without it.
 // Writes <output folder>/liminal-space/: the page's own files from site/, the owner's copy of the page in owner/
 // (Access guards that path; the page knows it is the owner's from where it was opened), data/index.json with
-// data/months/*.json (shapes in shared/site-data-shape.ts), and digests/ with one Markdown file a day and index.md for
+// data/months/*.json and data/selected.json, the owner's marked papers with their notes, from digests.standouts.json
+// beside the digests file (none when it isn't there; shapes in shared/site-data-shape.ts), and digests/ with one Markdown file a day and index.md for
 // agents (entries only, never the owner's notes), and sitemap.xml. Beside it, _headers, _redirects
 // and robots.txt from HEADERS, REDIRECTS and ROBOTS below.
 // site/app.js must be built first (pnpm run build). The new build is written beside the output folder and moved over
@@ -43,10 +44,14 @@ import {
 	type IndexEntry,
 	MONTHS_FOLDER,
 	type MonthLine,
+	SELECTED_PATH,
+	type SelectedFile,
+	type SelectedPaper,
 	type SiteIndex,
 	STUDY_CHARS_FOLDER,
 	STUDY_FOLDER,
 } from "../../shared/site-data-shape.ts";
+import { standoutsPath } from "../lib/standouts.ts";
 
 // The page's own files in site/ (or LIMINAL_SITE), copied: files, then whole folders. versionReferences then rewrites
 // the kept files' addresses in the HTML and CSS.
@@ -78,6 +83,9 @@ const RELATIVE_ADDRESS = /\b(href|src)="(?![a-zA-Z][a-zA-Z0-9+.-]*:|\/|#)/g;
 // it needs no Access cookie.
 const OWNER_MANIFEST_LINK =
 	'  <link rel="manifest" href="../manifest.webmanifest">\n</head>';
+// The public page preloads data/selected.json; the owner's Selected reads its own saved marks instead.
+const SELECTED_PRELOAD =
+	'  <link rel="preload" href="data/selected.json" as="fetch" crossorigin>\n';
 // The owner's page div gets page--owner, from the first frame: its column is wider by the rail's second column.
 const OWNER_PAGE_CLASS = {
 	from: 'class="page page--with-contents"',
@@ -124,6 +132,8 @@ const HEADERS = [
 	"  Cache-Control: no-cache",
 	`/${PAGE_PATH}/${STUDY_CHARS_FOLDER}/*`,
 	KEEP_A_YEAR,
+	`/${PAGE_PATH}/${SELECTED_PATH}`,
+	"  Cache-Control: no-cache",
 	...KEPT_FILES.flatMap((kept) => [
 		`/${PAGE_PATH}/${kept.replace(/\/$/, "/*")}`,
 		KEEP_A_YEAR,
@@ -372,6 +382,65 @@ export function digestFiles(
 	return files;
 }
 
+// The data/selected.json content.
+export function selectedFile(rows: unknown): SelectedFile {
+	const unreadable = new BuildFailure(
+		"the marked papers must be a list of {entry, date, note}",
+	);
+	if (!Array.isArray(rows)) {
+		throw unreadable;
+	}
+	const papers: SelectedPaper[] = [];
+	for (const row of rows) {
+		if (
+			!isJsonObject(row) ||
+			!isJsonObject(row.entry) ||
+			typeof row.entry.id !== "string" ||
+			!isDay(row.date) ||
+			typeof row.note !== "string"
+		) {
+			throw unreadable;
+		}
+		papers.push({ entry: row.entry, date: row.date, note: row.note });
+	}
+	// Newest mark first.
+	papers.sort(
+		(a, b) =>
+			b.date.localeCompare(a.date) ||
+			entryId(a.entry).localeCompare(entryId(b.entry)),
+	);
+	return { papers: papers };
+}
+
+// A checked entry's id.
+function entryId(entry: unknown): string {
+	if (isJsonObject(entry) && typeof entry.id === "string") {
+		return entry.id;
+	}
+	return "";
+}
+
+// The marked papers, or none.
+function readSelected(digestsFile: string): SelectedFile {
+	const file = standoutsPath(digestsFile);
+	let text: string;
+	try {
+		text = readFileSync(file, "utf8");
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") {
+			return { papers: [] };
+		}
+		throw new BuildFailure(`can't read ${file} (${errorCode(error)})`);
+	}
+	let rows: unknown;
+	try {
+		rows = JSON.parse(text);
+	} catch {
+		throw new BuildFailure(`${file} is not JSON`);
+	}
+	return selectedFile(rows);
+}
+
 // The <link rel="preload"> line for the newest month's file, which index.html can't name itself since the name holds
 // the file's hash; "" for a site with no days. crossorigin as index.html's other fetch preload says.
 export function preloadLinks(index: SiteIndex): string {
@@ -386,6 +455,7 @@ export function preloadLinks(index: SiteIndex): string {
 function writeBuild(
 	folder: string,
 	data: ReturnType<typeof siteData>,
+	selected: SelectedFile,
 	staging: StagingBuild | null,
 	study: Map<string, string> | null,
 ) {
@@ -427,6 +497,7 @@ function writeBuild(
 	writeFileSync(
 		join(page, OWNER_FOLDER, "index.html"),
 		html
+			.replace(SELECTED_PRELOAD, "")
 			.replace(RELATIVE_ADDRESS, '$1="../')
 			.replace("</head>", OWNER_MANIFEST_LINK)
 			.replace(OWNER_PAGE_CLASS.from, OWNER_PAGE_CLASS.to),
@@ -435,6 +506,7 @@ function writeBuild(
 	// register it.
 	cpSync(join(SITE_FOLDER, "sw.js"), join(page, OWNER_FOLDER, "sw.js"));
 	writeFileSync(join(page, INDEX_PATH), JSON.stringify(data.index));
+	writeFileSync(join(page, SELECTED_PATH), JSON.stringify(selected));
 	data.months.forEach((json, name) => {
 		writeFileSync(join(page, "data", name), json);
 	});
@@ -682,6 +754,7 @@ export function build(
 		}
 		throw error;
 	}
+	const selected = readSelected(digestsFile);
 	for (const built of ["app.js", "sw.js"]) {
 		if (!existsSync(join(SITE_FOLDER, built))) {
 			throw new BuildFailure(
@@ -714,7 +787,7 @@ export function build(
 	const fresh = join(dirname(target), `.${basename(target)}.${suffix}.new`);
 	const old = join(dirname(target), `.${basename(target)}.${suffix}.old`);
 	try {
-		writeBuild(fresh, data, staging, study);
+		writeBuild(fresh, data, selected, staging, study);
 	} catch (error) {
 		rmSync(fresh, { recursive: true, force: true });
 		throw new BuildFailure(`couldn't write the build (${errorCode(error)})`);

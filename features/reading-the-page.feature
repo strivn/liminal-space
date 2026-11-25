@@ -77,3 +77,11 @@ Feature: Reading the page
     When the owner opens their page
     Then the page has no bar with the last 7 days
 
+  @owner
+  Scenario: A paper the owner marks as shaping their thinking shows with their note on the public page's Selected
+    When the owner opens their page
+    And marks today's 2nd paper as shaping their thinking
+    And writes the note "Changed how I read monitor results." on it in Selected
+    And a visitor opens the public page the next morning
+    Then the public page opens on Selected
+    And Selected lists today's 2nd paper under its OpenAlex topic, with the note "Changed how I read monitor results."

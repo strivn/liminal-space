@@ -82,8 +82,8 @@ function commentFromRow(row: Row, idColumn: "id" | "comment_id"): Comment {
 }
 
 // GET state: every read mark, tag, like or dislike, thread with its comments, and takeaway (newest first), in the
-// shapes of shared/owner-protocol.ts. Six reads in one batch, so the answer is one moment's state. Threads and comments come back in the order they were
-// stored (rowid): a thread's replies oldest first, as the page sent them.
+// shapes of shared/owner-protocol.ts. Seven reads in one batch, so the answer is one moment's state. Threads and
+// comments come back in the order they were stored (rowid): a thread's replies oldest first, as the page sent them.
 export async function readState(
 	db: D1Database,
 	count: (cost: QueryCost) => void,
@@ -103,6 +103,7 @@ export async function readState(
 			db.prepare(
 				`SELECT ${TAKEAWAY_COLUMNS} FROM takeaways ORDER BY created DESC`,
 			),
+			db.prepare("SELECT entry_id, date, note FROM standouts"),
 		],
 		count,
 	);
@@ -112,13 +113,15 @@ export async function readState(
 	const commentRowsRead = answers[3];
 	const feedbackRows = answers[4];
 	const takeawayRows = answers[5];
+	const standoutRows = answers[6];
 	if (
 		readRows === undefined ||
 		tagRows === undefined ||
 		threadRows === undefined ||
 		commentRowsRead === undefined ||
 		feedbackRows === undefined ||
-		takeawayRows === undefined
+		takeawayRows === undefined ||
+		standoutRows === undefined
 	) {
 		throw new Error("D1 answered fewer statements than it was given");
 	}
@@ -130,7 +133,14 @@ export async function readState(
 		comments: Object.create(null),
 		feedback: Object.create(null),
 		takeaways: Object.create(null),
+		standouts: Object.create(null),
 	};
+	for (const row of standoutRows.results) {
+		state.standouts[String(row.entry_id)] = {
+			date: row.date === null ? null : String(row.date),
+			note: String(row.note),
+		};
+	}
 	for (const row of readRows.results) {
 		state.read[String(row.entry_id)] = readMarkFromRow(row);
 	}
