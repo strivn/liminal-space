@@ -3,14 +3,17 @@ What the scout looks for. Ivan owns this file. Claude edits it only when Ivan as
 
 ## Topics, highest priority first
 1. Risks of AI (weight 1.00): privacy leaks, honesty, sycophancy, deception, evaluation
-   awareness, jailbreaks, misuse
+   awareness, jailbreaks, misuse and uplift; benchmarks and evaluation methods (how AI
+   capabilities and risks are measured, red teaming)
 2. Societal impacts of AI (weight 1.00): economics and labour, society and policy,
    human-computer interaction
 3. Multi-agent systems (weight 0.97): multiple AI agents working together or against each
    other, agent communication and coordination, multi-agent LLM frameworks and their
    failures
 4. Indonesian (weight 0.97): Indonesian language models, NLP for Indonesian and
-   Indonesia's regional languages (Javanese, Sundanese and others), AI in Indonesia
+   Indonesia's regional languages (Javanese, Sundanese and others), AI in Indonesia:
+   its AI industry, data centres, AI policy (Komdigi, Korika) and personal data
+   protection (the PDP law and data protection officers)
 5. AI interpretability and control (weight 0.94): mechanistic interpretability, probes,
    sparse autoencoders, circuits, steering; AI control, monitoring, chain-of-thought
    monitorability, sabotage and auditing evals
@@ -26,6 +29,11 @@ What the scout looks for. Ivan owns this file. Claude edits it only when Ivan as
    standard models or tools behave (e.g. a numerical bug shared across PyTorch and
    scikit-learn), and major scaling results. Not incremental gains on a benchmark, and
    not routine applications of AI to another field.
+9. Applied AI for Good (weight 0.90): AI applied to health, climate, education,
+   accessibility, humanitarian and disaster response, and the Global South. Only
+   well-known work: papers accepted at a recognised venue (AAAI's AI for Social Impact
+   track, IJCAI's AI and Social Good track, or a conference listed below), or work the
+   news covers widely. Not every paper that applies AI to a social problem.
 
 A paper on none of these topics has weight 0.75. The weights scale each paper's score
 when candidates are ranked.
@@ -35,7 +43,7 @@ Papers can come from any arXiv category or venue; topics decide, not categories.
 ## Search phrases
 The arXiv abstract searches: one line per topic above, phrases separated by commas, and
 "A & B" for abstracts holding both.
-1. sycophancy, deception & language model, honesty & language model, evaluation awareness, jailbreak, misuse & language model, privacy leakage
+1. sycophancy, deception & language model, honesty & language model, evaluation awareness, jailbreak, misuse & language model, uplift & AI, dangerous capability, privacy leakage, benchmark design, construct validity, benchmark contamination, evaluation methodology, red teaming
 2. labor market, labour market, AI policy, AI governance, human-AI interaction, human-computer interaction, responsible AI
 3. multi-agent system, multi-agent & language model, multi-agent & LLM, agent coordination, agent communication
 4. Indonesian & language model, Indonesian & NLP, Indonesian & LLM, Bahasa Indonesia, Javanese, Sundanese, Indonesia & artificial intelligence
@@ -43,18 +51,20 @@ The arXiv abstract searches: one line per topic above, phrases separated by comm
 6. differential privacy, privacy attack, membership inference, privacy
 7. embodied AI, embodied agent, robot learning, vision-language-action, robot & language model, speech language model, spoken dialogue, full-duplex, speech-to-speech
 8. state space model, new architecture, activation function & transformer, scaling law, mixture of experts, numerical precision & deep learning, floating point & PyTorch
+9. AI for social good, social good, humanitarian, global south & AI, sustainable development goals & machine learning
 
 ## News phrases
 The Google News searches, written the same way. Each phrase names AI or a term only AI
 news uses.
-1. AI jailbreak, AI sycophancy, AI deception, chatbot & privacy leak, AI misuse, AI safety research
+1. AI jailbreak, AI sycophancy, AI deception, chatbot & privacy leak, AI misuse, AI uplift, AI safety research, AI evaluation, AI benchmark & flaw
 2. AI & jobs, AI & labor market, AI policy, AI regulation, AI governance
 3. multi-agent & AI, AI agents & coordination, agentic AI & failure
-4. Indonesia & AI, Indonesian & language model, Bahasa Indonesia & AI, Indonesia & chatbot
+4. Indonesia & AI, Indonesian & language model, Bahasa Indonesia & AI, Indonesia & chatbot, Indonesia & AI policy, Indonesia & data center & AI, Komdigi & AI, Korika, Sahabat-AI, Danantara & artificial intelligence, UU PDP, Indonesia & personal data protection, Indonesia & data protection officer
 5. AI interpretability, AI control, AI sabotage, AI monitoring & model, chain-of-thought & AI
 6. differential privacy, AI & privacy, chatbot & privacy, privacy attack & AI
 7. humanoid robot, robot & foundation model, embodied AI, voice AI & speech model, full-duplex & AI
 8. AI architecture, scaling law & AI, new AI model & architecture, state space model
+9. AI for good, AI for social good, AI & humanitarian
 
 ## Conferences
 Main-track and workshop papers from this year's edition of these conferences rank

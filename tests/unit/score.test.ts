@@ -27,6 +27,7 @@ test("The repository's interests.md gives each topic its weight, and a weight fo
 			["t6", 0.9],
 			["t7", 0.9],
 			["t8", 0.9],
+			["t9", 0.9],
 		],
 	);
 	assert.equal(weights.none, 0.75);
