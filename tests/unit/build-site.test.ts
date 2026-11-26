@@ -770,6 +770,66 @@ test("privacy: the site data holds no comment, takeaway, tag, like or read mark 
 	}
 });
 
-test.todo(
-	"the build writes data/search.json with each entry's id, date, kind, main OpenAlex topic, keywords and venue, and nothing of the owner's",
-);
+test("the build writes data/search.json with each entry's id, date, kind, main OpenAlex topic, keywords and venue, and nothing of the owner's", () => {
+	const copy = siteCopy();
+	const classified = {
+		...SCIENTIST_AI,
+		venue: "ACL Findings 2026",
+		openalex: {
+			topics: [
+				{
+					name: "Adversarial Robustness",
+					field: "Computer Science",
+					score: 0.9,
+				},
+				{ name: "Ethics of AI", field: "Social Sciences", score: 0.4 },
+			],
+			keywords: ["jailbreak detection", "monitoring"],
+		},
+	};
+	fs.writeFileSync(
+		copy.digests,
+		[
+			digestLine("2026-10-20", [classified, SYSTEM_CARD]),
+			digestLine("2026-11-02", [{ ...SCIENTIST_AI, id: "arxiv:2611.00002" }]),
+		].join("\n"),
+	);
+	const secret = "OWNER-NOTE-7f3a";
+	fs.writeFileSync(
+		path.join(path.dirname(copy.digests), "digests.read.json"),
+		JSON.stringify([classified.id]),
+	);
+	const page = buildSelected(copy, [
+		{ entry: classified, date: "2026-11-02", note: secret },
+	]);
+	const text = fs.readFileSync(path.join(page, "data", "search.json"), "utf8");
+	assert.ok(!text.includes(secret));
+	const entries = JSON.parse(text).entries;
+	assert.deepEqual(
+		entries.map((entry: object) => Object.keys(entry).sort()),
+		entries.map(() => ["date", "id", "keywords", "topic", "type", "venue"]),
+	);
+	assert.deepEqual(
+		entries.find((entry: { id: string }) => entry.id === classified.id),
+		{
+			id: classified.id,
+			date: "2026-10-20",
+			type: "paper",
+			topic: { name: "Adversarial Robustness", field: "Computer Science" },
+			keywords: ["jailbreak detection", "monitoring"],
+			venue: "ACL Findings 2026",
+		},
+	);
+	assert.deepEqual(
+		entries.find((entry: { id: string }) => entry.id === SYSTEM_CARD.id),
+		{
+			id: SYSTEM_CARD.id,
+			date: "2026-10-20",
+			type: "report",
+			topic: null,
+			keywords: [],
+			venue: null,
+		},
+	);
+	assert.equal(entries.length, 3);
+});
