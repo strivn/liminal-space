@@ -65,10 +65,8 @@
 		top: var(--held-top);
 	}
 	/* The first day shown starts where the band ends, as today's heading does with its 32px top margin: a folded
-	   day that a month choice brings to the top would otherwise start under the band. */
-	.page--with-contents
-		main
-		> details.day:nth-child(1 of .day:not(.month-hidden)) {
+	   day that the Search sentence brings to the top would otherwise start under the band. */
+	.page--with-contents main > details.day:nth-child(1 of .day:not([hidden])) {
 		margin-top: 32px;
 	}
 	.page--with-contents .entry {
@@ -95,9 +93,6 @@
 	}
 	.contents__summary {
 		display: none;
-	}
-	.read-filter {
-		margin-bottom: 8px;
 	}
 	.contents__date {
 		margin-top: 0;

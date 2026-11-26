@@ -4,6 +4,8 @@ import { isDay } from "../../shared/entry-checks.ts";
 import {
 	INDEX_PATH,
 	type IndexDay,
+	SEARCH_PATH,
+	type SearchEntry,
 	type SiteIndex,
 } from "../../shared/site-data-shape.ts";
 import { checkDigests } from "./check.ts";
@@ -15,6 +17,8 @@ import {
 	isOwnerPage,
 	type MonthLoader,
 	readIndex,
+	readSearchFile,
+	searchEntriesOf,
 	siteFile,
 } from "./data.ts";
 import { dayLabel, headerDay, jakartaToday, mergeDays } from "./days.ts";
@@ -27,9 +31,9 @@ import {
 	renderEntry,
 	type Typesetting,
 } from "./entry.ts";
+import { createFeedFilter } from "./feed-filter.ts";
 import { createFeedbackBoard } from "./feedback-board.ts";
 import { refreshIcon } from "./icons.ts";
-import { createMonthScope } from "./month-scope.ts";
 import { createMonths, skippedWarning } from "./months.ts";
 import { notificationButton, showBadge, unreadToday } from "./notifications.ts";
 import {
@@ -41,7 +45,7 @@ import {
 	SIGNED_IN_AGAIN,
 	signInAgainOnce,
 } from "./owner.ts";
-import { countedEntries, heatmapData, type PageModel } from "./page-model.ts";
+import { heatmapData, type PageModel } from "./page-model.ts";
 import { createPermalinks } from "./permalinks.ts";
 import { PHONE_QUERY, startPhoneGestures } from "./phone.ts";
 import { drawBarProgress, drawProgress } from "./progress.ts";
@@ -52,6 +56,7 @@ import {
 	startSavingPlace,
 } from "./reading-place.ts";
 import { showScoutLogs } from "./scout-logs.ts";
+import { createSearch, type Search } from "./search.ts";
 import type { View } from "./selected.ts";
 import { fetchMarkedPapers, ownerMarkedPapers } from "./selected-data.ts";
 import {
@@ -125,12 +130,23 @@ async function drawFromData(main: HTMLElement, failed: () => void) {
 	let markedLoad: Promise<MarkedPaper[]> = Promise.resolve([]);
 	if (isOwnerPage()) ownerLoad = loadOwnerState();
 	else markedLoad = fetchMarkedPapers();
+	// The Search sentence's file loads alongside the index, once.
+	const searchLoad = fetchJson(siteFile(SEARCH_PATH));
 	const answer = await fetchJson(siteFile(INDEX_PATH));
 	let index: SiteIndex | null = null;
 	if (answer.status === 200) index = readIndex(answer.json);
 	if (index === null) {
 		failed();
 		return;
+	}
+	// A search file that can't be read leaves the sentence with the index's days and kinds, and no topics, keywords or
+	// venues to offer.
+	const searchAnswer = await searchLoad;
+	let searchEntries =
+		searchAnswer.status === 200 ? readSearchFile(searchAnswer.json) : null;
+	if (searchEntries === null) {
+		console.warn(`${SEARCH_PATH} couldn't be read`);
+		searchEntries = { entries: searchEntriesOf(index) };
 	}
 	// Only days with a real date are drawn; the newest of them names the month loaded first.
 	const days = index.days.filter((day) => isDay(day.date));
@@ -171,6 +187,7 @@ async function drawFromData(main: HTMLElement, failed: () => void) {
 			papers: await markedLoad,
 		},
 		wordsFilesOf(index),
+		searchEntries.entries,
 	);
 	if (isOwnerPage() && owner === null) {
 		const header = document.getElementById("freshness");
@@ -181,9 +198,10 @@ async function drawFromData(main: HTMLElement, failed: () => void) {
 
 // Draw the page: the newest month's `lines` as days (today open, the rest folded with their entries), then the days
 // of older months from the index as folded rows whose entries are drawn when their month loads. With `owner` (the
-// owner's page, its saved state) each entry gets its icon rail and comments, and the sidebar its heatmap and chips;
-// without (the public page) the page shows entries only. `marked` is the index and the public page's marked papers
-// (none on the owner's page, which reads its own marks).
+// owner's page, its saved state) each entry gets its icon rail and comments, and the sidebar its heatmap and the read
+// blank of the Search sentence; without (the public page) the page shows entries only. `marked` is the index and the
+// public page's marked papers (none on the owner's page, which reads its own marks). `searchEntries` is what the
+// Search sentence matches, for every entry in every month.
 function render(
 	main: HTMLElement,
 	lines: unknown[],
@@ -192,6 +210,7 @@ function render(
 	owner: OwnerData | null,
 	marked: { index: SiteIndex; papers: MarkedPaper[] },
 	wordsFiles: ReadonlyMap<string, string>,
+	searchEntries: SearchEntry[],
 ) {
 	// index.html has it.
 	const header = document.getElementById("freshness");
@@ -243,7 +262,6 @@ function render(
 		newestDate: newest.date,
 		today: today,
 		olderPairs: [],
-		selectedMonth: newest.date.slice(0, 7),
 		header: header,
 		skipped: skipped,
 		warning: warning,
@@ -270,19 +288,17 @@ function render(
 	const board = createCommentBoard(saved.comments, sender, notice, () =>
 		refreshState(),
 	);
-	const tagBoard = createTagBoard(
-		() => countedEntries(model),
-		readState,
-		saved.tags,
-		sender,
-		notice,
+	// The Search sentence is made once the contents are in the page; its counts follow the read marks and tags.
+	let search: Search | null = null;
+	const tagBoard = createTagBoard(saved.tags, sender, notice, () =>
+		search?.refresh(),
 	);
 	const feedbackBoard = createFeedbackBoard(saved.feedback, sender, notice);
 	const takeawayBoard = createTakeawayBoard(saved.takeaways, sender);
 	const standoutBoard = createStandoutBoard(saved.standouts, sender, notice);
 	const redraw = () => {
 		for (const showPressed of toggleViews) showPressed();
-		tagBoard.showCounts();
+		search?.refresh();
 		if (owner !== null) {
 			if (progressLine !== null)
 				drawProgress(progressLine, newest.entries, readState);
@@ -341,24 +357,29 @@ function render(
 	}
 	// A day's entries in the contents' order, papers first, so the page reads in the same order as the contents.
 	const publicMarks = new Set(marked.papers.map((paper) => paper.entry.id));
+	// The entries added ad hoc among those drawn: the search file doesn't say, so the read blank counts these.
+	const adHocIds = new Set<string>();
 	const dayEntries = (day: Day, typesetting: Typesetting) =>
 		contentsGroups(day.entries)
 			.flatMap((group) => group.entries)
 			.map((entry) => {
+				if (entry.ad_hoc === true) adHocIds.add(entry.id);
 				const article = renderEntry(entry, controls, typesetting);
 				if (owner === null && publicMarks.has(entry.id)) markKicker(article);
 				return article;
 			});
-	// tracker is declared below; the months call it only once a month has loaded.
-	const { drawDays, fillMonth, showDayError, loadSelectedMonths } =
-		createMonths(model, {
+	// tracker and feedFilter are declared below; the months call them only once a month has loaded.
+	const { drawDays, fillMonth, showDayError, loadMonths } = createMonths(
+		model,
+		{
 			loadMonth: loadMonth,
 			dayEntries: dayEntries,
 			drawComments: (details) => board.drawIn(details),
 			collectContents: () => tracker.collect(),
 			redraw: redraw,
-			refreshTags: () => tagBoard.refresh(),
-		});
+			refilter: () => feedFilter.refresh(),
+		},
+	);
 
 	drawDays(main, days, olderMonthDays);
 
@@ -418,6 +439,12 @@ function render(
 			);
 		if (drawn === drawing) selectedView.draw(papers);
 	}
+	// After the Feed shows or hides entries, without a scroll: mark a shown entry in the contents, and place the comment
+	// cards again, since a hidden entry's cards may have been placed while it had no size.
+	const afterFilter = () => {
+		tracker.update();
+		board.placeAll();
+	};
 	let shownView: View = "feed";
 	standoutBoard.onChange(() => {
 		if (shownView === "selected") drawSelected().catch(reportSelected);
@@ -438,28 +465,7 @@ function render(
 		}
 	});
 
-	// The owner's page: the chips.
-	let chips: HTMLElement[] = [];
-	if (owner !== null) {
-		chips = tagBoard.chips;
-	}
-	// contents and tracker are declared below; the scope reads them once the page is drawn.
-	const { monthControl, showMonthScope, selectMonth, openHeatmapDay } =
-		createMonthScope(model, {
-			contents: () => contents,
-			updateTracker: () => tracker.update(),
-			placeComments: () => board.placeAll(),
-			refreshTags: () => tagBoard.refresh(),
-			clearTagFilters: () => tagBoard.clearFilters(),
-			loadSelectedMonths: loadSelectedMonths,
-			showDayError: showDayError,
-		});
-	const contents = renderContents(
-		newest,
-		model.olderPairs,
-		chips,
-		monthControl,
-	);
+	const contents = renderContents(newest, model.olderPairs);
 	const tracker = trackCurrent(contents);
 	// index.html has the bar.
 	const phoneBar = document.querySelector<HTMLElement>(".phone-bar");
@@ -473,30 +479,68 @@ function render(
 		dismissSheet: board.dismissSheet,
 	});
 
-	showMonthScope();
+	// The Search sentence, which says what the Feed shows. Its counts follow the owner's read marks and tags, and the
+	// ad hoc entries of the months drawn.
+	const searchRoot = document.getElementById("search");
+	if (searchRoot === null) throw new Error("index.html has no #search");
+	let shownNow: ReadonlySet<string> = new Set();
+	const feedFilter = createFeedFilter(
+		{
+			main: main,
+			newest: newest,
+			newestSection: model.newestSection,
+			older: model.olderPairs,
+			contents: contents,
+			onFilter: () => afterFilter(),
+		},
+		() => search?.reset(),
+	);
+	search = createSearch(searchRoot, model.newestDate, {
+		entries: () => searchEntries,
+		marksOf:
+			owner === null
+				? null
+				: (id) => ({
+						// A mark of the old depth "read" counts as an abstract read.
+						read:
+							readState[id] === undefined
+								? "unread"
+								: readState[id].depth === "paper"
+									? "paper"
+									: "abstract",
+						tags: tagBoard.labelsOf(id),
+						adHoc: adHocIds.has(id),
+					}),
+		loadMonths: loadMonths,
+		onChange: (shown, narrowed) => {
+			shownNow = shown;
+			feedFilter.show(shown, narrowed);
+		},
+	});
+
+	// A heatmap day opens in the Feed: the sentence is brought to its month when it shows nothing of that day.
+	async function openHeatmapDay(date: string) {
+		const dayShown = searchEntries.some(
+			(entry) => entry.date === date && shownNow.has(entry.id),
+		);
+		if (!dayShown) search?.showDay(date);
+		const pair = model.olderPairs.find((older) => older.day.date === date);
+		if (pair !== undefined) {
+			pair.details.open = true;
+			pair.details.scrollIntoView({ block: "start" });
+		} else if (date === model.newestDate)
+			model.newestSection.scrollIntoView({ block: "start" });
+	}
 
 	createPermalinks(model, {
 		loadMonth: loadMonth,
-		selectMonth: selectMonth,
+		isShown: (id) => shownNow.has(id),
+		showDay: (date) => search?.showDay(date),
 		fillMonth: fillMonth,
 		showDayError: showDayError,
 	}).start();
 	if (owner !== null) refreshOnReturn(refreshState);
-	// After a chip shows or hides entries, without a scroll: mark a shown entry in the contents, and place the comment
-	// cards again, since a hidden entry's cards may have been placed while it had no size.
-	const afterFilter = () => {
-		tracker.update();
-		board.placeAll();
-	};
 	views.showOpening();
-	tagBoard.start({
-		main: main,
-		newest: newest,
-		newestSection: model.newestSection,
-		older: model.olderPairs,
-		contents: contents,
-		onFilter: afterFilter,
-	});
 	startStudy(main, wordsFiles, readSiteFile);
 	// Last, so the contents, permalinks and arrow keys work even if drawing the heatmap fails.
 	redraw();

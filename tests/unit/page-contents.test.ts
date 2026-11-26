@@ -286,7 +286,9 @@ test("a permalink to an id that is in no digest loads only the newest month and 
 	await openPage(site, { hash: "#arxiv:2501.00000" });
 	await settle();
 	expect(
-		site.requested.filter((path) => path !== "data/selected.json"),
+		site.requested.filter(
+			(path) => path !== "data/selected.json" && path !== "data/search.json",
+		),
 	).toEqual(["data/index.json", "data/months/2026-09.json"]);
 	expect(texts("section.day .entry__title")).toEqual([
 		"2609 paper 1",

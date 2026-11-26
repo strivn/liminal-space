@@ -270,9 +270,7 @@ a:hover {
 	stroke-linejoin: round;
 }
 .discuss:hover,
-.highlight-float:hover,
-.tag-chip:hover,
-.read-chip:hover {
+.highlight-float:hover {
 	background: var(--surface);
 }
 /* Discuss is a link: no underline, and the text's colour. */
@@ -282,14 +280,6 @@ a:hover {
 }
 .discuss:hover {
 	color: var(--text);
-}
-/* A tag or read chip that is on: filled in the text colour. After the hover rules, so it keeps its colour under the
-   pointer. */
-.tag-chip[aria-pressed="true"],
-.read-chip[aria-pressed="true"] {
-	border-color: var(--pressed);
-	background: var(--pressed);
-	color: var(--on-pressed);
 }
 /* The icon rail's buttons: a round 32px target around a 20px Lucide icon, quiet until hovered. After .discuss, so
    Discuss in the rail drops the outlined look. Three layers, kept inside the button by isolation: the word's label
@@ -339,7 +329,7 @@ a:hover {
 .rail-button:focus-visible::before {
 	background: var(--border);
 }
-/* A pressed toggle is filled like a chip that is on, hovered or not: the text colour, its icon in the page's colour.
+/* A pressed toggle is filled hovered or not: the text colour, its icon in the page's colour.
    The fill is on the button and on its square, which lies over the label, so the label slides out from behind a
    whole square. */
 .toggle[aria-pressed="true"],

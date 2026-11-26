@@ -1,0 +1,388 @@
+/* The Search sentence (site/page/search.ts): the sentence with its blanks and its count, below the heatmap, and the
+   words a blank can hold. The choices are a box under the sentence on a narrow window, a panel beside the sidebar on a
+   wide one and a sheet from the bottom on a phone. */
+.search {
+	flex: none;
+	position: relative;
+	margin-top: 20px;
+}
+.search__title {
+	margin: 0 0 6px;
+	font-size: 12px;
+	line-height: 16px;
+	font-weight: 600;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--text-secondary);
+}
+/* The sentence's own words are 500, its blanks 300; a blank's dashed line is the secondary text colour, and one with a
+   choice made has a solid accent line. */
+.search__sentence {
+	margin: 0;
+	font-size: 14px;
+	line-height: 26px;
+	font-weight: 500;
+	text-wrap: pretty;
+}
+.search__nowrap {
+	white-space: nowrap;
+}
+.search__blank {
+	appearance: none;
+	display: inline;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 2px;
+	background: none;
+	color: inherit;
+	font: inherit;
+	font-weight: 300;
+	white-space: normal;
+	cursor: pointer;
+	text-decoration: underline 2px dashed var(--text-secondary);
+	text-underline-offset: 5px;
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
+}
+.search__blank:hover {
+	text-decoration-color: var(--text);
+}
+.search__blank--set {
+	text-decoration: underline 2px solid var(--accent);
+}
+.search__blank[aria-expanded="true"] {
+	background: var(--pressed);
+	color: var(--on-pressed);
+	text-decoration-color: var(--pressed);
+}
+.search__tally {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 12px;
+	margin: 6px 0 0;
+	font-size: 13px;
+	line-height: 20px;
+	color: var(--text-secondary);
+}
+.search__tally b,
+.search__count b {
+	color: var(--text);
+	font-weight: 700;
+}
+.search__reset,
+.search .linklike {
+	appearance: none;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--link);
+	font: inherit;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	cursor: pointer;
+}
+.search__reset:hover,
+.search .linklike:hover {
+	color: var(--link-hover);
+}
+.search__blank:focus-visible,
+.search__reset:focus-visible,
+.search__done:focus-visible,
+.search__word:focus-visible,
+.search__join button:focus-visible,
+.search__box:focus-visible,
+.search__tail summary:focus-visible,
+.linklike:focus-visible {
+	outline: none;
+	border-radius: 4px;
+	box-shadow: var(--focus-ring);
+}
+.search__backdrop {
+	display: none;
+}
+
+/* The words a blank can hold. */
+.search__choices {
+	margin-top: 12px;
+	padding: 16px;
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	background: var(--bg);
+	max-height: min(60vh, 520px);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+.search__choices[hidden],
+.search__backdrop[hidden] {
+	display: none;
+}
+.search__choices-head {
+	display: flex;
+	align-items: baseline;
+	gap: 16px;
+	margin: 0 0 12px;
+}
+.search__choices-title {
+	flex: 1;
+	margin: 0;
+	font-size: 14px;
+	line-height: 20px;
+	color: var(--text-secondary);
+}
+.search__choices-title b {
+	color: var(--text);
+}
+.search__count {
+	font-size: 13px;
+	color: var(--text-secondary);
+	white-space: nowrap;
+}
+.search__done {
+	appearance: none;
+	margin: 0;
+	padding: 2px 8px;
+	border: 0;
+	border-radius: 6px;
+	background: none;
+	color: var(--text);
+	font: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+}
+.search__done:hover {
+	background: var(--surface);
+}
+.search__box {
+	width: 100%;
+	margin: 0 0 12px;
+	padding: 8px 12px;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: var(--surface);
+	color: var(--text);
+	font: 16px / 24px var(--font-sans);
+}
+.search__words {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px 18px;
+	font-size: 16px;
+	line-height: 28px;
+}
+.search__word {
+	appearance: none;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	font-weight: 600;
+	text-align: left;
+	cursor: pointer;
+}
+.search__word svg {
+	width: 15px;
+	height: 15px;
+	margin-right: 6px;
+	vertical-align: -2px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	color: var(--text-secondary);
+}
+.search__word sup {
+	display: inline-block;
+	margin-left: 3px;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 0;
+	vertical-align: 6px;
+	color: var(--text-secondary);
+}
+.search__word:hover {
+	color: var(--link-hover);
+}
+.search__word[aria-pressed="true"],
+.search__word[aria-checked="true"] {
+	text-decoration: underline 2px solid var(--accent);
+	text-underline-offset: 6px;
+}
+.search__word:disabled {
+	color: var(--mark-muted);
+	cursor: default;
+}
+.search__word:disabled sup {
+	color: var(--mark-muted);
+}
+.search__word--quiet {
+	font-weight: 500;
+	color: var(--text-secondary);
+}
+.search__group {
+	flex-basis: 100%;
+	margin-top: 12px;
+	font-size: 12px;
+	line-height: 16px;
+	font-weight: 600;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--text-secondary);
+}
+.search__group:first-child {
+	margin-top: 0;
+}
+.search__tracks {
+	display: inline-flex;
+	gap: 10px;
+	margin-left: 8px;
+}
+.search__tracks .search__word {
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--text-secondary);
+}
+.search__tracks .search__word[aria-checked="true"] {
+	color: var(--text);
+}
+.search__tail {
+	flex-basis: 100%;
+	margin-top: 8px;
+}
+.search__tail summary {
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--text-secondary);
+}
+.search__tail summary:hover {
+	color: var(--text);
+}
+.search__tail .search__words {
+	margin-top: 4px;
+	font-size: 14px;
+	line-height: 24px;
+	gap: 0 14px;
+}
+.search__join {
+	margin: 12px 0 0;
+	font-size: 14px;
+	color: var(--text-secondary);
+}
+.search__join button {
+	appearance: none;
+	margin: 0;
+	padding: 0 6px;
+	border: 0;
+	border-radius: 4px;
+	background: none;
+	color: inherit;
+	font: inherit;
+	font-weight: 700;
+	cursor: pointer;
+}
+.search__join button[aria-pressed="true"] {
+	background: var(--pressed);
+	color: var(--on-pressed);
+}
+.search__none {
+	margin: 0;
+	color: var(--text-secondary);
+}
+.search__empty {
+	margin: 48px 0;
+}
+
+/* A wide window: the choices open beside the sidebar, level with the sentence, over the Feed. The sidebar goes above
+   the Feed's held headings, so the panel does too. */
+@media (min-width: 1080px) {
+	.page--with-contents .sidebar {
+		z-index: var(--z-menu);
+	}
+	.search__choices {
+		position: fixed;
+		z-index: var(--z-menu);
+		left: var(--search-left, 300px);
+		top: var(--search-top, 24px);
+		width: max-content;
+		min-width: 280px;
+		max-width: var(--search-width, 560px);
+		max-height: var(--search-max, calc(100dvh - 48px));
+		margin: 0;
+		padding: 14px 16px 16px;
+		border-color: var(--text-secondary);
+		border-radius: 10px;
+		box-shadow: var(--shadow-hover);
+	}
+}
+
+/* A phone: the choices are a sheet from the bottom, over a dimmed page; the page behind doesn't scroll. */
+@media (max-width: 599px) and (pointer: coarse) {
+	.search {
+		margin-top: 16px;
+		padding-bottom: 16px;
+	}
+	.search__sentence {
+		line-height: 32px;
+	}
+	.search__choices {
+		position: fixed;
+		z-index: var(--z-menu);
+		right: 0;
+		bottom: 0;
+		left: 0;
+		max-height: 78dvh;
+		margin: 0;
+		padding: 0 16px calc(24px + env(safe-area-inset-bottom));
+		border: 0;
+		border-top: 1px solid var(--border);
+		border-radius: 16px 16px 0 0;
+		box-shadow: 0 -8px 24px #00000026;
+	}
+	.search__choices-head {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		margin: 0 -16px 8px;
+		padding: 20px 16px 10px;
+		background: var(--bg);
+	}
+	.search__done {
+		margin: -8px -12px;
+		padding: 8px 12px;
+	}
+	.search__words {
+		gap: 0 18px;
+		font-size: 17px;
+		line-height: 40px;
+	}
+	.search__word {
+		padding: 2px 0;
+	}
+	.search__tail .search__words {
+		font-size: 15px;
+		line-height: 36px;
+	}
+	.search__tracks .search__word {
+		font-size: 14px;
+	}
+	.search__backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: calc(var(--z-menu) - 1);
+		display: block;
+		background: var(--backdrop);
+	}
+	.search__backdrop[hidden] {
+		display: none;
+	}
+	html:has(.search__choices:not([hidden])) {
+		overflow: hidden;
+	}
+}

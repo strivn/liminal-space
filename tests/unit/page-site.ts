@@ -57,6 +57,19 @@ export function siteOf(lines: { date: string; entries: Entry[] }[]): FakeSite {
 			files[`data/months/${month}.json`] = { lines: [line] };
 		else file.lines.push(line);
 	}
+	// The search file: each entry with no topic or keywords, unless a test writes its own.
+	files["data/search.json"] = {
+		entries: lines.flatMap((line) =>
+			line.entries.map((entry) => ({
+				id: entry.id,
+				date: line.date,
+				type: entry.type,
+				topic: null,
+				keywords: [],
+				venue: typeof entry.venue === "string" ? entry.venue : null,
+			})),
+		),
+	};
 	const index: SiteIndex = { days: days, months: months };
 	return {
 		index: index,
@@ -205,4 +218,20 @@ export function texts(selector: string) {
 	return [...document.querySelectorAll(selector)].map((node) =>
 		(node.textContent ?? "").trim(),
 	);
+}
+
+// The titles of the entries the page shows now: not hidden by the Search sentence, not in a hidden or folded day.
+export function shownTitles() {
+	return [...document.querySelectorAll<HTMLElement>("main article")]
+		.filter(
+			(one) => !one.hidden && !one.closest("[hidden], details:not([open])"),
+		)
+		.map((one) => one.querySelector(".entry__title")?.textContent);
+}
+
+// The titles the contents list now, less the ones the Search sentence hid.
+export function listedTitles() {
+	return [...document.querySelectorAll<HTMLElement>(".contents li:not([role])")]
+		.filter((one) => !one.closest("[hidden]"))
+		.map((one) => one.textContent);
 }
