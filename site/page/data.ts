@@ -153,6 +153,20 @@ export function readSearchFile(json: unknown): SearchFile | null {
 	return { entries: entries };
 }
 
+// The index as search entries, bare.
+export function searchEntriesOf(index: SiteIndex): SearchEntry[] {
+	return index.days.flatMap((day) =>
+		day.entries.map((entry) => ({
+			id: entry.id,
+			date: day.date,
+			type: entry.type,
+			topic: null,
+			keywords: [],
+			venue: null,
+		})),
+	);
+}
+
 function readSearchEntry(entry: unknown): SearchEntry | null {
 	if (
 		!isJsonObject(entry) ||
@@ -192,6 +206,6 @@ function readSearchEntry(entry: unknown): SearchEntry | null {
 	};
 }
 
-function isCapped(value: unknown, cap: number): value is string {
+export function isCapped(value: unknown, cap: number): value is string {
 	return hasText(value) && value.length <= cap;
 }

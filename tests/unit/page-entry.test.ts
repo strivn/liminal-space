@@ -85,6 +85,7 @@ test("a paper shows its journal reference and comments, between the date and the
 		"Journal reference: NeurIPS 2026",
 		"Comments: 27 pages, 10 figures. Code: https://github.com/example/repo",
 		"Abstract.",
+		"Topics (OpenAlex): none yet",
 	]);
 	expect(
 		hrefs(article.querySelectorAll(".entry__venue")[1] ?? article),
@@ -333,6 +334,7 @@ test("a paper's Figure 1 shows after the abstract and before the links row, link
 	).toEqual([
 		"entry__title",
 		"entry__abstract",
+		"entry__about",
 		"entry__figure",
 		"entry__links",
 	]);
@@ -675,13 +677,7 @@ function ownerEntry(entry: Entry) {
 		onReadChange: (one, depth) => readBoard.press(one.id, depth),
 		toggleViews: toggleViews,
 		board: createCommentBoard({}, sender, notice, async () => true),
-		tagBoard: createTagBoard(
-			() => [entry],
-			readState,
-			Object.create(null),
-			sender,
-			notice,
-		),
+		tagBoard: createTagBoard(Object.create(null), sender, notice, () => {}),
 		feedbackBoard: createFeedbackBoard(Object.create(null), sender, notice),
 		standoutBoard: createStandoutBoard(Object.create(null), sender, notice),
 		takeawayBoard: createTakeawayBoard(Object.create(null), sender),

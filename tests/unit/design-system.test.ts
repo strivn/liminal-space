@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Salience's parts as the page builds them: icons drawn from Lucide's markup, and the month selector, a listbox a screen reader can use.
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+// Salience's parts as the page builds them: icons drawn from Lucide's markup.
+import { describe, expect, test } from "vitest";
 import { status, svgIcon } from "../../site/page/dom.ts";
 import {
 	crownIcon,
@@ -9,7 +9,6 @@ import {
 	refreshIcon,
 	withIcon,
 } from "../../site/page/icons.ts";
-import { monthMenu } from "../../site/page/month-menu.ts";
 
 const SVG = "http://www.w3.org/2000/svg";
 
@@ -64,126 +63,5 @@ describe("icons", () => {
 		expect(
 			status("warning", "Careful").querySelector("svg")?.dataset.icon,
 		).toBe("triangle-alert");
-	});
-});
-
-describe("the month selector", () => {
-	const MONTHS = [
-		{ value: "2026-10", label: "October 2026" },
-		{ value: "2026-09", label: "September 2026" },
-	];
-	let picked: string[] = [];
-	function selector(selected: string | null = "2026-10") {
-		picked = [];
-		const menu = monthMenu(MONTHS, selected, (value) => picked.push(value));
-		document.body.append(menu.root);
-		const button = menu.root.querySelector("button") as HTMLButtonElement;
-		const list = menu.root.querySelector("ul") as HTMLElement;
-		const options = Array.from(list.querySelectorAll<HTMLElement>("li"));
-		return { menu, button, list, options };
-	}
-	const key = (button: HTMLElement, name: string) => {
-		const event = new KeyboardEvent("keydown", {
-			key: name,
-			bubbles: true,
-			cancelable: true,
-		});
-		button.dispatchEvent(event);
-		return event;
-	};
-	beforeEach(() => {
-		Element.prototype.scrollIntoView = vi.fn();
-	});
-	afterEach(() => {
-		document.body.replaceChildren();
-	});
-
-	test("it is a combobox button named by its label and month, with a listbox of one option per month", () => {
-		const { button, list, options } = selector();
-		expect(button.getAttribute("role")).toBe("combobox");
-		expect(button.getAttribute("aria-haspopup")).toBe("listbox");
-		expect(button.getAttribute("aria-expanded")).toBe("false");
-		// Its accessible name is the hidden "Month" label and its own text.
-		const name = button
-			.getAttribute("aria-labelledby")
-			?.split(" ")
-			.map((id) => document.getElementById(id)?.textContent)
-			.join(" ");
-		expect(name).toBe("Month October 2026");
-		expect(list.getAttribute("role")).toBe("listbox");
-		expect(list.hidden).toBe(true);
-		expect(options.map((option) => option.getAttribute("role"))).toEqual([
-			"option",
-			"option",
-		]);
-	});
-
-	test("opening it sets aria-expanded, and only the chosen month's option is selected", () => {
-		const { button, list, options } = selector();
-		button.click();
-		expect(button.getAttribute("aria-expanded")).toBe("true");
-		expect(list.hidden).toBe(false);
-		expect(
-			options.map((option) => option.getAttribute("aria-selected")),
-		).toEqual(["true", "false"]);
-		expect(button.getAttribute("aria-activedescendant")).toBe(options[0]?.id);
-	});
-
-	test("All months shows its name and selects no option", () => {
-		const { button, options } = selector(null);
-		expect(button.textContent).toBe("All months");
-		expect(
-			options.map((option) => option.getAttribute("aria-selected")),
-		).toEqual(["false", "false"]);
-	});
-
-	test("the arrow keys open the list and move round it, and Enter picks the marked month and closes the list", () => {
-		const { button, list, options } = selector();
-		expect(key(button, "ArrowDown").defaultPrevented).toBe(true);
-		expect(list.hidden).toBe(false);
-		key(button, "ArrowDown");
-		expect(button.getAttribute("aria-activedescendant")).toBe(options[1]?.id);
-		// The marked option wraps from the last to the first, and from the first to the last.
-		key(button, "ArrowDown");
-		expect(button.getAttribute("aria-activedescendant")).toBe(options[0]?.id);
-		key(button, "ArrowUp");
-		expect(button.getAttribute("aria-activedescendant")).toBe(options[1]?.id);
-
-		key(button, "Enter");
-		expect(picked).toEqual(["2026-09"]);
-		expect(list.hidden).toBe(true);
-		expect(button.getAttribute("aria-expanded")).toBe("false");
-		expect(button.hasAttribute("aria-activedescendant")).toBe(false);
-		expect(button.textContent).toBe("September 2026");
-		expect(document.activeElement).toBe(button);
-	});
-
-	test("Escape closes it without picking, and a click outside closes it too", () => {
-		const { button, list } = selector();
-		button.click();
-		key(button, "Escape");
-		expect(list.hidden).toBe(true);
-		expect(picked).toEqual([]);
-		button.click();
-		document.body.click();
-		expect(list.hidden).toBe(true);
-	});
-
-	test("Enter on a closed selector is left to the browser, and a click on an option picks it", () => {
-		const { button, options } = selector();
-		expect(key(button, "Enter").defaultPrevented).toBe(false);
-		button.click();
-		options[1]?.click();
-		expect(picked).toEqual(["2026-09"]);
-	});
-
-	test("showing a month chosen elsewhere ticks its option and changes the button's text", () => {
-		const { menu, button, options } = selector();
-		menu.setValue("2026-09");
-		expect(button.textContent).toBe("September 2026");
-		expect(
-			options.map((option) => option.getAttribute("aria-selected")),
-		).toEqual(["false", "true"]);
-		expect(picked).toEqual([]);
 	});
 });

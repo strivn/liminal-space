@@ -82,14 +82,10 @@ function contentsDay(
 	return [row, titles];
 }
 
-// Build the contents: the filter's `chips` (the tag chips' row, then the read chips'), "Collapse all", the newest day's
-// titles, then one row per older day. `older` pairs each older day with its <details> element in the page; each pair
-// also gets its row here, as `row`. The public page has no chips.
+// Build the contents; each older pair gets its `row`.
 export function renderContents(
 	newest: Day,
 	older: OlderDay[],
-	chips: HTMLElement[],
-	monthControl: HTMLElement,
 ): HTMLDetailsElement {
 	// Folds every older day in the page. Shown only while one is open, however it opened.
 	const collapse = withIcon(
@@ -105,8 +101,6 @@ export function renderContents(
 		});
 	}
 
-	// The chips come first, so on a wide window, where the summary is hidden, they sit right under the heatmap. They are
-	// buttons, not links, so a click on one never folds the contents on a narrow window.
 	// The button sits in a full-width box of its own, so the box can stay at the top of the list, opaque to its edges.
 	const list = el(
 		"div",
@@ -129,7 +123,6 @@ export function renderContents(
 				` · ${itemCount(newest.entries.length)}`,
 			),
 		),
-		el("div", { class: "contents__controls" }, monthControl, ...chips),
 		list,
 	);
 	list.append(
@@ -146,7 +139,7 @@ export function renderContents(
 			pair.details,
 			olderDayIds(pair).length,
 		);
-		pair.row = rowAndTitles[0]; // the tag filter hides the row of a day with nothing to show
+		pair.row = rowAndTitles[0]; // the Feed filter hides the row of a day with nothing to show
 		pair.titles = rowAndTitles[1]; // filled when the day's month loads
 		// The row and its titles share one box, so the row sticks while its own day is in view (style.css).
 		list.append(
@@ -189,7 +182,7 @@ function stuckHeadingsBottom(link: Element, list: Element) {
 }
 
 // Mark the contents link of the entry being read: the last visible entry whose title has passed the reading
-// line, else the first visible entry. Entries in folded days, and entries the tag filter hides, never count. The
+// line, else the first visible entry. Entries in folded days, and entries the Feed filter hides, never count. The
 // page lists each day in the contents' order, so the mark walks the contents top to bottom.
 // An entry you jump to (a contents title or a permalink) stays marked until the page scrolls away from where
 // the jump left it: near the end of a day the page can't scroll it up to the reading line.
@@ -236,8 +229,8 @@ export function trackCurrent(box: HTMLElement) {
 	// position when something above reflows, but it keeps the entry where it was.
 	function heldEntry() {
 		if (jumpedTo === null) return null;
-		// An entry the tag filter has since hidden isn't held: a hidden element's box reads 0, which can pass for "not moved".
-		if (jumpedTo.entry.hidden || jumpedTo.entry.closest(".month-hidden")) {
+		// An entry the Feed filter has since hidden isn't held: a hidden element's box reads 0, which can pass for "not moved".
+		if (jumpedTo.entry.closest("[hidden]")) {
 			jumpedTo = null;
 			return null;
 		}
@@ -260,12 +253,12 @@ export function trackCurrent(box: HTMLElement) {
 		return title.getBoundingClientRect().top;
 	}
 
-	// The entries of today and of unfolded days, less those the tag filter hides, and all of them while Selected shows.
+	// The entries of today and of unfolded days, less those the Feed filter hides, and all of them while Selected shows.
 	// Chrome still lays out the entries of a closed <details> (measured in Chrome 153 and 154), so their boxes can't
 	// tell a folded entry from a visible one.
 	function unfoldedEntries() {
 		return entries.filter(
-			(entry) => !entry.closest("[hidden], details:not([open]), .month-hidden"),
+			(entry) => !entry.closest("[hidden], details:not([open])"),
 		);
 	}
 

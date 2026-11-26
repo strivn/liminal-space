@@ -36,98 +36,6 @@
 .contents__collapse[hidden] {
 	display: none;
 }
-/* Filters stay in two rows with room for three-digit counts and comfortable targets. */
-.tag-filter,
-.read-filter {
-	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 8px;
-	margin-bottom: 8px;
-}
-.tag-chip,
-.read-chip {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 4px;
-	min-width: 0;
-	min-height: 36px;
-	font: 500 12px / 18px var(--font-sans);
-	padding: 6px 4px;
-	border: 1px solid var(--text-secondary);
-	border-radius: 6px;
-	background: transparent;
-	color: var(--text);
-	cursor: pointer;
-	transition: background 0.15s var(--ease);
-}
-.tag-chip svg,
-.read-chip svg {
-	width: 18px;
-	height: 18px;
-	fill: none;
-	stroke: currentColor;
-	stroke-width: 2;
-	stroke-linecap: round;
-	stroke-linejoin: round;
-	flex-shrink: 0;
-}
-/* A filter's name, in a label above its button on hover or keyboard focus, its arrow pointing down at the button. It
-   starts at the button's left edge; the last button in a row ends it at its right edge, inside the sidebar. */
-.tag-chip,
-.read-chip {
-	position: relative;
-}
-.filter-label {
-	position: absolute;
-	bottom: calc(100% + 8px);
-	left: 0;
-	z-index: var(--z-above);
-	width: max-content;
-	max-width: 190px;
-	padding: 4px 8px;
-	border: 1px solid var(--border);
-	border-radius: 6px;
-	background: var(--surface);
-	color: var(--text);
-	font: 500 12px / 18px var(--font-sans);
-	white-space: nowrap;
-	pointer-events: none;
-	opacity: 0;
-	visibility: hidden;
-	transition: opacity 0.15s var(--ease);
-}
-:is(.tag-chip, .read-chip):last-child .filter-label {
-	left: auto;
-	right: 0;
-}
-.filter-label::after {
-	content: "";
-	position: absolute;
-	left: 12px;
-	bottom: -4px;
-	width: 6px;
-	height: 6px;
-	transform: rotate(45deg);
-	background: var(--surface);
-	border-right: 1px solid var(--border);
-	border-bottom: 1px solid var(--border);
-}
-:is(.tag-chip, .read-chip):is(:hover, :focus-visible) .filter-label {
-	opacity: 1;
-	visibility: visible;
-}
-/* Clicked with the mouse: the name goes until the mouse leaves (site/page/tag-board.ts). */
-:is(.tag-chip, .read-chip).chip--clicked .filter-label {
-	opacity: 0;
-	visibility: hidden;
-}
-.contents__controls {
-	position: relative;
-	flex: none;
-	padding: 4px;
-	margin: 0 -4px;
-}
 .contents__list {
 	overflow-y: auto;
 	overscroll-behavior-y: contain;
@@ -136,7 +44,7 @@
 	padding: 4px;
 	margin: 0 -4px;
 }
-/* What the tag filter hides. These set their own display, which would otherwise win over the hidden attribute. */
+/* What the Feed filter hides. These set their own display, which would otherwise win over the hidden attribute. */
 .contents ul[hidden],
 .contents li[hidden],
 .contents__day[hidden] {
