@@ -205,6 +205,27 @@ test("the model splits each sentence into words, and code cuts the pieces from t
 	assert.equal(study.title.map((piece) => piece.text).join(""), title);
 });
 
+test("a word the model returns with Latin letters or punctuation keeps only its Han characters as words, and the rest stays text between words", async () => {
+	const title = "Plaud、亚马逊、打造 OpenAI";
+	const study = await studyOf(title, [
+		studyRule(
+			title,
+			word("Plaud", "name", "Plaud"),
+			word("亚马逊、", "name", "Amazon"),
+			word("打造 OpenAI", "term", "to build OpenAI"),
+		),
+	]);
+
+	assert.deepEqual(
+		study.title.map((piece) => piece.text),
+		["Plaud、", "亚马逊", "、", "打造", " OpenAI"],
+	);
+	assert.deepEqual(
+		words(study.title).map((piece) => piece.text),
+		["亚马逊", "打造"],
+	);
+});
+
 test("a description's trailing … and a word cut by it become text between words", async () => {
 	const cutWordGiven = entry(1, "t3a 甲", "他是老师…");
 	const cutWordLeftOut = entry(2, "t3b 乙", "她是学生…");
