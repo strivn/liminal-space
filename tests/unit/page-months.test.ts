@@ -72,7 +72,9 @@ test("opening the page requests the index and the newest month, and no other mon
 	const site = threeMonths();
 	await openPage(site);
 	expect(
-		site.requested.filter((path) => path !== "data/selected.json"),
+		site.requested.filter(
+			(path) => path !== "data/selected.json" && path !== "data/search.json",
+		),
 	).toEqual(["data/index.json", "data/months/2026-10.json"]);
 	const rows = [...document.querySelectorAll("main details.day")].map((day) =>
 		day.getAttribute("data-date"),

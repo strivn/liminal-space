@@ -1,11 +1,14 @@
 // @vitest-environment jsdom
 // The page's data files: which page this is, where its files are, the index and the month loader (site/page/data.ts).
 import { afterEach, expect, test, vi } from "vitest";
+import { FIELD_CAPS } from "../../shared/entry-checks.ts";
+import { OPENALEX_CAPS } from "../../shared/openalex.ts";
 import {
 	createMonthLoader,
 	fetchJson,
 	isOwnerPage,
 	readIndex,
+	readSearchFile,
 	siteFile,
 } from "../../site/page/data.ts";
 
@@ -168,4 +171,52 @@ test("a month file that answers 404 fails when a fresh copy of the index names t
 	await expect(load("2026-10")).rejects.toThrow(
 		"The file for 2026-10 couldn't be loaded",
 	);
+});
+
+const SEARCH_ENTRY = {
+	id: "arxiv:2611.00002",
+	date: "2026-11-02",
+	type: "paper",
+	topic: { name: "Adversarial Robustness", field: "Computer Science" },
+	keywords: ["jailbreak detection"],
+	venue: "ACL 2026",
+};
+
+test("security: a search file that is not the search shape is refused, and the Search sentence then offers no topics, keywords or venues", () => {
+	for (const json of [
+		null,
+		"entries",
+		[SEARCH_ENTRY],
+		{},
+		{ entries: "none" },
+		{ entries: { 0: SEARCH_ENTRY } },
+	]) {
+		expect(readSearchFile(json)).toBeNull();
+	}
+	const dropped = [
+		{ ...SEARCH_ENTRY, id: 7 },
+		{ ...SEARCH_ENTRY, date: "2026-13-40" },
+		{ ...SEARCH_ENTRY, type: null },
+		{ ...SEARCH_ENTRY, topic: undefined },
+		{ ...SEARCH_ENTRY, topic: { name: "Ethics" } },
+		{ ...SEARCH_ENTRY, topic: { name: " ", field: "Computer Science" } },
+		{ ...SEARCH_ENTRY, keywords: "jailbreak detection" },
+		{ ...SEARCH_ENTRY, keywords: ["jailbreak detection", 4] },
+		{ ...SEARCH_ENTRY, keywords: ["x".repeat(OPENALEX_CAPS.text + 1)] },
+		{ ...SEARCH_ENTRY, keywords: Array(OPENALEX_CAPS.keywords + 1).fill("a") },
+		{ ...SEARCH_ENTRY, venue: undefined },
+		{ ...SEARCH_ENTRY, venue: ["ACL 2026"] },
+		{ ...SEARCH_ENTRY, venue: "v".repeat(FIELD_CAPS.source + 1) },
+		null,
+		"arxiv:1",
+	];
+	const kept = { ...SEARCH_ENTRY, topic: null, venue: null };
+	const file = readSearchFile({
+		entries: [
+			...dropped,
+			{ ...SEARCH_ENTRY, owner: "a note", html: "<img src=x onerror=1>" },
+			kept,
+		],
+	});
+	expect(file).toEqual({ entries: [SEARCH_ENTRY, kept] });
 });

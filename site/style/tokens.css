@@ -23,8 +23,8 @@
 	--data: #00243d;
 	/* The words on a --data fill: the Comment button and Save. */
 	--on-data: #faf7f5;
-	/* A pressed rail toggle, and a tag or read chip that is on, is filled in the text colour with the page's colour on
-     it (Salience: ticked and selected controls are the text colour, never red or blue). */
+	/* A pressed rail toggle, and a blank of the Search sentence that is open, is filled in the text colour with the
+     page's colour on it (Salience: ticked and selected controls are the text colour, never red or blue). */
 	--pressed: #141414;
 	--on-pressed: #faf7f5;
 	/* Heatmap shades for some, most and all of a day read: navy-400, navy-500, navy-700. navy-900 reads as black. */
@@ -56,7 +56,7 @@
 	--z-phone-bar: 5;
 	/* The Highlight and Comment buttons beside a selection, and the menu on a highlight. */
 	--z-selection: 10;
-	/* The month selector's menu. */
+	/* The Search sentence's choices, and the sidebar they open beside. */
 	--z-menu: 20;
 }
 /* Dark: cards and fills are sunken, a step darker than the page, never lighter. */

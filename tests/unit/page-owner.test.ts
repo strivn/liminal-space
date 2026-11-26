@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// The owner's page start() draws from an in-memory site: read toggles and chips, tags, likes, the heatmap, the header's
-// progress line, and the month in view (site/page/render.ts, state.ts, read-board.ts, tag-board.ts, month-scope.ts).
+// The owner's page start() draws from an in-memory site: read toggles, tags, likes, the heatmap and the header's
+// progress line (site/page/render.ts, state.ts, read-board.ts, tag-board.ts).
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { SIGNED_IN_AGAIN, signInAgainOnce } from "../../site/page/owner.ts";
 import {
@@ -9,6 +9,7 @@ import {
 	openPage,
 	paperEntry,
 	releasePage,
+	shownTitles,
 	siteOf,
 	texts,
 } from "./page-site.ts";
@@ -30,7 +31,6 @@ afterEach(() => {
 });
 
 const TODAY = "2026-09-27";
-const THREE_DAYS_AGO = "2026-09-24";
 
 type Saved = {
 	read?: Record<string, unknown>;
@@ -76,33 +76,6 @@ const control = (id: string, name: string) => {
 };
 const pressed = (id: string, name: string) =>
 	control(id, name).getAttribute("aria-pressed") === "true";
-const chip = (label: string) => {
-	const found = [
-		...document.querySelectorAll<HTMLButtonElement>(".tag-chip, .read-chip"),
-	].find((one) =>
-		(one.getAttribute("aria-label") ?? "").startsWith(`${label} (`),
-	);
-	if (found === undefined) throw new Error(`no chip ${label}`);
-	return found;
-};
-const chipLabels = () =>
-	[...document.querySelectorAll(".tag-filter button, .read-filter button")].map(
-		(one) => one.getAttribute("aria-label"),
-	);
-// The titles of the entries the page shows now: not hidden by a filter, not in a hidden or folded day.
-const shownTitles = () =>
-	[...document.querySelectorAll<HTMLElement>("main article")]
-		.filter(
-			(one) =>
-				!one.hidden &&
-				!one.closest("[hidden], .month-hidden, details:not([open])"),
-		)
-		.map((one) => one.querySelector(".entry__title")?.textContent);
-// The titles the contents list now, less the ones a filter hid.
-const listedTitles = () =>
-	[...document.querySelectorAll<HTMLElement>(".contents li:not([role])")]
-		.filter((one) => !one.closest("[hidden]"))
-		.map((one) => one.textContent);
 const posts = (site: FakeSite, route: string) =>
 	site.posts
 		.filter((one) => one.path === `api/owner/${route}`)
@@ -126,22 +99,6 @@ test("an id with %, ? and # keeps its read state over a reload", async () => {
 	expect(pressed(id, "Abstract")).toBe(true);
 });
 
-test("a read mark saved on news counts nowhere, and nothing is sent for it", async () => {
-	const site = siteOf([
-		{ date: TODAY, entries: [...papers(2), newsEntry("n", "News item")] },
-	]);
-	await owner(site, { read: { "news:n": { depth: "paper", date: TODAY } } });
-	expect(chipLabels()).toEqual([
-		"To read (0)",
-		"Learn first (0)",
-		"Ad hoc (0)",
-		"Unread (2)",
-		"Abstract (0)",
-		"Paper (0)",
-	]);
-	expect(site.posts).toEqual([]);
-});
-
 test("a paper marked read on another device shows as read, with its count, when the page comes back into view", async () => {
 	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
 	await owner(site);
@@ -156,14 +113,14 @@ test("a paper marked read on another device shows as read, with its count, when 
 	await vi.waitFor(() =>
 		expect(pressed("arxiv:2609.00001", "Abstract")).toBe(true),
 	);
-	expect(chip("Abstract").getAttribute("aria-label")).toBe("Abstract (1)");
 });
 
-test("privacy: the public page has no icon rail, no chips, no heatmap and no progress line, and calls no API route", async () => {
+test("privacy: the public page has no icon rail, no read blank, no heatmap and no progress line, and calls no API route", async () => {
 	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
 	await openPage(site);
 	expect(document.querySelector(".entry__rail")).toBeNull();
-	expect(document.querySelector(".tag-filter, .read-filter")).toBeNull();
+	expect(document.querySelector('[data-blank="subject"]')).not.toBeNull();
+	expect(document.querySelector('[data-blank="read"]')).toBeNull();
 	expect(document.getElementById("heatmap")).toBeNull();
 	expect(document.querySelector(".progress")).toBeNull();
 	expect(site.requested.filter((path) => path.startsWith("api/"))).toEqual([]);
@@ -264,121 +221,6 @@ test("security: the fresh sign-in returns only to the owner page on the page's o
 	expect(back.href).toBe(owners);
 });
 
-// ---- Read chips ----
-
-test("a read chip shows only the papers read to that depth, across days, and opens the days that hold one", async () => {
-	const site = siteOf([
-		{ date: TODAY, entries: papers(3) },
-		{ date: THREE_DAYS_AGO, entries: papers(2, "2610") },
-		{ date: "2026-09-22", entries: papers(1, "2611") },
-	]);
-	await owner(site, {
-		read: {
-			"arxiv:2609.00001": { depth: "abstract", date: TODAY },
-			"arxiv:2610.00001": { depth: "abstract", date: TODAY },
-		},
-	});
-	chip("Abstract").click();
-	expect(shownTitles()).toEqual(["P1", "P1-2610"]);
-	expect(
-		document.querySelector<HTMLDetailsElement>(
-			`details[data-date="${THREE_DAYS_AGO}"]`,
-		)?.open,
-	).toBe(true);
-	expect(
-		document
-			.querySelector('details[data-date="2026-09-22"]')
-			?.hasAttribute("hidden"),
-	).toBe(true);
-	await settle();
-	expect(listedTitles()).toEqual(["P1", "P1-2610"]);
-	chip("Abstract").click();
-	expect(shownTitles()).toEqual(["P1", "P2", "P3"]);
-});
-
-test("only one read chip is on at a time", async () => {
-	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
-	await owner(site, {
-		read: {
-			"arxiv:2609.00001": { depth: "abstract", date: TODAY },
-			"arxiv:2609.00002": { depth: "paper", date: TODAY },
-		},
-	});
-	chip("Abstract").click();
-	chip("Paper").click();
-	expect(
-		[chip("Abstract"), chip("Paper")].map((one) =>
-			one.getAttribute("aria-pressed"),
-		),
-	).toEqual(["false", "true"]);
-	expect(shownTitles()).toEqual(["P2"]);
-});
-
-test("a read chip and a tag chip together show only entries that match both", async () => {
-	const site = siteOf([{ date: TODAY, entries: papers(3) }]);
-	await owner(site, {
-		read: { "arxiv:2609.00003": { depth: "abstract", date: TODAY } },
-		tags: {
-			"arxiv:2609.00001": { toRead: true },
-			"arxiv:2609.00003": { toRead: true },
-		},
-	});
-	chip("Unread").click();
-	chip("To read").click();
-	expect(shownTitles()).toEqual(["P1"]);
-});
-
-test("a read chip with nothing matching says so", async () => {
-	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
-	await owner(site);
-	expect(chip("Paper").getAttribute("aria-label")).toBe("Paper (0)");
-	chip("Paper").click();
-	expect(texts(".tag-filter__empty")).toEqual(['No entries are read "Paper"']);
-	chip("Unread").click();
-	chip("To read").click();
-	expect(texts(".tag-filter__empty")).toEqual(["No entries match the filters"]);
-});
-
-test("while a chip filters, pressing a read button updates the counts at once and keeps the entry shown until the filter changes", async () => {
-	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
-	await owner(site);
-	chip("Unread").click();
-	control("arxiv:2609.00001", "Abstract").click();
-	expect(
-		[chip("Unread"), chip("Abstract")].map((one) =>
-			one.getAttribute("aria-label"),
-		),
-	).toEqual(["Unread (1)", "Abstract (1)"]);
-	expect(shownTitles()).toEqual(["P1", "P2"]);
-	chip("Unread").click();
-	chip("Unread").click();
-	expect(shownTitles()).toEqual(["P2"]);
-});
-
-test("the read chips count only the selected month, and All months counts every month the index lists", async () => {
-	const site = siteOf([
-		{ date: TODAY, entries: papers(2) },
-		{ date: "2026-08-20", entries: papers(2, "2608") },
-	]);
-	await owner(site, {
-		read: { "arxiv:2608.00001": { depth: "abstract", date: TODAY } },
-	});
-	expect(site.requested).not.toContain("data/months/2026-08.json");
-	expect(chipLabels().slice(-3)).toEqual([
-		"Unread (2)",
-		"Abstract (0)",
-		"Paper (0)",
-	]);
-	document.querySelector<HTMLButtonElement>(".month-all")?.click();
-	await vi.waitFor(() =>
-		expect(chipLabels().slice(-3)).toEqual([
-			"Unread (3)",
-			"Abstract (1)",
-			"Paper (0)",
-		]),
-	);
-});
-
 // ---- Tags ----
 
 test("a tag is saved under the entry's id, and clearing it is saved as off", async () => {
@@ -424,246 +266,6 @@ test("a tag set on another device shows, with its count, when the page comes bac
 	await vi.waitFor(() =>
 		expect(pressed("arxiv:2609.00001", "To read")).toBe(true),
 	);
-	expect(chip("To read").getAttribute("aria-label")).toBe("To read (1)");
-});
-
-test("the tag chips count tagged entries across the loaded days, and a chip shows only entries with its tag and opens their days", async () => {
-	const site = siteOf([
-		{ date: TODAY, entries: papers(3) },
-		{ date: THREE_DAYS_AGO, entries: papers(2, "2610") },
-		{ date: "2026-09-22", entries: papers(1, "2611") },
-	]);
-	await owner(site, {
-		tags: {
-			"arxiv:2609.00001": { toRead: true },
-			"arxiv:2609.00002": { toRead: true },
-			"arxiv:2610.00001": { toRead: true, learnFirst: true },
-		},
-	});
-	expect(
-		[chip("To read"), chip("Learn first")].map((one) =>
-			one.getAttribute("aria-label"),
-		),
-	).toEqual(["To read (3)", "Learn first (1)"]);
-	chip("To read").click();
-	expect(shownTitles()).toEqual(["P1", "P2", "P1-2610"]);
-	expect(
-		document.querySelector<HTMLDetailsElement>(
-			`details[data-date="${THREE_DAYS_AGO}"]`,
-		)?.open,
-	).toBe(true);
-	expect(
-		document
-			.querySelector('details[data-date="2026-09-22"]')
-			?.hasAttribute("hidden"),
-	).toBe(true);
-});
-
-test("both tag chips on show only entries with both tags", async () => {
-	const site = siteOf([{ date: TODAY, entries: papers(3) }]);
-	await owner(site, {
-		tags: {
-			"arxiv:2609.00001": { toRead: true },
-			"arxiv:2609.00002": { learnFirst: true },
-			"arxiv:2609.00003": { toRead: true, learnFirst: true },
-		},
-	});
-	chip("To read").click();
-	chip("Learn first").click();
-	expect(shownTitles()).toEqual(["P3"]);
-});
-
-test("turning a chip off shows everything again and folds the days it opened", async () => {
-	const site = siteOf([
-		{ date: TODAY, entries: papers(3) },
-		{ date: THREE_DAYS_AGO, entries: papers(2, "2610") },
-	]);
-	await owner(site, { tags: { "arxiv:2609.00001": { toRead: true } } });
-	chip("To read").click();
-	chip("To read").click();
-	expect(shownTitles()).toEqual(["P1", "P2", "P3"]);
-	expect(
-		document.querySelector<HTMLDetailsElement>(
-			`details[data-date="${THREE_DAYS_AGO}"]`,
-		)?.open,
-	).toBe(false);
-});
-
-test("an open day that a filter hides is closed, and opens again when the filter is turned off", async () => {
-	const site = siteOf([
-		{ date: TODAY, entries: papers(2) },
-		{ date: THREE_DAYS_AGO, entries: papers(2, "2610") },
-	]);
-	await owner(site, { tags: { "arxiv:2609.00001": { toRead: true } } });
-	const day = () =>
-		document.querySelector<HTMLDetailsElement>(
-			`details[data-date="${THREE_DAYS_AGO}"]`,
-		);
-	const collapse = () =>
-		document.querySelector<HTMLElement>(".contents__collapse");
-	document.querySelector<HTMLButtonElement>(".contents__day")?.click();
-	await settle();
-	expect(day()?.open).toBe(true);
-	chip("To read").click();
-	await settle();
-	expect([day()?.hidden, day()?.open, collapse()?.hidden]).toEqual([
-		true,
-		false,
-		true,
-	]);
-	chip("To read").click();
-	await settle();
-	expect([day()?.hidden, day()?.open, collapse()?.hidden]).toEqual([
-		false,
-		true,
-		false,
-	]);
-});
-
-test("while a chip filters, pressing a tag button updates the counts at once and keeps the entry shown until the filter changes", async () => {
-	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
-	await owner(site, {
-		tags: {
-			"arxiv:2609.00001": { toRead: true },
-			"arxiv:2609.00002": { toRead: true },
-		},
-	});
-	chip("To read").click();
-	control("arxiv:2609.00001", "To read").click();
-	expect(chip("To read").getAttribute("aria-label")).toBe("To read (1)");
-	expect(shownTitles()).toEqual(["P1", "P2"]);
-	chip("To read").click();
-	chip("To read").click();
-	expect(shownTitles()).toEqual(["P2"]);
-});
-
-test("the tag chips count only the selected month, and turning a chip on loads no older month", async () => {
-	const site = siteOf([
-		{ date: TODAY, entries: papers(3) },
-		{ date: "2026-08-20", entries: papers(2, "2608") },
-	]);
-	await owner(site, {
-		tags: {
-			"arxiv:2609.00001": { toRead: true },
-			"arxiv:2608.00001": { toRead: true },
-			"arxiv:2608.00002": { toRead: true },
-		},
-	});
-	expect(chip("To read").getAttribute("aria-label")).toBe("To read (1)");
-	chip("To read").click();
-	expect(site.requested).not.toContain("data/months/2026-08.json");
-	expect(shownTitles()).toEqual(["P1"]);
-});
-
-test("a month that loads only after a retry still shows only tagged entries", async () => {
-	vi.spyOn(console, "error").mockImplementation(() => {});
-	const site = siteOf([
-		{ date: TODAY, entries: papers(1) },
-		{
-			date: "2026-08-20",
-			entries: [
-				...papers(2, "2608"),
-				newsEntry("x", "News X"),
-				newsEntry("y", "News Y"),
-			],
-		},
-	]);
-	site.statuses["data/months/2026-08.json"] = 500;
-	await owner(site, {
-		tags: {
-			"arxiv:2609.00001": { toRead: true },
-			"arxiv:2608.00001": { toRead: true },
-		},
-	});
-	document.querySelector<HTMLButtonElement>(".month-all")?.click();
-	await settle();
-	await settle();
-	chip("To read").click();
-	delete site.statuses["data/months/2026-08.json"];
-	const day = document.querySelector<HTMLDetailsElement>(
-		'details[data-date="2026-08-20"]',
-	);
-	if (day === null) throw new Error("no August day");
-	day.open = false;
-	await settle();
-	day.open = true;
-	await vi.waitFor(() => expect(shownTitles()).toEqual(["P1", "P1-2608"]));
-	expect(listedTitles()).toEqual(["P1", "P1-2608"]);
-});
-
-test("a permalink to an entry the filter hides leaves the filter on and says nothing is tagged", async () => {
-	const site = siteOf([
-		{ date: TODAY, entries: papers(1) },
-		{ date: "2026-08-20", entries: papers(2, "2608") },
-	]);
-	await owner(site, { tags: { "arxiv:2609.00001": { toRead: true } } });
-	chip("To read").click();
-	location.hash = "#arxiv:2608.00001";
-	await vi.waitFor(() =>
-		expect(site.requested).toContain("data/months/2026-08.json"),
-	);
-	await settle();
-	expect(texts(".tag-filter__empty")).toEqual([
-		'No entries are tagged "To read"',
-	]);
-});
-
-test("the arrow keys skip entries a chip hides, and the contents list marks the entry they move to", async () => {
-	const site = siteOf([{ date: TODAY, entries: papers(4) }]);
-	await owner(site, {
-		tags: {
-			"arxiv:2609.00001": { toRead: true },
-			"arxiv:2609.00004": { toRead: true },
-		},
-	});
-	chip("To read").click();
-	document
-		.querySelector<HTMLAnchorElement>('.contents a[href="#arxiv:2609.00001"]')
-		?.click();
-	await settle();
-	document.body.dispatchEvent(
-		new KeyboardEvent("keydown", {
-			key: "ArrowRight",
-			bubbles: true,
-			cancelable: true,
-		}),
-	);
-	await vi.waitFor(() => expect(location.hash).toBe("#arxiv:2609.00004"));
-	await vi.waitFor(() =>
-		expect(texts('.contents a[aria-current="true"]')).toEqual(["P4"]),
-	);
-});
-
-test("the filters are not remembered over a reload", async () => {
-	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
-	await owner(site, { tags: { "arxiv:2609.00001": { toRead: true } } });
-	chip("To read").click();
-	releasePage();
-	document.body.replaceChildren();
-	await owner(site, { tags: { "arxiv:2609.00001": { toRead: true } } });
-	expect(
-		document.querySelectorAll('.tag-chip[aria-pressed="true"]'),
-	).toHaveLength(0);
-	expect(shownTitles()).toEqual(["P1", "P2"]);
-});
-
-test("the filters leave the header's progress line and the heatmap as they were", async () => {
-	const site = siteOf([{ date: TODAY, entries: papers(3) }]);
-	await owner(site, {
-		read: { "arxiv:2609.00001": { depth: "paper", date: TODAY } },
-		tags: { "arxiv:2609.00001": { toRead: true } },
-	});
-	const before = [
-		texts("#freshness .progress__text"),
-		document.querySelector('.heatmap__day[data-date="2026-09-27"]')?.className,
-	];
-	chip("To read").click();
-	expect(texts("#freshness")[0]).toContain("Sunday 27 September");
-	expect([
-		texts("#freshness .progress__text"),
-		document.querySelector('.heatmap__day[data-date="2026-09-27"]')?.className,
-	]).toEqual(before);
-	expect(before[0]).toEqual(["1 of 3 papers read"]);
 });
 
 // ---- Likes and dislikes ----
@@ -754,7 +356,6 @@ test("a tag the site refuses is undone, and the page says it wasn't saved", asyn
 	expect(pressed(id, "Learn first")).toBe(true);
 	await vi.waitFor(() => expect(pressed(id, "Learn first")).toBe(false));
 	expect(said()).toMatch(/^Not saved: /);
-	expect(chipLabels()).toContain("Learn first (0)");
 });
 
 test("a read mark the site refuses is undone on the buttons and on the day's square, and the page says so", async () => {
@@ -910,108 +511,6 @@ test("the header names the newest digest's day, and warns when it is 2 or more d
 	expect(texts("#freshness .status")).toEqual(["No new digest for 2 days"]);
 });
 
-// ---- The month in view and the heatmap's days ----
-
-test("a heatmap day in an older month clears the filters, selects that month, loads it and opens the day", async () => {
-	const site = siteOf([
-		{ date: TODAY, entries: papers(2) },
-		{ date: "2026-08-20", entries: papers(2, "2608") },
-	]);
-	await owner(site, { tags: { "arxiv:2609.00001": { toRead: true } } });
-	chip("To read").click();
-	expect(shownTitles()).toEqual(["P1"]);
-	square("2026-08-20").click();
-	await vi.waitFor(() =>
-		expect(
-			document.querySelector<HTMLDetailsElement>(
-				'details[data-date="2026-08-20"]',
-			)?.open,
-		).toBe(true),
-	);
-	expect(
-		document.querySelectorAll('.tag-chip[aria-pressed="true"]'),
-	).toHaveLength(0);
-	expect(document.querySelector("#month-button")?.textContent).toBe(
-		"August 2026",
-	);
-	expect(shownTitles()).toEqual(["P1-2608", "P2-2608"]);
-});
-
-test("choosing All months loads every month once and shows every day, and choosing a month narrows to it", async () => {
-	const site = siteOf([
-		{ date: TODAY, entries: papers(2) },
-		{ date: "2026-08-20", entries: papers(2, "2608") },
-	]);
-	await owner(site);
-	expect(document.querySelector("#month-button")?.textContent).toBe(
-		"September 2026",
-	);
-	expect(
-		document
-			.querySelector('details[data-date="2026-08-20"]')
-			?.classList.contains("month-hidden"),
-	).toBe(true);
-	document.querySelector<HTMLButtonElement>(".month-all")?.click();
-	await vi.waitFor(() =>
-		expect(
-			document.querySelector('details[data-date="2026-08-20"] article'),
-		).not.toBeNull(),
-	);
-	expect(
-		document.querySelector(".month-all")?.getAttribute("aria-pressed"),
-	).toBe("true");
-	expect(document.querySelector("#month-button")?.textContent).toBe(
-		"All months",
-	);
-	expect(
-		document
-			.querySelector('details[data-date="2026-08-20"]')
-			?.classList.contains("month-hidden"),
-	).toBe(false);
-	expect(
-		site.requested.filter((path) => path === "data/months/2026-08.json"),
-	).toHaveLength(1);
-	document.querySelector<HTMLElement>("#month-option-2026-09")?.click();
-	await settle();
-	expect(
-		document
-			.querySelector('details[data-date="2026-08-20"]')
-			?.classList.contains("month-hidden"),
-	).toBe(true);
-	expect(
-		document.querySelector("section.day")?.classList.contains("month-hidden"),
-	).toBe(false);
-});
-
-test("choosing an older month in the selector loads it and opens its days", async () => {
-	const site = siteOf([
-		{ date: TODAY, entries: papers(2) },
-		{ date: "2026-08-20", entries: papers(2, "2608") },
-	]);
-	await owner(site);
-	document.querySelector<HTMLButtonElement>("#month-button")?.click();
-	document.querySelector<HTMLElement>("#month-option-2026-08")?.click();
-	await vi.waitFor(() =>
-		expect(
-			document.querySelector('details[data-date="2026-08-20"] article'),
-		).not.toBeNull(),
-	);
-	expect(
-		document
-			.querySelector('details[data-date="2026-08-20"]')
-			?.classList.contains("month-hidden"),
-	).toBe(false);
-	expect(
-		document.querySelector("section.day")?.classList.contains("month-hidden"),
-	).toBe(true);
-	expect(
-		document.querySelector(".month-all")?.getAttribute("aria-pressed"),
-	).toBe("false");
-	expect(document.querySelector("#month-button")?.textContent).toBe(
-		"August 2026",
-	);
-});
-
 // ---- Comments and links ----
 
 const CREATED = "2026-09-27T16:20:00.000Z";
@@ -1086,46 +585,7 @@ test("a comment on part of a link keeps the link whole, and its highlight is dra
 	expect(highlighted()).toBe("at https://github");
 });
 
-// ---- The sidebar's controls ----
-
-test("the Ad hoc chip counts ad hoc entries, has the same icon as the contents list, and combines with a read chip", async () => {
-	const entries = [
-		paperEntry("2609.00001", "P1", { ad_hoc: true }),
-		paperEntry("2609.00002", "P2", { ad_hoc: true }),
-		paperEntry("2609.00003", "P3"),
-	];
-	const site = siteOf([{ date: TODAY, entries: entries }]);
-	await owner(site, {
-		read: { "arxiv:2609.00002": { depth: "abstract", date: TODAY } },
-	});
-	const adHoc = chip("Ad hoc");
-	expect(adHoc.getAttribute("aria-label")).toBe("Ad hoc (2)");
-	expect(adHoc.querySelector("svg")?.getAttribute("data-icon")).toBe(
-		document
-			.querySelector(".contents__tag--icon svg")
-			?.getAttribute("data-icon"),
-	);
-	adHoc.click();
-	expect(shownTitles()).toEqual(["P1", "P2"]);
-	chip("Unread").click();
-	expect(shownTitles()).toEqual(["P1"]);
-});
-
-test("a chip says whether it is on, and a click with the mouse hides its label until the pointer leaves", async () => {
-	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
-	await owner(site);
-	const unread = chip("Unread");
-	expect(unread.getAttribute("aria-pressed")).toBe("false");
-	unread.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
-	expect(unread.getAttribute("aria-pressed")).toBe("true");
-	expect(unread.classList.contains("chip--clicked")).toBe(true);
-	unread.dispatchEvent(new MouseEvent("mouseleave"));
-	expect(unread.classList.contains("chip--clicked")).toBe(false);
-	unread.click();
-	expect(unread.classList.contains("chip--clicked")).toBe(false);
-});
-
-// ---- The heatmap's caption and the month a link names ----
+// ---- The heatmap's caption ----
 
 test("a heatmap square's caption shows on hover and hides with Escape, and a focused square keeps focus when the heatmap redraws", async () => {
 	const site = siteOf([{ date: TODAY, entries: papers(2) }]);
@@ -1144,28 +604,6 @@ test("a heatmap square's caption shows on hover and hides with Escape, and a foc
 	control("arxiv:2609.00001", "Abstract").click();
 	expect(document.activeElement?.getAttribute("data-date")).toBe(TODAY);
 	expect(document.activeElement).toBe(square(TODAY));
-});
-
-test("a link to the newest day's entry selects the newest month again after another month was chosen", async () => {
-	const site = siteOf([
-		{ date: TODAY, entries: papers(2) },
-		{ date: "2026-08-20", entries: papers(2, "2608") },
-	]);
-	await owner(site);
-	square("2026-08-20").click();
-	await vi.waitFor(() =>
-		expect(document.querySelector("#month-button")?.textContent).toBe(
-			"August 2026",
-		),
-	);
-	await vi.waitFor(() => expect(shownTitles()).toEqual(["P1-2608", "P2-2608"]));
-	location.hash = "#arxiv:2609.00001";
-	await vi.waitFor(() =>
-		expect(document.querySelector("#month-button")?.textContent).toBe(
-			"September 2026",
-		),
-	);
-	expect(shownTitles()).toContain("P1");
 });
 
 // ---- A crown under a week ----
