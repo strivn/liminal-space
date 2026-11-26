@@ -10,7 +10,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { afterEach, test } from "vitest";
-import { digestFiles, siteData } from "../../scripts/deploy/build-site.ts";
+import {
+	digestFiles,
+	searchFile,
+	siteData,
+} from "../../scripts/deploy/build-site.ts";
+import { FIELD_CAPS } from "../../shared/entry-checks.ts";
+import { readSearchFile } from "../../site/page/data.ts";
 import { closeServers, serve } from "./local-server.ts";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -832,4 +838,15 @@ test("the build writes data/search.json with each entry's id, date, kind, main O
 		},
 	);
 	assert.equal(entries.length, 3);
+});
+
+test("an entry whose venue is longer than the page reads stays in the search file, with no venue", () => {
+	const long = "v".repeat(FIELD_CAPS.source + 1);
+	const built = searchFile([
+		{ date: "2026-11-02", entries: [{ ...SCIENTIST_AI, venue: long }] },
+	]);
+	assert.deepEqual(
+		readSearchFile(built)?.entries.map((entry) => [entry.id, entry.venue]),
+		[[SCIENTIST_AI.id, null]],
+	);
 });
