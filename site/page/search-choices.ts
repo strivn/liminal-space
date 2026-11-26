@@ -240,7 +240,8 @@ export function venuePanel(ctx: PanelContext): Node[] {
 				{ key: `venue:${conference}`, single: true },
 			),
 		);
-		if (own.size > 1) {
+		// A conference with a track beside its main one, or none but a named one, lists its tracks.
+		if (own.size > 1 || !own.has("")) {
 			const sorted = [...own.entries()].sort(([a], [b]) => a.localeCompare(b));
 			row.append(
 				el(
