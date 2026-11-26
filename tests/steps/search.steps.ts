@@ -46,8 +46,10 @@ Given(
 
 Given(
 	/^today's (\d+)(?:st|nd|rd|th) paper has the OpenAlex keyword "(.*)"$/,
-	async ({ world }, position: string, keyword: string) => {
-		throw new Error(`not implemented: ${world.dir} ${position} ${keyword}`);
+	({ world }, position: string, keyword: string) => {
+		nthPaper(world, world.today, Number(position)).openalex.keywords = [
+			keyword,
+		];
 	},
 );
 
@@ -91,16 +93,18 @@ When(
 
 When(
 	/^clicks the keyword "(.*)" under today's (\d+)(?:st|nd|rd|th) paper$/,
-	async ({ world, browser }, keyword: string, position: string) => {
-		throw new Error(
-			`not implemented: ${world.dir} ${browser.version()} ${keyword} ${position}`,
-		);
+	async ({ world }, keyword: string, position: string) => {
+		const paper = nthPaper(world, world.today, Number(position));
+		await openedPage(world)
+			.locator(`article.entry[id="${paper.id}"]`)
+			.getByRole("button", { name: keyword, exact: true })
+			.click();
 	},
 );
 
-Then(/^Search reads "(.*)"$/, async ({ world, browser }, words: string) => {
-	throw new Error(
-		`not implemented: ${world.dir} ${browser.version()} ${words}`,
+Then(/^Search reads "(.*)"$/, async ({ world }, words: string) => {
+	await expect(openedPage(world).locator(".search__sentence")).toContainText(
+		words,
 	);
 });
 
@@ -118,8 +122,9 @@ Then(
 
 Then(
 	/^the Feed shows today's (\d+)(?:st|nd|rd|th)(?: and (\d+)(?:st|nd|rd|th))? papers? and nothing else$/,
-	async ({ world }, first: string, second: string | undefined) => {
-		const positions = [first, second].filter((one) => one !== undefined);
+	async ({ world }, first: number, second: number | null | undefined) => {
+		// A number the regex captures arrives as a number; an unmatched "and 2nd" as undefined or null.
+		const positions = [first, second].filter((one) => typeof one === "number");
 		const wanted = positions.map(
 			(position) => nthPaper(world, world.today, Number(position)).title,
 		);
