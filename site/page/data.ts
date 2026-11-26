@@ -206,6 +206,6 @@ function readSearchEntry(entry: unknown): SearchEntry | null {
 	};
 }
 
-function isCapped(value: unknown, cap: number): value is string {
+export function isCapped(value: unknown, cap: number): value is string {
 	return hasText(value) && value.length <= cap;
 }

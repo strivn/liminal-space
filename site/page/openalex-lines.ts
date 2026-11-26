@@ -1,21 +1,16 @@
-// A paper's OpenAlex topic and keywords under its abstract, each a button that adds itself to the Search sentence.
+// A paper's OpenAlex lines under its abstract.
 import { isJsonObject } from "../../shared/narrow.ts";
 import { OPENALEX_CAPS } from "../../shared/openalex.ts";
+import { isCapped } from "./data.ts";
 import { el } from "./dom.ts";
 import type { Entry } from "./types.ts";
 
-// How many of a paper's keywords are listed.
 const KEYWORDS_SHOWN = 5;
 
-function isText(value: unknown): value is string {
-	return (
-		typeof value === "string" &&
-		value.trim() !== "" &&
-		value.length <= OPENALEX_CAPS.text
-	);
-}
+const isText = (value: unknown): value is string =>
+	isCapped(value, OPENALEX_CAPS.text);
 
-// The main topic's name, or null when OpenAlex has not classified the paper yet, and the keywords as OpenAlex gave them.
+// The main topic (null when none yet) and the keywords.
 function openAlexOf(value: unknown): {
 	topic: string | null;
 	keywords: string[];
@@ -27,7 +22,7 @@ function openAlexOf(value: unknown): {
 	return { topic: topic, keywords: listed.filter(isText) };
 }
 
-// One topic or keyword as a button; `subject` is how the Search sentence names it ("t:<topic>" or "k:<keyword>").
+// A button; `subject` is "t:<topic>" or "k:<keyword>".
 function subjectButton(subject: string, name: string) {
 	return el(
 		"button",
@@ -41,8 +36,7 @@ function subjectButton(subject: string, name: string) {
 	);
 }
 
-// "Topics (OpenAlex): <main topic>" and, on the next line, "Keywords (OpenAlex): <up to 5>"; null for what is not a
-// paper. A paper OpenAlex has not classified yet reads "none yet", and has no keywords line.
+// Topic and keyword lines; null for non-papers.
 export function openAlexLines(entry: Entry): HTMLElement | null {
 	if (entry.type !== "paper") return null;
 	const { topic, keywords } = openAlexOf(entry.openalex);
@@ -66,7 +60,7 @@ export function openAlexLines(entry: Entry): HTMLElement | null {
 	return el("div", { class: "entry__about" }, ...lines);
 }
 
-// Show which of the topics and keywords under the entries in `root` the sentence's subject holds.
+// Press the buttons the subject holds.
 export function showSubjects(root: ParentNode, subjects: readonly string[]) {
 	for (const button of root.querySelectorAll<HTMLElement>("[data-subject]")) {
 		button.setAttribute(
