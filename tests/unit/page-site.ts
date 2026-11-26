@@ -57,7 +57,7 @@ export function siteOf(lines: { date: string; entries: Entry[] }[]): FakeSite {
 			files[`data/months/${month}.json`] = { lines: [line] };
 		else file.lines.push(line);
 	}
-	// The search file: each entry with no topic or keywords, unless a test writes its own.
+	// The search file, from the entries' own fields.
 	files["data/search.json"] = {
 		entries: lines.flatMap((line) =>
 			line.entries.map((entry) => ({
@@ -220,7 +220,7 @@ export function texts(selector: string) {
 	);
 }
 
-// The titles of the entries the page shows now: not hidden by the Search sentence, not in a hidden or folded day.
+// Titles of entries shown now.
 export function shownTitles() {
 	return [...document.querySelectorAll<HTMLElement>("main article")]
 		.filter(
@@ -229,7 +229,7 @@ export function shownTitles() {
 		.map((one) => one.querySelector(".entry__title")?.textContent);
 }
 
-// The titles the contents list now, less the ones the Search sentence hid.
+// Titles the contents list now.
 export function listedTitles() {
 	return [...document.querySelectorAll<HTMLElement>(".contents li:not([role])")]
 		.filter((one) => !one.closest("[hidden]"))

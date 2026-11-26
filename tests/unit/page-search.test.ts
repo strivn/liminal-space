@@ -58,7 +58,7 @@ function shown(
 		.map((e) => e.id);
 }
 
-// The entries the choice panels are drawn from: this month, October, and a paper OpenAlex has not classified yet.
+// Entries for the panels.
 const ENTRIES = [
 	entry({
 		id: "a",
@@ -95,8 +95,7 @@ type Mount = {
 	marks?: Record<string, EntryMarks> | null;
 };
 
-// The Search sentence drawn over `entries` in a sidebar, as a window of the kind `options` says. `marks` is the owner's
-// marks by id; null draws the public page.
+// The sentence over `entries`; null `marks` is the public page.
 function mount(entries: SearchEntry[], options: Mount = {}) {
 	vi.stubGlobal("matchMedia", (query: string) => ({
 		matches:
@@ -289,8 +288,7 @@ test("the time blank shows today, the last week, one month or any time, and load
 		"seven-days-ago",
 	]);
 
-	// The sentence asks for the months that hold what it shows: this month first, then only the month picked, then
-	// every month with an entry that the other blanks leave in.
+	// Only months holding shown entries load.
 	const page = mount(entries);
 	expect(page.loaded).toEqual([["2026-11"]]);
 	pick("time", "in October");
@@ -366,7 +364,7 @@ test("every choice shows how many entries it would give with the other blanks as
 	expect(tallyText()).toBe("5 of 6 entries");
 	expect(document.querySelector(".search__count b")?.textContent).toBe("5");
 
-	// October's paper is out of this month, so what only it carries cannot be picked.
+	// October's paper is out of this month.
 	blank("subject").click();
 	expect(countOf("Ethics of AI")).toBe("1");
 	expect(word("red teaming").disabled).toBe(true);
@@ -377,7 +375,7 @@ test("every choice shows how many entries it would give with the other blanks as
 	expect(countOf("ACL 2026")).toBe("2");
 	expect(word("ICML 2026").disabled).toBe(true);
 
-	// With any time the same choices give entries.
+	// Any time gives them entries.
 	pick("time", "any time");
 	blank("subject").click();
 	expect(word("red teaming").disabled).toBe(false);
@@ -389,7 +387,7 @@ test("every choice shows how many entries it would give with the other blanks as
 		"1",
 	]);
 
-	// A choice that shows other blanks' entries counts them with those blanks as they are.
+	// Counts follow the other blanks.
 	pick("kind", "papers");
 	blank("venue").click();
 	expect(countOf("any venue")).toBe("5");
@@ -407,7 +405,7 @@ test("the current month is drawn as a choice already made, and Reset shows only 
 	pick("kind", "papers");
 	expect(set()).toEqual(["kind", "time"]);
 	expect(reset()).not.toBeNull();
-	// The blank goes back to where it started: nothing has moved.
+	// Back where it started.
 	pick("kind", "everything");
 	expect(set()).toEqual(["time"]);
 	expect(reset()).toBeNull();
@@ -458,12 +456,12 @@ test("typing in the subject box lists the topics and keywords that contain the t
 	expect(document.querySelector(".search__none")?.textContent).toBe(
 		"No topic or keyword matches.",
 	);
-	// The Feed, the sentence and the count are as they were.
+	// Nothing changed.
 	expect(page.changes).toHaveLength(changes);
 	expect(sentenceText()).toContain("about any subject");
 	expect(tallyText()).toBe("5 of 6 entries");
 
-	// Enter picks the topic the letters begin, and closes the choices.
+	// Enter picks and closes.
 	type("ethics");
 	box.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
 	expect(sentenceText()).toContain("about Ethics of AI");
@@ -485,7 +483,7 @@ test("on a wide window the choices open beside the sidebar, so the sentence and 
 	page.root.getBoundingClientRect = rect({ top: 120 });
 	blank("subject").click();
 	const style = page.panel().style;
-	// Level with the sentence, 16px right of the sidebar, as wide as the subject words need, down to 16px from the foot.
+	// Level with the sentence, 16px from the sidebar.
 	expect([
 		style.getPropertyValue("--search-left"),
 		style.getPropertyValue("--search-top"),
@@ -498,7 +496,7 @@ test("on a wide window the choices open beside the sidebar, so the sentence and 
 		"search-choices-title",
 	);
 
-	// The head shows the count as the sentence changes, while the sentence stays where it was.
+	// The head's count follows changes.
 	expect(document.querySelector(".search__count b")?.textContent).toBe("5");
 	word("Ethics of AI").click();
 	expect(page.panel().hidden).toBe(false);
@@ -507,7 +505,7 @@ test("on a wide window the choices open beside the sidebar, so the sentence and 
 		"about Ethics of AI",
 	);
 
-	// The panel follows the sentence when the page scrolls.
+	// It follows a scroll.
 	page.root.getBoundingClientRect = rect({ top: 40 });
 	window.dispatchEvent(new Event("scroll"));
 	expect(style.getPropertyValue("--search-top")).toBe("40px");
@@ -515,7 +513,7 @@ test("on a wide window the choices open beside the sidebar, so the sentence and 
 	window.dispatchEvent(new Event("scroll"));
 	expect(style.getPropertyValue("--search-top")).toBe("16px");
 
-	// A narrow window places nothing: its CSS puts the choices under the sentence.
+	// Narrow places nothing.
 	const narrow = mount(ENTRIES);
 	blank("kind").click();
 	expect(narrow.panel().style.getPropertyValue("--search-left")).toBe("");
@@ -533,13 +531,13 @@ test("on a phone the choices open in a sheet that holds the count, and keeps foc
 	expect(document.querySelector<HTMLElement>(".search__backdrop")?.hidden).toBe(
 		false,
 	);
-	// Focus goes into the sheet, not to the box, which would raise the keyboard.
+	// Focus enters the sheet, not the box.
 	expect(panel.contains(document.activeElement)).toBe(true);
 	expect(document.activeElement).not.toBe(
 		document.querySelector(".search__box"),
 	);
 
-	// Tab goes round inside the sheet, both ways.
+	// Tab wraps both ways.
 	const focusable = [
 		...panel.querySelectorAll<HTMLElement>("button:not(:disabled), input"),
 	];
@@ -561,7 +559,7 @@ test("on a phone the choices open in a sheet that holds the count, and keeps foc
 	press(true);
 	expect(document.activeElement).toBe(last);
 
-	// Escape and Done close it, and focus goes back to the blank.
+	// Escape and Done close it.
 	document.dispatchEvent(
 		new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
 	);
@@ -594,7 +592,7 @@ test("accessibility: each blank is named for what it filters, single-choice pane
 	blank("kind").click();
 	expect(blank("kind").getAttribute("aria-expanded")).toBe("true");
 
-	// A single choice is a radio of a group: the one made is the tab stop, an arrow moves to the next that can be picked.
+	// Radios: the one made is the tab stop.
 	const group = document.querySelector('[role="radiogroup"]');
 	expect(group?.getAttribute("aria-label")).toBe("Kind");
 	const radios = [
@@ -623,7 +621,7 @@ test("accessibility: each blank is named for what it filters, single-choice pane
 		new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true }),
 	);
 	expect(document.activeElement).toBe(radios[2]);
-	// Each choice says how many entries it gives as its description.
+	// The count is the description.
 	expect(
 		radios.map(
 			(one) =>
@@ -637,11 +635,11 @@ test("accessibility: each blank is named for what it filters, single-choice pane
 			document.querySelector('[role="radiogroup"]')?.getAttribute("aria-label"),
 		).toBe(name === "time" ? "Time" : "Venue");
 	}
-	// What can be one of several, or on and off, is pressed or not.
+	// Toggles are pressed or not.
 	blank("subject").click();
 	expect(word("Ethics of AI").getAttribute("aria-pressed")).toBe("false");
 
-	// The count is told once it has stood still for a moment, and only as it then is.
+	// The count is spoken once it settles.
 	const live = document.querySelector(".search__tally + [aria-live]");
 	expect(live?.getAttribute("aria-live")).toBe("polite");
 	pick("kind", "papers");
@@ -664,22 +662,29 @@ test("security: topic, keyword and venue names from the search file are drawn as
 			venue: venueName,
 		}),
 	]);
-	for (const name of ["subject", "venue"]) blank(name).click();
+	// No element comes from a name: open, closed, and in the sentence.
+	const noMarkup = () => {
+		expect(page.root.querySelectorAll("img, script, iframe")).toHaveLength(0);
+		expect(
+			[...page.root.querySelectorAll("b")].map((one) => one.textContent),
+		).not.toContain("field");
+	};
 	blank("subject").click();
+	noMarkup();
 	const subjects = labels();
 	expect(subjects).toContain(topicName);
 	expect(subjects).toContain(keywordName);
 	expect(subjects).toContain("anything in <b>field</b>");
+	expect(page.panel().textContent).toContain(topicName);
 	pick("subject", topicName);
 	pick("subject", keywordName);
+	noMarkup();
 	blank("venue").click();
+	noMarkup();
 	expect(labels()).toContain(venueName);
+	expect(page.panel().textContent).toContain(venueName);
 	pick("venue", venueName);
-	// The words are in the page as text, with no element made from them: the only <b> is the count.
-	expect(page.root.querySelectorAll("img, script, iframe")).toHaveLength(0);
-	expect(
-		[...page.root.querySelectorAll("b")].map((one) => one.textContent),
-	).toEqual(["1"]);
+	noMarkup();
 	expect(page.root.textContent).toContain(topicName);
 	expect(page.root.textContent).toContain(keywordName);
 	expect(page.root.innerHTML).toContain("&lt;img src=x onerror=alert(1)&gt;");
@@ -697,7 +702,7 @@ test("a page whose search file is not the search shape offers no topics, keyword
 	expect(labels()).toEqual(["any subject"]);
 	blank("venue").click();
 	expect(labels()).toEqual(["any venue"]);
-	// The Feed still shows the page's entries.
+	// The Feed still shows entries.
 	expect(document.querySelectorAll("main article")).toHaveLength(1);
 	expect(tallyText()).toBe("1 of 1 entries");
 });

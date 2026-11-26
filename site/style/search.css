@@ -1,6 +1,4 @@
-/* The Search sentence (site/page/search.ts): the sentence with its blanks and its count, below the heatmap, and the
-   words a blank can hold. The choices are a box under the sentence on a narrow window, a panel beside the sidebar on a
-   wide one and a sheet from the bottom on a phone. */
+/* The Search sentence and its choices. */
 .search {
 	flex: none;
 	position: relative;
@@ -15,8 +13,7 @@
 	text-transform: uppercase;
 	color: var(--text-secondary);
 }
-/* The sentence's own words are 500, its blanks 300; a blank's dashed line is the secondary text colour, and one with a
-   choice made has a solid accent line. */
+/* Words 500, blanks 300. */
 .search__sentence {
 	margin: 0;
 	font-size: 14px;
@@ -104,7 +101,7 @@
 	display: none;
 }
 
-/* The words a blank can hold. */
+/* The choices. */
 .search__choices {
 	margin-top: 12px;
 	padding: 16px;
@@ -299,8 +296,7 @@
 	margin: 48px 0;
 }
 
-/* A wide window: the choices open beside the sidebar, level with the sentence, over the Feed. The sidebar goes above
-   the Feed's held headings, so the panel does too. */
+/* Wide: beside the sidebar. */
 @media (min-width: 1080px) {
 	.page--with-contents .sidebar {
 		z-index: var(--z-menu);
@@ -322,7 +318,7 @@
 	}
 }
 
-/* A phone: the choices are a sheet from the bottom, over a dimmed page; the page behind doesn't scroll. */
+/* Phone: a bottom sheet. */
 @media (max-width: 599px) and (pointer: coarse) {
 	.search {
 		margin-top: 16px;

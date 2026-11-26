@@ -213,7 +213,7 @@ export function createMonths(model: PageModel, deps: MonthsDeps): Months {
 			});
 	}
 
-	// Draw `months` the page hasn't drawn yet, in parallel, each loaded once.
+	// Load and draw `months`.
 	function loadMonths(months: string[]) {
 		const waiting = new Set<string>();
 		for (const pair of model.olderPairs) {

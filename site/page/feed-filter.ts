@@ -1,9 +1,9 @@
-// The Feed narrowed to the entries the Search sentence shows: the rest are hidden in the page and in the contents.
+// Hides what the Search sentence doesn't show.
 import { el } from "./dom.ts";
 import { hrefId, type OlderDay, olderDayIds } from "./older-day.ts";
 import type { Day } from "./types.ts";
 
-// The entries and contents the sentence narrows.
+// What the filter acts on.
 export type FilterLayout = {
 	main: HTMLElement;
 	newest: Day;
@@ -13,9 +13,7 @@ export type FilterLayout = {
 	onFilter: () => void;
 };
 
-// What createFeedFilter hands the page: `show` narrows the Feed to `shown`, and again whenever a month has drawn more
-// entries. A narrowed sentence unfolds the days that hold what it shows; the days are folded as they were once it
-// isn't narrowed any more. `reset` is what the "Nothing matches" note's button does.
+// A narrowed sentence unfolds the days it shows.
 export function createFeedFilter(layout: FilterLayout, reset: () => void) {
 	let hidden: HTMLElement[] = [];
 	let openBefore: boolean[] | null = null;
@@ -32,7 +30,7 @@ export function createFeedFilter(layout: FilterLayout, reset: () => void) {
 		openBefore = null;
 	}
 
-	// Every element hidden here is an HTML element of the page.
+	// Hide an element, remembered.
 	function hide(element: Element | null | undefined) {
 		if (!(element instanceof HTMLElement))
 			throw new Error("The Feed filter can't hide a missing element");
@@ -49,14 +47,14 @@ export function createFeedFilter(layout: FilterLayout, reset: () => void) {
 			openBefore = layout.older.map((pair) => pair.details.open);
 		if (!narrowedNow) restoreOpen();
 
-		// Entries, by their element id, which is the entry's id; their titles in the contents, by the link's "#<id>".
+		// Entries and their contents titles.
 		for (const article of layout.main.querySelectorAll("article.entry")) {
 			if (!shownNow.has(article.id)) hide(article);
 		}
 		for (const link of layout.contents.querySelectorAll("li > a")) {
 			if (!shownNow.has(hrefId(link))) hide(link.parentElement);
 		}
-		// A group's list with no title left goes, with the group's label just before it.
+		// Empty groups go.
 		for (const list of layout.contents.querySelectorAll("ul")) {
 			const titleShown = [...list.children].some(
 				(item) => !(item instanceof HTMLElement) || !item.hidden,
@@ -73,8 +71,7 @@ export function createFeedFilter(layout: FilterLayout, reset: () => void) {
 			hide(layout.newestSection);
 			hide(layout.contents.querySelector(".contents__date"));
 		}
-		// An older day is judged by its ids, which for a month not drawn yet are the index's. A day shown opens when the
-		// sentence is narrowed, or when its month isn't drawn yet, which opening draws.
+		// Older days, judged by ids.
 		for (const pair of layout.older) {
 			if (olderDayIds(pair).some((id) => shownNow.has(id))) {
 				anyShown = true;
@@ -109,7 +106,7 @@ export function createFeedFilter(layout: FilterLayout, reset: () => void) {
 		apply();
 	}
 
-	// Again, as the last sentence says: a month has drawn entries the filter hasn't seen.
+	// Apply again after a month draws.
 	function refresh() {
 		apply();
 	}

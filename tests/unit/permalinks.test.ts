@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
-// Links to an entry (site/page/permalinks.ts). jsdom lays nothing out; only which day is shown and which month is
-// loaded is tested.
+// Links to an entry (site/page/permalinks.ts).
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { OlderDay } from "../../site/page/older-day.ts";
 import type { PageModel } from "../../site/page/page-model.ts";
@@ -40,7 +39,7 @@ function pageWithOlderMonth() {
 	return { model: model, olderDay: olderDay };
 }
 
-// `shown` says whether the Search sentence shows an entry.
+// `shown`: whether the sentence shows the entry.
 function depsFor(shown: boolean) {
 	return {
 		loadMonth: vi.fn(async () => [] as unknown[]),

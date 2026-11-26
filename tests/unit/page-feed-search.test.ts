@@ -1,7 +1,5 @@
 // @vitest-environment jsdom
-// The Search sentence over the owner's whole page: which entries and days it shows, which months it loads, and how it
-// follows the owner's marks (site/page/render.ts, search.ts, feed-filter.ts). jsdom lays nothing out; only what is
-// hidden, folded and loaded is tested.
+// The Search sentence over the owner's whole page.
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import {
 	type FakeSite,
@@ -74,10 +72,10 @@ const word = (label: string) => {
 	if (found === undefined) throw new Error(`no choice ${label}`);
 	return found;
 };
-// The number a choice shows beside it.
+// A choice's count.
 const countOf = (label: string) =>
 	word(label).querySelector("sup")?.textContent;
-// Open a blank, unless it is open, and pick one of its choices.
+// Open a blank and pick a choice.
 function pick(blankName: string, label: string) {
 	if (blank(blankName).getAttribute("aria-expanded") !== "true")
 		blank(blankName).click();

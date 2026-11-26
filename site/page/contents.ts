@@ -82,8 +82,7 @@ function contentsDay(
 	return [row, titles];
 }
 
-// Build the contents: "Collapse all", the newest day's titles, then one row per older day. `older` pairs each older day
-// with its <details> element in the page; each pair also gets its row here, as `row`.
+// Build the contents; each older pair gets its `row`.
 export function renderContents(
 	newest: Day,
 	older: OlderDay[],

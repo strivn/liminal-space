@@ -17,12 +17,12 @@ function openedPage(world: World): Page {
 	return page;
 }
 
-// The entries the Feed shows now: not hidden by the sentence, not in a folded day.
+// Titles the Feed shows now.
 function shownTitles(page: Page) {
 	return page.locator("main article.entry:visible .entry__title");
 }
 
-// Open the sentence's blank `name` unless its choices are already open, and give back the choices.
+// Open blank `name`, and give its choices.
 async function openBlank(page: Page, name: string) {
 	const blank = page.locator(`[data-blank="${name}"]`);
 	if ((await blank.getAttribute("aria-expanded")) !== "true") {
@@ -69,7 +69,7 @@ When(
 		const page = openedPage(world);
 		const choices = await openBlank(page, blank);
 		if (blank === "subject") {
-			// Typing in the box lists the topics and keywords that hold the letters, so a topic of few papers is in view.
+			// Typing brings a small topic into view.
 			await choices.getByRole("searchbox").fill(choice);
 			await choices.getByRole("button", { name: choice, exact: true }).click();
 		} else {
@@ -107,7 +107,7 @@ Then(/^Search reads "(.*)"$/, async ({ world, browser }, words: string) => {
 Then(
 	/^the Feed shows those (\d+) papers and nothing else$/,
 	async ({ world }, count: string) => {
-		// Every seeded paper has the one default topic; the papers a step gave another are those.
+		// Papers given a non-default topic.
 		const wanted = (world.days.get(world.today) ?? [])
 			.filter((paper) => paper.openalex.topics[0]?.name !== OPENALEX_TOPIC)
 			.map((paper) => paper.title);

@@ -4,8 +4,7 @@ import type { MonthLoader } from "./data.ts";
 import type { OlderDay } from "./older-day.ts";
 import type { PageModel } from "./page-model.ts";
 
-// What a link may need from the rest of the page: whether the Search sentence shows an entry, showing the sentence's
-// month of a day, loading a month, drawing it, and saying a day failed.
+// What a link needs from the page.
 export type PermalinkDeps = {
 	loadMonth: MonthLoader;
 	isShown: (id: string) => boolean;
@@ -16,7 +15,7 @@ export type PermalinkDeps = {
 
 export function createPermalinks(model: PageModel, deps: PermalinkDeps) {
 	// Follow #<entry id>: an entry already drawn opens at once; one the index places in an older month waits for that
-	// month; an id in no digest is left alone. An entry the sentence doesn't show brings its day's month back.
+	// month; an id in no digest is left alone. A hidden entry brings its month back.
 	function followPermalink() {
 		const target = hashTarget();
 		if (target) {

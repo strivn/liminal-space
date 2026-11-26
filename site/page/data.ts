@@ -153,7 +153,7 @@ export function readSearchFile(json: unknown): SearchFile | null {
 	return { entries: entries };
 }
 
-// The index's entries as search entries with no topic, keywords or venue, for a page whose search file can't be read.
+// The index as search entries, bare.
 export function searchEntriesOf(index: SiteIndex): SearchEntry[] {
 	return index.days.flatMap((day) =>
 		day.entries.map((entry) => ({

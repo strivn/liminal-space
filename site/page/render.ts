@@ -130,7 +130,7 @@ async function drawFromData(main: HTMLElement, failed: () => void) {
 	let markedLoad: Promise<MarkedPaper[]> = Promise.resolve([]);
 	if (isOwnerPage()) ownerLoad = loadOwnerState();
 	else markedLoad = fetchMarkedPapers();
-	// The Search sentence's file loads alongside the index, once.
+	// The search file loads beside the index.
 	const searchLoad = fetchJson(siteFile(SEARCH_PATH));
 	const answer = await fetchJson(siteFile(INDEX_PATH));
 	let index: SiteIndex | null = null;
@@ -139,8 +139,7 @@ async function drawFromData(main: HTMLElement, failed: () => void) {
 		failed();
 		return;
 	}
-	// A search file that can't be read leaves the sentence with the index's days and kinds, and no topics, keywords or
-	// venues to offer.
+	// Fall back to the index's entries.
 	const searchAnswer = await searchLoad;
 	let searchEntries =
 		searchAnswer.status === 200 ? readSearchFile(searchAnswer.json) : null;
@@ -198,10 +197,9 @@ async function drawFromData(main: HTMLElement, failed: () => void) {
 
 // Draw the page: the newest month's `lines` as days (today open, the rest folded with their entries), then the days
 // of older months from the index as folded rows whose entries are drawn when their month loads. With `owner` (the
-// owner's page, its saved state) each entry gets its icon rail and comments, and the sidebar its heatmap and the read
-// blank of the Search sentence; without (the public page) the page shows entries only. `marked` is the index and the
-// public page's marked papers (none on the owner's page, which reads its own marks). `searchEntries` is what the
-// Search sentence matches, for every entry in every month.
+// owner's page, its saved state) each entry gets its icon rail and comments, and the sidebar its heatmap; without
+// (the public page) the page shows entries only. `marked` is the index and the public page's marked papers.
+// `searchEntries` is what the Search sentence matches.
 function render(
 	main: HTMLElement,
 	lines: unknown[],
@@ -288,7 +286,7 @@ function render(
 	const board = createCommentBoard(saved.comments, sender, notice, () =>
 		refreshState(),
 	);
-	// The Search sentence is made once the contents are in the page; its counts follow the read marks and tags.
+	// Made once the contents exist.
 	let search: Search | null = null;
 	const tagBoard = createTagBoard(saved.tags, sender, notice, () =>
 		search?.refresh(),
@@ -357,7 +355,7 @@ function render(
 	}
 	// A day's entries in the contents' order, papers first, so the page reads in the same order as the contents.
 	const publicMarks = new Set(marked.papers.map((paper) => paper.entry.id));
-	// The entries added ad hoc among those drawn: the search file doesn't say, so the read blank counts these.
+	// Ad hoc ids among entries drawn.
 	const adHocIds = new Set<string>();
 	const dayEntries = (day: Day, typesetting: Typesetting) =>
 		contentsGroups(day.entries)
@@ -368,7 +366,7 @@ function render(
 				if (owner === null && publicMarks.has(entry.id)) markKicker(article);
 				return article;
 			});
-	// tracker and feedFilter are declared below; the months call them only once a month has loaded.
+	// tracker and feedFilter come later.
 	const { drawDays, fillMonth, showDayError, loadMonths } = createMonths(
 		model,
 		{
@@ -439,8 +437,7 @@ function render(
 			);
 		if (drawn === drawing) selectedView.draw(papers);
 	}
-	// After the Feed shows or hides entries, without a scroll: mark a shown entry in the contents, and place the comment
-	// cards again, since a hidden entry's cards may have been placed while it had no size.
+	// After the filter: mark, place comments.
 	const afterFilter = () => {
 		tracker.update();
 		board.placeAll();
@@ -479,8 +476,7 @@ function render(
 		dismissSheet: board.dismissSheet,
 	});
 
-	// The Search sentence, which says what the Feed shows. Its counts follow the owner's read marks and tags, and the
-	// ad hoc entries of the months drawn.
+	// The Search sentence.
 	const searchRoot = document.getElementById("search");
 	if (searchRoot === null) throw new Error("index.html has no #search");
 	let shownNow: ReadonlySet<string> = new Set();
@@ -501,7 +497,7 @@ function render(
 			owner === null
 				? null
 				: (id) => ({
-						// A mark of the old depth "read" counts as an abstract read.
+						// Old depth "read" counts as abstract.
 						read:
 							readState[id] === undefined
 								? "unread"
@@ -518,7 +514,7 @@ function render(
 		},
 	});
 
-	// A heatmap day opens in the Feed: the sentence is brought to its month when it shows nothing of that day.
+	// Bring the sentence to the day's month.
 	async function openHeatmapDay(date: string) {
 		const dayShown = searchEntries.some(
 			(entry) => entry.date === date && shownNow.has(entry.id),

@@ -126,7 +126,7 @@ function matchesMarks(
 	return !wanted.adHoc || marks.adHoc;
 }
 
-// Whether any blank but the time is set: the Feed then opens the days that hold what the sentence shows.
+// Any blank but time set.
 export function isNarrowed(sentence: Sentence): boolean {
 	return (
 		sentence.kind !== "all" ||
@@ -138,8 +138,7 @@ export function isNarrowed(sentence: Sentence): boolean {
 	);
 }
 
-// `onChange` gets the ids the sentence shows, and whether it is narrowed; `loadMonths` draws the months the Feed needs
-// to show them. `marksOf` is null on the public page.
+// `marksOf` is null on the public page.
 export type SearchDeps = {
 	entries: () => SearchEntry[];
 	marksOf: ((id: string) => EntryMarks) | null;
@@ -147,19 +146,17 @@ export type SearchDeps = {
 	onChange: (shown: Set<string>, narrowed: boolean) => void;
 };
 
-// What createSearch hands the page: a subject added from under a paper, the starting sentence again, the month of a
-// day shown, and the counts drawn again after a mark changed.
+// What createSearch hands the page.
 export type Search = {
-	focusOn: (subject: string) => void;
 	reset: () => void;
 	showDay: (date: string) => void;
 	refresh: () => void;
 };
 
 const WIDE_QUERY = "(min-width: 1080px)";
-// How long the count must stand still before a screen reader is told it.
+// Quiet time before the count is spoken.
 const COUNT_SPOKEN_AFTER_MS = 600;
-// The wide window's panel: its distance from the sidebar and the window's edges, and its widths.
+// The wide panel's gap and widths.
 const PANEL_MARGIN = 16;
 const PANEL_WIDTH = 440;
 const SUBJECT_PANEL_WIDTH = 520;
@@ -226,7 +223,7 @@ export function createSearch(
 	let open: Blank | null = null;
 	let typed = "";
 	let drawWords: (() => void) | null = null;
-	// Counts changes, so a month that loads after a later change doesn't draw the earlier one.
+	// Drops a load finished too late.
 	let version = 0;
 	let spoken: ReturnType<typeof setTimeout> | undefined;
 
@@ -263,7 +260,7 @@ export function createSearch(
 		}
 		return ids;
 	}
-	// How many entries the sentence would show with `change` made to it.
+	// Entries shown with `change` made.
 	function countWith(change: Partial<Sentence>): number {
 		return showing({ ...sentence, ...change }).size;
 	}
@@ -419,7 +416,7 @@ export function createSearch(
 		place();
 	}
 
-	// On a wide window the panel sits beside the sidebar, its top level with the sentence.
+	// Beside the sidebar, level with the sentence.
 	function place() {
 		if (open === null || !isWide()) return;
 		const sidebar = root.closest(".sidebar") ?? root;
@@ -485,7 +482,7 @@ export function createSearch(
 		if (closes && was !== null) focusBlank(was);
 	}
 
-	// The sentence has changed: draw it, tell the Feed what it shows and draw the months that holds.
+	// Draw, tell the Feed, load months.
 	function apply() {
 		version += 1;
 		const mine = version;
@@ -494,7 +491,7 @@ export function createSearch(
 		drawPanel();
 		const shown = showing(sentence);
 		deps.onChange(shown, isNarrowed(sentence));
-		// Whether an entry is ad hoc is known once its month is drawn, so every month in the time is drawn first.
+		// Ad hoc is known once drawn.
 		const wanted = sentence.marks.adHoc
 			? showing({ ...sentence, marks: { ...sentence.marks, adHoc: false } })
 			: shown;
@@ -516,14 +513,6 @@ export function createSearch(
 
 	function reset() {
 		sentence = startingSentence(today);
-		typed = "";
-		open = null;
-		apply();
-	}
-
-	function focusOn(subject: string) {
-		if (!sentence.subjects.includes(subject))
-			sentence = { ...sentence, subjects: [...sentence.subjects, subject] };
 		typed = "";
 		open = null;
 		apply();
@@ -563,7 +552,7 @@ export function createSearch(
 			first.focus();
 		}
 	});
-	// The path is read from the event, since a press on a blank draws the sentence again and so detaches its button.
+	// The path outlives a redrawn button.
 	document.addEventListener("focusin", (event) => {
 		if (open === null || isPhone()) return;
 		if (!event.composedPath().includes(root)) {
@@ -585,5 +574,5 @@ export function createSearch(
 	window.addEventListener("scroll", place, { passive: true });
 
 	apply();
-	return { focusOn, reset, showDay, refresh };
+	return { reset, showDay, refresh };
 }

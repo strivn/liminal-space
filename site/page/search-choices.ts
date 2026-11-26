@@ -1,4 +1,4 @@
-// The words each blank of the Search sentence can hold, drawn as the choice panel's body.
+// The choice panel's words per blank.
 import type { SearchEntry } from "../../shared/site-data-shape.ts";
 import { venueOf } from "../../shared/venue.ts";
 import { el } from "./dom.ts";
@@ -7,7 +7,7 @@ import type { Sentence } from "./search.ts";
 
 export type Blank = "kind" | "subject" | "venue" | "time" | "read";
 
-// What a panel needs from the sentence: its state, how many entries a change would give, and how to apply one.
+// What a panel reads and calls.
 export type PanelContext = {
 	sentence: Sentence;
 	entries: readonly SearchEntry[];
@@ -19,9 +19,9 @@ export type PanelContext = {
 	done: () => void;
 };
 
-// Topics with this many papers or more are listed up front, the rest under "More topics".
+// Topics this big list up front.
 const BIG_TOPIC = 5;
-// How many keywords are listed with nothing typed, and how many a typed word finds.
+// Keywords listed, and found by typing.
 const KEYWORDS_LISTED = 14;
 const KEYWORDS_FOUND = 24;
 
@@ -46,14 +46,14 @@ const TAGS: { name: string; icon: RailIcon }[] = [
 	{ name: "Learn first", icon: "learnFirst" },
 ];
 
-// The months the entries are in, newest first, and the month `today` is in.
+// Entry months, newest first.
 export function monthsOf(entries: readonly SearchEntry[], today: string) {
 	const months = new Set(entries.map((entry) => entry.date.slice(0, 7)));
 	months.add(today.slice(0, 7));
 	return [...months].sort().reverse();
 }
 
-// The time blank's words: "today", "in the last week", "this month", "in October", "any time".
+// The time blank's words.
 export function timeWord(time: string, today: string): string {
 	if (time === "today") return "today";
 	if (time === "week") return "in the last week";
@@ -75,16 +75,15 @@ type WordOptions = {
 	key: string;
 	icon?: RailIcon;
 	quiet?: boolean;
-	// A radio of a group that holds one choice; otherwise a button that is pressed or not.
+	// A radio, else a toggle.
 	single?: boolean;
-	// The name a screen reader reads, when it is not the label.
+	// Accessible name, if not the label.
 	name?: string;
-	// Can be picked even when it shows none: the count is of the months drawn so far.
+	// Pickable even when it shows none.
 	always?: boolean;
 };
 
-// One choice: its label, how many entries it gives, and whether it is the one made. A choice that gives none can't
-// be picked. The last word of the label stays with the count.
+// One choice with its count.
 function word(
 	label: string,
 	count: number,
@@ -131,7 +130,7 @@ function word(
 	return button;
 }
 
-// A group of radios: the arrow keys move between the ones that can be picked, and the group is one stop for Tab.
+// Radios with arrow-key movement.
 function radioGroup(name: string, ...children: (Node | null)[]) {
 	const group = el(
 		"div",
@@ -209,7 +208,7 @@ export function timePanel(ctx: PanelContext): Node[] {
 	];
 }
 
-// How the venue blank says a conference's track.
+// A track's word.
 function trackWord(track: string): string {
 	return track === "" ? "main track" : track;
 }
@@ -240,7 +239,7 @@ export function venuePanel(ctx: PanelContext): Node[] {
 				{ key: `venue:${conference}`, single: true },
 			),
 		);
-		// A conference with a track beside its main one, or none but a named one, lists its tracks.
+		// Tracks beyond the main one.
 		if (own.size > 1 || !own.has("")) {
 			const sorted = [...own.entries()].sort(([a], [b]) => a.localeCompare(b));
 			row.append(
@@ -339,14 +338,14 @@ export function readPanel(ctx: PanelContext): Node[] {
 	];
 }
 
-// How many entries each name has, most first, then by name.
+// Names by entry count.
 function tally(names: Iterable<string>): [string, number][] {
 	const counts = new Map<string, number>();
 	for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1);
 	return [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 }
 
-// The words for the subject blank: topics, fields and keywords from the search file, and the box that finds them.
+// The subject blank's box and words.
 export function subjectPanel(ctx: PanelContext): {
 	nodes: Node[];
 	drawWords: () => void;

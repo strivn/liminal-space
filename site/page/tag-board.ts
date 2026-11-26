@@ -19,14 +19,13 @@ import type { Entry, Tags } from "./types.ts";
 export type TagBoard = {
 	toggles: (entry: Entry) => HTMLElement;
 	clear: (id: string, name: TagName) => void;
-	// The labels of the tags an entry carries, as the Search sentence names them.
+	// An entry's tag labels.
 	labelsOf: (id: string) => string[];
 	replace: (fresh: Tags) => void;
 };
 
 // The next-action tags on every entry. `saved` is the site's tags; each press goes to the site through `sender`, and
-// one the site refuses is undone and `notice` says so. `onChange` runs after the page's tags changed, for what is
-// drawn from them. toggles(entry) while the entries are drawn.
+// one the site refuses is undone and `notice` says so. `onChange` runs after the tags change.
 export function createTagBoard(
 	saved: Tags,
 	sender: Sender,
@@ -42,7 +41,7 @@ export function createTagBoard(
 	let presses = 0; // tag presses sent since the page opened
 	const lastPress = new Map<string, number>(); // "<tag> <entry id>" -> the number of its last press
 
-	// Every tag toggle shows the tags as they are now.
+	// Redraw the toggles.
 	function redraw() {
 		for (const showPressed of views) showPressed();
 		onChange();
