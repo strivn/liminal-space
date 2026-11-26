@@ -468,12 +468,131 @@ test("typing in the subject box lists the topics and keywords that contain the t
 	expect(page.panel().hidden).toBe(true);
 	expect(page.changes).toHaveLength(changes + 1);
 });
-test.todo(
-	"a topic or keyword under a paper adds itself to the subject and keeps the other blanks and the reading place",
-);
-test.todo(
-	"a paper OpenAlex has not classified yet reads Topics (OpenAlex): none yet, and the subject no topic yet finds it",
-);
+// The owner's page over `entries` on Sunday 27 September 2026, with nothing read or tagged.
+async function openOwnerPage(entries: ReturnType<typeof paperEntry>[]) {
+	vi.useFakeTimers({ toFake: ["Date"] });
+	vi.setSystemTime(new Date("2026-09-27T05:00:00Z"));
+	const site = siteOf([{ date: "2026-09-27", entries: entries }]);
+	site.owner = {
+		read: {},
+		tags: {},
+		comments: {},
+		feedback: {},
+		takeaways: {},
+	};
+	await openPage(site, { owner: true });
+}
+const openalex = (topic: string, keywords: string[] = []) => ({
+	openalex: {
+		topics: [{ name: topic, field: "Computer Science", score: 0.9 }],
+		keywords: keywords,
+	},
+});
+const about = (id: string) =>
+	[...document.querySelectorAll(`[id="${id}"] .entry__about p`)].map(
+		(line) => line.textContent,
+	);
+const subjectButton = (id: string, name: string) => {
+	const found = [
+		...document.querySelectorAll<HTMLElement>(`[id="${id}"] [data-subject]`),
+	].find((one) => one.textContent === name);
+	if (found === undefined) throw new Error(`no ${name} under ${id}`);
+	return found;
+};
+const shownIds = () =>
+	[...document.querySelectorAll<HTMLElement>("main article")]
+		.filter((one) => !one.closest("[hidden], details:not([open])"))
+		.map((one) => one.id);
+test("a topic or keyword under a paper adds itself to the subject and keeps the other blanks and the reading place", async () => {
+	await openOwnerPage([
+		paperEntry(
+			"2609.00001",
+			"P1",
+			openalex("Adversarial Robustness", [
+				"jailbreak detection",
+				"monitoring",
+				"one",
+				"two",
+				"three",
+				"four",
+			]),
+		),
+		paperEntry(
+			"2609.00002",
+			"P2",
+			openalex("Ethics of AI", ["jailbreak detection"]),
+		),
+		paperEntry("2609.00003", "P3", openalex("Adversarial Robustness")),
+		{ id: "news:n", type: "news", title: "N" },
+	]);
+	// Under the abstract: the main topic, and the first 5 keywords. News has neither.
+	expect(about("arxiv:2609.00001")).toEqual([
+		"Topics (OpenAlex): Adversarial Robustness",
+		"Keywords (OpenAlex): jailbreak detection, monitoring, one, two, three",
+	]);
+	expect(document.querySelector('[id="news:n"] .entry__about')).toBeNull();
+
+	// The blanks already picked stay when a keyword is clicked.
+	pick("kind", "papers");
+	pick("read", "unread");
+	const place = vi.fn();
+	vi.stubGlobal("scrollBy", place);
+	const second = document.getElementById("arxiv:2609.00002");
+	if (second === null) throw new Error("no second paper");
+	second.getBoundingClientRect = vi
+		.fn()
+		.mockReturnValueOnce({ top: 300 })
+		.mockReturnValue({ top: 120 });
+	subjectButton("arxiv:2609.00002", "jailbreak detection").click();
+	expect(sentenceText()).toBe(
+		"Show me papers about jailbreak detection from any venue, this month, unread.",
+	);
+	expect(shownIds()).toEqual(["arxiv:2609.00001", "arxiv:2609.00002"]);
+	// The paper clicked under stays where it was in the window: the page scrolls by how far it moved.
+	expect(place).toHaveBeenCalledWith(0, -180);
+
+	// The keyword is pressed under every paper that carries it, and a topic joins it.
+	const pressed = () =>
+		[...document.querySelectorAll('[aria-pressed="true"][data-subject]')].map(
+			(one) => `${one.closest("article")?.id} ${one.textContent}`,
+		);
+	expect(pressed()).toEqual([
+		"arxiv:2609.00001 jailbreak detection",
+		"arxiv:2609.00002 jailbreak detection",
+	]);
+	subjectButton("arxiv:2609.00001", "Adversarial Robustness").click();
+	expect(sentenceText()).toContain(
+		"about jailbreak detection or Adversarial Robustness",
+	);
+	expect(shownIds()).toEqual([
+		"arxiv:2609.00001",
+		"arxiv:2609.00002",
+		"arxiv:2609.00003",
+	]);
+	expect(pressed()).toHaveLength(4);
+	// Clicking one the subject already holds changes nothing.
+	subjectButton("arxiv:2609.00001", "Adversarial Robustness").click();
+	expect(sentenceText()).toContain(
+		"about jailbreak detection or Adversarial Robustness",
+	);
+});
+test("a paper OpenAlex has not classified yet reads Topics (OpenAlex): none yet, and the subject no topic yet finds it", async () => {
+	await openOwnerPage([
+		paperEntry(
+			"2609.00001",
+			"P1",
+			openalex("Adversarial Robustness", ["monitoring"]),
+		),
+		paperEntry("2609.00002", "P2"),
+	]);
+	expect(about("arxiv:2609.00002")).toEqual(["Topics (OpenAlex): none yet"]);
+	expect(
+		document.querySelector('[id="arxiv:2609.00002"] [data-subject]'),
+	).toBeNull();
+	pick("subject", "no topic yet");
+	expect(sentenceText()).toContain("about no topic yet");
+	expect(shownIds()).toEqual(["arxiv:2609.00002"]);
+});
 test("on a wide window the choices open beside the sidebar, so the sentence and its count stay in view", () => {
 	vi.stubGlobal("innerWidth", 1280);
 	vi.stubGlobal("innerHeight", 800);
