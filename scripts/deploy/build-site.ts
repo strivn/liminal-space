@@ -27,6 +27,7 @@ import {
 import { basename, dirname, join, posix, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+	FIELD_CAPS,
 	hasText,
 	isDay,
 	readLines,
@@ -473,7 +474,10 @@ export function searchFile(lines: unknown[]): SearchFile {
 				type: typeof entry.type === "string" ? entry.type : "",
 				topic: mainTopic(entry.openalex),
 				keywords: keywordsOf(entry.openalex),
-				venue: hasText(entry.venue) ? entry.venue : null,
+				venue:
+					hasText(entry.venue) && entry.venue.length <= FIELD_CAPS.source
+						? entry.venue
+						: null,
 			});
 		}
 	}
