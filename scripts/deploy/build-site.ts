@@ -4,7 +4,8 @@
 // words file in data/index.json; the month files are the same with or without it.
 // Writes <output folder>/liminal-space/: the page's own files from site/, the owner's copy of the page in owner/
 // (Access guards that path; the page knows it is the owner's from where it was opened), data/index.json with
-// data/months/*.json and data/selected.json, the owner's marked papers with their notes, from digests.standouts.json
+// data/months/*.json, data/search.json (each entry's topic, keywords and venue) and
+// data/selected.json, the owner's marked papers with their notes, from digests.standouts.json
 // beside the digests file (none when it isn't there; shapes in shared/site-data-shape.ts), and digests/ with one Markdown file a day and index.md for
 // agents (entries only, never the owner's notes), and sitemap.xml. Beside it, _headers, _redirects
 // and robots.txt from HEADERS, REDIRECTS and ROBOTS below.
@@ -25,7 +26,13 @@ import {
 } from "node:fs";
 import { basename, dirname, join, posix, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isDay, readLines, UnloadedLine } from "../../shared/entry-checks.ts";
+import {
+	FIELD_CAPS,
+	hasText,
+	isDay,
+	readLines,
+	UnloadedLine,
+} from "../../shared/entry-checks.ts";
 import { digestMarkdown } from "../../shared/entry-markdown.ts";
 import { LAB_FIGURE_ADDRESSES } from "../../shared/lab-figures.ts";
 import {
@@ -44,7 +51,10 @@ import {
 	type IndexEntry,
 	MONTHS_FOLDER,
 	type MonthLine,
+	SEARCH_PATH,
 	SELECTED_PATH,
+	type SearchEntry,
+	type SearchFile,
 	type SelectedFile,
 	type SelectedPaper,
 	type SiteIndex,
@@ -133,6 +143,8 @@ const HEADERS = [
 	`/${PAGE_PATH}/${STUDY_CHARS_FOLDER}/*`,
 	KEEP_A_YEAR,
 	`/${PAGE_PATH}/${SELECTED_PATH}`,
+	"  Cache-Control: no-cache",
+	`/${PAGE_PATH}/${SEARCH_PATH}`,
 	"  Cache-Control: no-cache",
 	...KEPT_FILES.flatMap((kept) => [
 		`/${PAGE_PATH}/${kept.replace(/\/$/, "/*")}`,
@@ -441,6 +453,61 @@ function readSelected(digestsFile: string): SelectedFile {
 	return selectedFile(rows);
 }
 
+// data/search.json from the digests' lines: each entry's date, kind, main OpenAlex topic, keywords and venue.
+export function searchFile(lines: unknown[]): SearchFile {
+	const entries: SearchEntry[] = [];
+	for (const line of lines) {
+		if (
+			!isJsonObject(line) ||
+			!isDay(line.date) ||
+			!Array.isArray(line.entries)
+		) {
+			continue;
+		}
+		for (const entry of line.entries) {
+			if (!isJsonObject(entry) || typeof entry.id !== "string") {
+				continue;
+			}
+			entries.push({
+				id: entry.id,
+				date: line.date,
+				type: typeof entry.type === "string" ? entry.type : "",
+				topic: mainTopic(entry.openalex),
+				keywords: keywordsOf(entry.openalex),
+				venue:
+					hasText(entry.venue) && entry.venue.length <= FIELD_CAPS.source
+						? entry.venue
+						: null,
+			});
+		}
+	}
+	return { entries: entries };
+}
+
+function mainTopic(openalex: unknown): SearchEntry["topic"] {
+	if (!isJsonObject(openalex) || !Array.isArray(openalex.topics)) {
+		return null;
+	}
+	const first: unknown = openalex.topics[0];
+	if (
+		!isJsonObject(first) ||
+		typeof first.name !== "string" ||
+		typeof first.field !== "string"
+	) {
+		return null;
+	}
+	return { name: first.name, field: first.field };
+}
+
+function keywordsOf(openalex: unknown): string[] {
+	if (!isJsonObject(openalex) || !Array.isArray(openalex.keywords)) {
+		return [];
+	}
+	return openalex.keywords.filter(
+		(keyword): keyword is string => typeof keyword === "string",
+	);
+}
+
 // The <link rel="preload"> line for the newest month's file, which index.html can't name itself since the name holds
 // the file's hash; "" for a site with no days. crossorigin as index.html's other fetch preload says.
 export function preloadLinks(index: SiteIndex): string {
@@ -507,9 +574,13 @@ function writeBuild(
 	cpSync(join(SITE_FOLDER, "sw.js"), join(page, OWNER_FOLDER, "sw.js"));
 	writeFileSync(join(page, INDEX_PATH), JSON.stringify(data.index));
 	writeFileSync(join(page, SELECTED_PATH), JSON.stringify(selected));
+	const lines: MonthLine[] = [];
 	data.months.forEach((json, name) => {
 		writeFileSync(join(page, "data", name), json);
+		const month: { lines: MonthLine[] } = JSON.parse(json);
+		lines.push(...month.lines);
 	});
+	writeFileSync(join(page, SEARCH_PATH), JSON.stringify(searchFile(lines)));
 	mkdirSync(join(page, DIGESTS_FOLDER));
 	digestFiles(data).forEach((text, name) => {
 		writeFileSync(join(page, DIGESTS_FOLDER, name), text);

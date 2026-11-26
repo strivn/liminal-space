@@ -85,3 +85,32 @@ Feature: Reading the page
     And a visitor opens the public page the next morning
     Then the public page opens on Selected
     And Selected lists today's 2nd paper under its OpenAlex topic, with the note "Changed how I read monitor results."
+
+  Rule: The Feed shows only the entries the Search sentence describes
+
+    Scenario: A visitor reads only the papers about one topic
+      Given 3 of today's papers have the OpenAlex topic "Adversarial Robustness in Machine Learning"
+      When a visitor opens the public page
+      And picks "Adversarial Robustness in Machine Learning" as the subject in Search
+      Then the Feed shows those 3 papers and nothing else
+
+    Scenario: A keyword under a paper narrows the Feed and keeps the other choices
+      Given today's 2nd paper has the OpenAlex keyword "jailbreak detection"
+      When a visitor opens the public page
+      And picks "papers" as the kind in Search
+      And clicks the keyword "jailbreak detection" under today's 2nd paper
+      Then Search reads "Show me papers about jailbreak detection"
+      And the Feed shows today's 2nd paper and nothing else
+
+    Scenario: Papers from one venue show together, however their venue is written
+      Given today's 1st paper's venue is "ACL Findings 2026" and its 2nd paper's is "ACL 2026 Findings"
+      When a visitor opens the public page
+      And picks "ACL 2026 Findings" as the venue in Search
+      Then the Feed shows today's 1st and 2nd papers and nothing else
+
+    @owner
+    Scenario: The owner finds every unread paper, in any month
+      Given a day 2 months ago has 5 papers
+      When the owner opens their page
+      And picks "any time" and "unread" in Search
+      Then the Feed shows 26 papers, every one unread

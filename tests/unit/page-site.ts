@@ -23,6 +23,10 @@ export type FakeSite = {
 };
 
 type Entry = Record<string, unknown> & { id: string; type: string };
+type OpenAlex = {
+	topics?: { name: string; field: string }[];
+	keywords?: string[];
+};
 
 export function paperEntry(id: string, title: string, extra = {}): Entry {
 	return { id: `arxiv:${id}`, type: "paper", title: title, ...extra };
@@ -57,6 +61,23 @@ export function siteOf(lines: { date: string; entries: Entry[] }[]): FakeSite {
 			files[`data/months/${month}.json`] = { lines: [line] };
 		else file.lines.push(line);
 	}
+	// The search file, from the entries' own fields.
+	files["data/search.json"] = {
+		entries: lines.flatMap((line) =>
+			line.entries.map((entry) => {
+				const openalex = entry.openalex as OpenAlex | undefined;
+				const main = openalex?.topics?.[0];
+				return {
+					id: entry.id,
+					date: line.date,
+					type: entry.type,
+					topic: main ? { name: main.name, field: main.field } : null,
+					keywords: openalex?.keywords ?? [],
+					venue: typeof entry.venue === "string" ? entry.venue : null,
+				};
+			}),
+		),
+	};
 	const index: SiteIndex = { days: days, months: months };
 	return {
 		index: index,
@@ -205,4 +226,20 @@ export function texts(selector: string) {
 	return [...document.querySelectorAll(selector)].map((node) =>
 		(node.textContent ?? "").trim(),
 	);
+}
+
+// Titles of entries shown now.
+export function shownTitles() {
+	return [...document.querySelectorAll<HTMLElement>("main article")]
+		.filter(
+			(one) => !one.hidden && !one.closest("[hidden], details:not([open])"),
+		)
+		.map((one) => one.querySelector(".entry__title")?.textContent);
+}
+
+// Titles the contents list now.
+export function listedTitles() {
+	return [...document.querySelectorAll<HTMLElement>(".contents li:not([role])")]
+		.filter((one) => !one.closest("[hidden]"))
+		.map((one) => one.textContent);
 }

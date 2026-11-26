@@ -7,7 +7,7 @@ import { dayLabel, itemCount, mergeDays, shortDayLabel } from "./days.ts";
 import { el, status } from "./dom.ts";
 import { type Typesetting, typesetFolded } from "./entry.ts";
 import type { OlderDay } from "./older-day.ts";
-import { inMonth, type PageModel } from "./page-model.ts";
+import type { PageModel } from "./page-model.ts";
 import type { Day, Entry, Skipped } from "./types.ts";
 
 // The header's warning for what checkDigests left out: "2 entries couldn't be shown", which unfolds to each entry or
@@ -52,7 +52,7 @@ export type MonthsDeps = {
 	drawComments: (details: HTMLElement) => void;
 	collectContents: () => void;
 	redraw: () => void;
-	refreshTags: () => void;
+	refilter: () => void;
 };
 
 export type Months = {
@@ -64,7 +64,7 @@ export type Months = {
 	fillMonth: (month: string, monthLines: unknown[]) => void;
 	showDayError: (pair: OlderDay) => void;
 	openOlderDay: (pair: OlderDay) => void;
-	loadSelectedMonths: () => Promise<void>;
+	loadMonths: (months: string[]) => Promise<void>;
 };
 
 export function createMonths(model: PageModel, deps: MonthsDeps): Months {
@@ -154,7 +154,7 @@ export function createMonths(model: PageModel, deps: MonthsDeps): Months {
 		deps.drawComments(pair.details);
 	}
 
-	// Draw every day of a month that just loaded, then filter them as the chips that are on say. A month loads once;
+	// Draw every day of a month that just loaded, then filter them as the Search sentence says. A month loads once;
 	// this runs again only for a day that couldn't be drawn, when it is opened again.
 	function fillMonth(month: string, monthLines: unknown[]) {
 		const waiting = model.olderPairs.filter(
@@ -183,7 +183,7 @@ export function createMonths(model: PageModel, deps: MonthsDeps): Months {
 		}
 		deps.collectContents();
 		deps.redraw();
-		deps.refreshTags();
+		deps.refilter();
 	}
 
 	// "Couldn't load this day" under the day's row, until it is opened again.
@@ -213,15 +213,15 @@ export function createMonths(model: PageModel, deps: MonthsDeps): Months {
 			});
 	}
 
-	// Explicit month navigation loads each selected month once, in parallel.
-	function loadSelectedMonths() {
-		const months = new Set<string>();
+	// Load and draw `months`.
+	function loadMonths(months: string[]) {
+		const waiting = new Set<string>();
 		for (const pair of model.olderPairs) {
-			if (pair.ids !== null && inMonth(model, pair.day.date))
-				months.add(pair.month);
+			if (pair.ids !== null && months.includes(pair.month))
+				waiting.add(pair.month);
 		}
 		// A month that fails to load is left to its days, which say so when opened; one that fails to draw is logged.
-		const loads = Array.from(months).map((month) =>
+		const loads = Array.from(waiting).map((month) =>
 			deps
 				.loadMonth(month)
 				.then(
@@ -238,6 +238,6 @@ export function createMonths(model: PageModel, deps: MonthsDeps): Months {
 		fillMonth: fillMonth,
 		showDayError: showDayError,
 		openOlderDay: openOlderDay,
-		loadSelectedMonths: loadSelectedMonths,
+		loadMonths: loadMonths,
 	};
 }
