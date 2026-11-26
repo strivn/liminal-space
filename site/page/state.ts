@@ -1,4 +1,4 @@
-// Read marks, likes and dislikes, tags and the read filter as the page holds them in memory.
+// Read marks, likes and dislikes and tags as the page holds them in memory.
 import { isDay } from "../../shared/entry-checks.ts";
 import { isJsonObject, type JsonObject } from "../../shared/narrow.ts";
 import {
@@ -160,7 +160,7 @@ export function standoutsOf(saved: unknown): Standouts {
 
 // The two next-action tags an entry can carry, each independent of the other, by the name they are saved under.
 export const TAG_NAMES: TagName[] = ["toRead", "learnFirst"];
-// What each tag's toggle and filter chip say.
+// What each tag's toggle and the Search sentence say.
 export const TAG_LABELS: Record<TagName, string> = {
 	toRead: "To read",
 	learnFirst: "Learn first",
@@ -216,67 +216,12 @@ export function clearTag(tags: Tags, id: string, name: TagName): void {
 	if (Object.keys(tags[id]).length === 0) delete tags[id];
 }
 
-// How many of `entries` carry each tag: { toRead, learnFirst }. An entry with both counts once for each. Only ids
-// are read.
-export function tagCounts(
-	entries: { id: string }[],
-	tags: Tags,
-): Record<TagName, number> {
-	const counts: Record<TagName, number> = { toRead: 0, learnFirst: 0 };
-	for (const entry of entries) {
-		for (const name of TAG_NAMES) {
-			if (matchesTags(tags, entry.id, [name])) counts[name] += 1;
-		}
-	}
-	return counts;
-}
-
 // Whether an entry carries every tag in `names`. Every entry does when `names` is empty.
 export function matchesTags(tags: Tags, id: string, names: TagName[]): boolean {
 	for (const name of names) {
 		if (!tags[id] || tags[id][name] !== true) return false;
 	}
 	return true;
-}
-
-// ---- read filter ----
-
-// The three read chips, in the order the sidebar shows them.
-export type ReadChip = "unread" | "abstract" | "paper";
-export const READ_CHIPS: ReadChip[] = ["unread", "abstract", "paper"];
-// What each read chip says.
-export const READ_CHIP_LABELS: Record<ReadChip, string> = {
-	unread: "Unread",
-	abstract: "Abstract",
-	paper: "Paper",
-};
-
-// Whether an entry shows while a read chip is on: only papers are tracked, so no other type matches a chip. For a
-// paper, unread means no read state; abstract and paper mean that depth. null (no chip on) matches every entry.
-export function matchesRead(
-	state: ReadState,
-	entry: { id: string; type: string },
-	chip: ReadChip | null,
-): boolean {
-	if (chip === null) return true;
-	if (entry.type !== "paper") return false;
-	const saved = state[entry.id];
-	if (chip === "unread") return saved === undefined;
-	return saved !== undefined && saved.depth === chip;
-}
-
-// Each read chip's count across the given entries. Only ids and types are read.
-export function readChipCounts(
-	entries: { id: string; type: string }[],
-	state: ReadState,
-): Record<ReadChip, number> {
-	const counts: Record<ReadChip, number> = { unread: 0, abstract: 0, paper: 0 };
-	for (const entry of entries) {
-		for (const chip of READ_CHIPS) {
-			if (matchesRead(state, entry, chip)) counts[chip] += 1;
-		}
-	}
-	return counts;
 }
 
 // The site's state taken as the page's own: each entry's value from `fresh`, except for an entry `keeps` names (a
@@ -305,23 +250,4 @@ export function copyTags(tags: Tags): Tags {
 		copy[id] = entryTagsOf(tags[id]);
 	}
 	return copy;
-}
-
-// What the page says when no entry carries every tag whose chip is on: 'No entries are tagged "To read"', or
-// 'No entries are tagged "To read" and "Learn first"'.
-function noTaggedEntriesText(names: TagName[]) {
-	const quoted = names.map((name) => `"${TAG_LABELS[name]}"`);
-	return `No entries are tagged ${quoted.join(" and ")}`;
-}
-
-// What the page says when no entry matches the chips that are on: the tag chips' words alone, 'No entries are
-// unread' or 'No entries are read "Paper"' for a read chip alone, 'No entries match the filters' for both.
-export function noFilteredEntriesText(
-	names: TagName[],
-	readChip: ReadChip | null,
-) {
-	if (readChip === null) return noTaggedEntriesText(names);
-	if (names.length > 0) return "No entries match the filters";
-	if (readChip === "unread") return "No entries are unread";
-	return `No entries are read "${READ_CHIP_LABELS[readChip]}"`;
 }

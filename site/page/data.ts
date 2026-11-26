@@ -1,10 +1,13 @@
 // The page's data files: which page this is, where its files are, data/index.json and the month files.
 
+import { FIELD_CAPS, hasText, isDay } from "../../shared/entry-checks.ts";
 import { isJsonObject } from "../../shared/narrow.ts";
+import { OPENALEX_CAPS } from "../../shared/openalex.ts";
 import {
 	INDEX_PATH,
 	type IndexDay,
 	type IndexEntry,
+	type SearchEntry,
 	type SearchFile,
 	type SiteIndex,
 	STUDY_WORDS_PATH,
@@ -140,5 +143,69 @@ export function createMonthLoader(index: SiteIndex): MonthLoader {
 
 // The search file as the page reads it; null when it is not the search shape.
 export function readSearchFile(json: unknown): SearchFile | null {
-	throw new Error(`not implemented: ${typeof json}`);
+	if (!isJsonObject(json) || !Array.isArray(json.entries)) return null;
+	const entries: SearchEntry[] = [];
+	const listed: unknown[] = json.entries;
+	for (const entry of listed) {
+		const kept = readSearchEntry(entry);
+		if (kept !== null) entries.push(kept);
+	}
+	return { entries: entries };
+}
+
+// The index as search entries, bare.
+export function searchEntriesOf(index: SiteIndex): SearchEntry[] {
+	return index.days.flatMap((day) =>
+		day.entries.map((entry) => ({
+			id: entry.id,
+			date: day.date,
+			type: entry.type,
+			topic: null,
+			keywords: [],
+			venue: null,
+		})),
+	);
+}
+
+function readSearchEntry(entry: unknown): SearchEntry | null {
+	if (
+		!isJsonObject(entry) ||
+		!isCapped(entry.id, FIELD_CAPS.id) ||
+		!isDay(entry.date) ||
+		typeof entry.type !== "string" ||
+		!Array.isArray(entry.keywords) ||
+		entry.keywords.length > OPENALEX_CAPS.keywords
+	) {
+		return null;
+	}
+	const keywords: unknown[] = entry.keywords;
+	if (!keywords.every((keyword) => isCapped(keyword, OPENALEX_CAPS.text))) {
+		return null;
+	}
+	let topic: SearchEntry["topic"] = null;
+	if (entry.topic !== null) {
+		if (
+			!isJsonObject(entry.topic) ||
+			!isCapped(entry.topic.name, OPENALEX_CAPS.text) ||
+			!isCapped(entry.topic.field, OPENALEX_CAPS.text)
+		) {
+			return null;
+		}
+		topic = { name: entry.topic.name, field: entry.topic.field };
+	}
+	if (entry.venue !== null && !isCapped(entry.venue, FIELD_CAPS.source)) {
+		return null;
+	}
+	return {
+		id: entry.id,
+		date: entry.date,
+		type: entry.type,
+		topic: topic,
+		keywords: keywords.filter((keyword) => typeof keyword === "string"),
+		venue: entry.venue,
+	};
+}
+
+export function isCapped(value: unknown, cap: number): value is string {
+	return hasText(value) && value.length <= cap;
 }

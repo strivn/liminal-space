@@ -2,32 +2,25 @@
 import { hashIds, hashTarget, openPermalink } from "./contents.ts";
 import type { MonthLoader } from "./data.ts";
 import type { OlderDay } from "./older-day.ts";
-import { inMonth, type PageModel } from "./page-model.ts";
+import type { PageModel } from "./page-model.ts";
 
-// What a link may need from the rest of the page: selecting a month, loading one, drawing it, and saying a day failed.
+// What a link needs from the page.
 export type PermalinkDeps = {
 	loadMonth: MonthLoader;
-	selectMonth: (month: string | null) => Promise<void>;
+	isShown: (id: string) => boolean;
+	showDay: (date: string) => void;
 	fillMonth: (month: string, monthLines: unknown[]) => void;
 	showDayError: (pair: OlderDay) => void;
 };
 
 export function createPermalinks(model: PageModel, deps: PermalinkDeps) {
 	// Follow #<entry id>: an entry already drawn opens at once; one the index places in an older month waits for that
-	// month; an id in no digest is left alone.
+	// month; an id in no digest is left alone. A hidden entry brings its month back.
 	function followPermalink() {
 		const target = hashTarget();
 		if (target) {
-			const pair = model.olderPairs.find((older) =>
-				older.details.contains(target),
-			);
-			if (pair !== undefined && !inMonth(model, pair.day.date))
-				void deps.selectMonth(pair.month);
-			else if (
-				model.newestSection.contains(target) &&
-				!inMonth(model, model.newestDate)
-			)
-				void deps.selectMonth(model.newestDate.slice(0, 7));
+			const date = target.closest<HTMLElement>("[data-date]")?.dataset.date;
+			if (date !== undefined && !deps.isShown(target.id)) deps.showDay(date);
 			openPermalink();
 			return;
 		}
@@ -36,7 +29,8 @@ export function createPermalinks(model: PageModel, deps: PermalinkDeps) {
 			(older) => older.ids !== null && older.ids.some((id) => ids.includes(id)),
 		);
 		if (pair === undefined) return;
-		if (!inMonth(model, pair.day.date)) void deps.selectMonth(pair.month);
+		const id = pair.ids?.find((own) => ids.includes(own));
+		if (id !== undefined && !deps.isShown(id)) deps.showDay(pair.day.date);
 		deps
 			.loadMonth(pair.month)
 			.then(

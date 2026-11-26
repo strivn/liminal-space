@@ -35,11 +35,8 @@ import {
 import { unreadToday } from "../../site/page/notifications.ts";
 import {
 	clearTag,
-	matchesRead,
 	matchesTags,
-	readChipCounts,
 	readCounts,
-	tagCounts,
 	takeawaysOf,
 	toggleRead,
 	toggleTag,
@@ -1503,25 +1500,7 @@ test('Clearing "To read" when it is off changes nothing and never turns it on', 
 	assert.deepEqual(none, {});
 });
 
-test("The chips count tagged entries across all days", () => {
-	// Today: papers 1 to 3, two of them "To read". Three days ago: papers 30 and 31, one of them both tags. An entry
-	// with both tags counts once for each chip; an id no digest has counts for neither.
-	const entries = papers(1, 3).concat(papers(30, 2));
-	const tags: Tags = {
-		"arxiv:2601.00001": { toRead: true },
-		"arxiv:2601.00002": { toRead: true },
-		"arxiv:2601.00030": { toRead: true, learnFirst: true },
-		"arxiv:2601.99999": { toRead: true, learnFirst: true },
-	};
-	assert.deepEqual(tagCounts(entries, tags), { toRead: 3, learnFirst: 1 });
-});
-
-test("With nothing tagged, both tag chips count 0", () => {
-	assert.deepEqual(tagCounts(papers(1, 2), {}), { toRead: 0, learnFirst: 0 });
-	assert.deepEqual(tagCounts([], {}), { toRead: 0, learnFirst: 0 });
-});
-
-test("A chip shows only entries with its tag, across all days", () => {
+test("An entry matches a tag when it carries it, across all days", () => {
 	const tags: Tags = {
 		"arxiv:2601.00001": { toRead: true },
 		"arxiv:2601.00002": { toRead: true },
@@ -1538,7 +1517,7 @@ test("A chip shows only entries with its tag, across all days", () => {
 	assert.equal(matchesTags(tags, "arxiv:2601.00040", ["learnFirst"]), true);
 });
 
-test("Both chips on show only entries with both tags", () => {
+test("An entry matches two tags only when it carries both", () => {
 	const tags: Tags = {
 		"arxiv:2601.00001": { toRead: true },
 		"arxiv:2601.00002": { learnFirst: true },
@@ -1561,139 +1540,18 @@ test("Both chips on show only entries with both tags", () => {
 		matchesTags(tags, "arxiv:2601.00004", ["toRead", "learnFirst"]),
 		false,
 	);
-	// The order the chips went on doesn't matter.
+	// The order the tags are named in doesn't matter.
 	assert.equal(
 		matchesTags(tags, "arxiv:2601.00003", ["learnFirst", "toRead"]),
 		true,
 	);
 });
 
-test("With no tag chip on, every entry is shown, tagged or not", () => {
-	// With no chip on, every entry matches, tagged or not.
+test("With no tag named, every entry matches, tagged or not", () => {
 	const tags: Tags = { "arxiv:2601.00001": { toRead: true } };
 	assert.equal(matchesTags(tags, "arxiv:2601.00001", []), true);
 	assert.equal(matchesTags(tags, "arxiv:2601.00002", []), true);
 	assert.equal(matchesTags({}, "arxiv:2601.00030", []), true);
-});
-
-test("Untagging an entry while filtering lowers the chip count at once, and the next filter leaves the entry out", () => {
-	const entries = papers(1, 2);
-	const tags: Tags = {
-		"arxiv:2601.00001": { toRead: true },
-		"arxiv:2601.00002": { toRead: true },
-	};
-	assert.deepEqual(tagCounts(entries, tags), { toRead: 2, learnFirst: 0 });
-
-	// "To read" pressed on the first paper: the count drops at once.
-	toggleTag(tags, "arxiv:2601.00001", "toRead");
-	assert.deepEqual(tagCounts(entries, tags), { toRead: 1, learnFirst: 0 });
-
-	// Once the filter is applied again, only the second paper matches.
-	assert.equal(matchesTags(tags, "arxiv:2601.00001", ["toRead"]), false);
-	assert.equal(matchesTags(tags, "arxiv:2601.00002", ["toRead"]), true);
-});
-
-// ---- read state: the read filter chips ----
-
-test("The read chips count papers across all days", () => {
-	// Today: papers 1 to 3 and news 1 and 2; paper 1 read "abstract", paper 2 "paper", news 1 "read". Three days ago:
-	// papers 30 and 31, paper 30 read "abstract". No news item is in any count, read or not; an id no digest has
-	// counts for nothing.
-	const entries = papers(1, 3).concat([news(1), news(2)], papers(30, 2));
-	const state = readState([
-		["arxiv:2601.00001", "abstract", TODAY],
-		["arxiv:2601.00002", "paper", TODAY],
-		["news:fixture-1", "read", TODAY],
-		["arxiv:2601.00030", "abstract", "2026-09-24"],
-		["arxiv:2601.99999", "paper", TODAY],
-	]);
-	assert.deepEqual(readChipCounts(entries, state), {
-		unread: 2,
-		abstract: 2,
-		paper: 1,
-	});
-});
-
-test("With nothing read, the Unread chip counts every paper and the depth chips count 0", () => {
-	assert.deepEqual(readChipCounts(papers(1, 2), {}), {
-		unread: 2,
-		abstract: 0,
-		paper: 0,
-	});
-	assert.deepEqual(readChipCounts([], {}), {
-		unread: 0,
-		abstract: 0,
-		paper: 0,
-	});
-});
-
-test("A read chip shows only entries read that deep, across all days", () => {
-	const state = readState([
-		["arxiv:2601.00001", "abstract", TODAY],
-		["arxiv:2601.00030", "abstract", "2026-09-24"],
-		["arxiv:2601.00002", "paper", TODAY],
-		["news:fixture-1", "read", TODAY],
-	]);
-
-	assert.equal(matchesRead(state, paper(1), "abstract"), true);
-	assert.equal(matchesRead(state, paper(30), "abstract"), true);
-	assert.equal(matchesRead(state, paper(2), "abstract"), false);
-	assert.equal(matchesRead(state, paper(3), "abstract"), false);
-	assert.equal(matchesRead(state, news(1), "abstract"), false);
-
-	assert.equal(matchesRead(state, paper(2), "paper"), true);
-	assert.equal(matchesRead(state, paper(1), "paper"), false);
-	assert.equal(matchesRead(state, paper(3), "paper"), false);
-	assert.equal(matchesRead(state, news(1), "paper"), false);
-});
-
-test("Unread shows papers with no read state, and no news", () => {
-	const state = readState([
-		[paper(1).id, "paper", TODAY],
-		[news(1).id, "read", TODAY],
-	]);
-
-	assert.equal(matchesRead(state, paper(2), "unread"), true);
-	// Read at any depth is not unread, and a news item, an article or a report is never listed as unread.
-	assert.equal(matchesRead(state, paper(1), "unread"), false);
-	assert.equal(matchesRead(state, news(1), "unread"), false);
-	assert.equal(matchesRead(state, news(2), "unread"), false);
-	assert.equal(matchesRead(state, article(1), "unread"), false);
-	assert.equal(matchesRead(state, report(1), "unread"), false);
-});
-
-test("With no read chip on, every entry is shown, read or not", () => {
-	// With no read chip on, every entry matches, read or not.
-	const state = readState([
-		[paper(1).id, "paper", TODAY],
-		[news(1).id, "read", TODAY],
-	]);
-	assert.equal(matchesRead(state, paper(1), null), true);
-	assert.equal(matchesRead(state, news(1), null), true);
-	assert.equal(matchesRead(state, paper(2), null), true);
-	assert.equal(matchesRead({}, paper(30), null), true);
-});
-
-test("Marking a paper read while filtering changes the read chip counts at once, and the next filter leaves it out of Unread", () => {
-	const entries = papers(1, 2);
-	const state: ReadState = {};
-	assert.deepEqual(readChipCounts(entries, state), {
-		unread: 2,
-		abstract: 0,
-		paper: 0,
-	});
-
-	// "Abstract" pressed on the first paper: the counts change at once.
-	toggleRead(state, "arxiv:2601.00001", "abstract", TODAY);
-	assert.deepEqual(readChipCounts(entries, state), {
-		unread: 1,
-		abstract: 1,
-		paper: 0,
-	});
-
-	// Once the filter is applied again, only the second paper is unread.
-	assert.equal(matchesRead(state, paper(1), "unread"), false);
-	assert.equal(matchesRead(state, paper(2), "unread"), true);
 });
 
 // ---- links in text ----
@@ -2131,7 +1989,7 @@ test("A day is crowned when one of its papers is read in depth", () => {
 		false,
 	);
 });
-test("a read mark on a news item, an article or a report counts in no square, chip, progress line or badge", () => {
+test("a read mark on a news item, an article or a report counts in no square, progress line or badge", () => {
 	const entries = [paper(1), paper(2), news(1), article(1), report(1)];
 	const unread: ReadState = {};
 	const marked = readState([
@@ -2145,16 +2003,6 @@ test("a read mark on a news item, an article or a report counts in no square, ch
 	assert.equal(counts.read, 0);
 	assert.equal(counts.total, 2);
 	assert.equal(heatLevel(counts.read, counts.total), "none");
-	// The chips.
-	assert.deepEqual(
-		readChipCounts(entries, marked),
-		readChipCounts(entries, unread),
-	);
-	assert.deepEqual(readChipCounts(entries, marked), {
-		unread: 2,
-		abstract: 0,
-		paper: 0,
-	});
 	// The progress line.
 	assert.deepEqual(
 		paperProgress(entries, marked),

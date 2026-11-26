@@ -357,6 +357,10 @@
 	.entry__body {
 		touch-action: pan-y pinch-zoom;
 	}
+	/* A topic or keyword takes a tap about 40px tall: the padding of an inline button draws over the lines around it. */
+	.entry__subject {
+		padding: 9px 0;
+	}
 	.entry__rail {
 		position: static;
 		flex-direction: row;
