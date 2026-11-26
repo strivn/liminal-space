@@ -45,6 +45,7 @@ export type Paper = {
 	source: string;
 	url: string;
 	abstract: string;
+	venue?: string;
 	openalex: {
 		topics: { name: string; field: string; score: number }[];
 		keywords: string[];
