@@ -14,6 +14,7 @@ export type Cut = { text: string; word: ModelWord | null };
 // The cut-off word of a description that ends in "…" is at most this many characters.
 const MAX_CUT_CHARACTERS = 6;
 const HAN = /\p{Script=Han}/u;
+const ONLY_HAN = /^\p{Script=Han}+$/u;
 // The Han characters just before a closing …, with the … itself.
 const CUT_WORD = /\p{Script=Han}+…$/u;
 
@@ -22,12 +23,15 @@ export function splitSentences(text: string): string[] {
 	return text.split(/(?<=[。！？；][」』”’）)]*)/u).filter((s) => s !== "");
 }
 
-// The words with every run of Han characters the model left out added as a plain word, in its place, and how many were
-// added. The cut-off word before a closing … stays out. Words that are not in the sentence are left for cutField to refuse.
+// The words with every run of Han characters the model left out, or put in a word with other text, added as a plain
+// word, in its place, and how many were added. The cut-off word before a closing … stays out. Words that are not in the
+// sentence are left for cutField to refuse.
 export function withOmitted(
 	sentence: string,
-	words: ModelWord[],
+	modelWords: ModelWord[],
 ): { words: ModelWord[]; added: number } {
+	// Non-Han words become text.
+	const words = modelWords.filter((word) => ONLY_HAN.test(word.text));
 	const plain = (text: string): ModelWord[] =>
 		(text.match(/\p{Script=Han}+/gu) ?? []).map((run) => ({
 			text: run,
