@@ -5,6 +5,7 @@ import {
 	INDEX_PATH,
 	type IndexDay,
 	type IndexEntry,
+	type SearchFile,
 	type SiteIndex,
 	STUDY_WORDS_PATH,
 } from "../../shared/site-data-shape.ts";
@@ -135,4 +136,9 @@ export function createMonthLoader(index: SiteIndex): MonthLoader {
 		}
 		return pending;
 	};
+}
+
+// The search file as the page reads it; null when it is not the search shape.
+export function readSearchFile(json: unknown): SearchFile | null {
+	throw new Error(`not implemented: ${typeof json}`);
 }

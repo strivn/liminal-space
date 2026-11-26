@@ -45,6 +45,7 @@ import {
 	MONTHS_FOLDER,
 	type MonthLine,
 	SELECTED_PATH,
+	type SearchFile,
 	type SelectedFile,
 	type SelectedPaper,
 	type SiteIndex,
@@ -443,6 +444,11 @@ function readSelected(digestsFile: string): SelectedFile {
 
 // The <link rel="preload"> line for the newest month's file, which index.html can't name itself since the name holds
 // the file's hash; "" for a site with no days. crossorigin as index.html's other fetch preload says.
+// data/search.json from the digests' lines: each entry's date, kind, main OpenAlex topic, keywords and venue.
+export function searchFile(lines: unknown[]): SearchFile {
+	throw new Error(`not implemented: ${lines.length}`);
+}
+
 export function preloadLinks(index: SiteIndex): string {
 	const newest = index.days[0];
 	if (newest === undefined) return "";

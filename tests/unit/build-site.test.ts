@@ -769,3 +769,7 @@ test("privacy: the site data holds no comment, takeaway, tag, like or read mark 
 		}
 	}
 });
+
+test.todo(
+	"the build writes data/search.json with each entry's id, date, kind, main OpenAlex topic, keywords and venue, and nothing of the owner's",
+);

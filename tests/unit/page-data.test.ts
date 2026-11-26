@@ -169,3 +169,7 @@ test("a month file that answers 404 fails when a fresh copy of the index names t
 		"The file for 2026-10 couldn't be loaded",
 	);
 });
+
+test.todo(
+	"security: a search file that is not the search shape is refused, and the Search sentence then offers no topics, keywords or venues",
+);
