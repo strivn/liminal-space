@@ -143,11 +143,16 @@ export type SearchDeps = {
 	entries: () => SearchEntry[];
 	marksOf: ((id: string) => EntryMarks) | null;
 	loadMonths: (months: string[]) => Promise<void>;
-	onChange: (shown: Set<string>, narrowed: boolean) => void;
+	onChange: (
+		shown: Set<string>,
+		narrowed: boolean,
+		subjects: readonly string[],
+	) => void;
 };
 
 // What createSearch hands the page.
 export type Search = {
+	focusOn: (subject: string) => void;
 	reset: () => void;
 	showDay: (date: string) => void;
 	refresh: () => void;
@@ -490,7 +495,7 @@ export function createSearch(
 		drawTally();
 		drawPanel();
 		const shown = showing(sentence);
-		deps.onChange(shown, isNarrowed(sentence));
+		deps.onChange(shown, isNarrowed(sentence), sentence.subjects);
 		// Ad hoc is known once drawn.
 		const wanted = sentence.marks.adHoc
 			? showing({ ...sentence, marks: { ...sentence.marks, adHoc: false } })
@@ -504,11 +509,23 @@ export function createSearch(
 		deps.loadMonths([...months]).then(
 			() => {
 				if (mine !== version || !sentence.marks.adHoc) return;
-				deps.onChange(showing(sentence), isNarrowed(sentence));
+				deps.onChange(
+					showing(sentence),
+					isNarrowed(sentence),
+					sentence.subjects,
+				);
 				refresh();
 			},
 			(error) => console.error("Months not loaded:", error),
 		);
+	}
+
+	function focusOn(subject: string) {
+		if (!sentence.subjects.includes(subject))
+			sentence = { ...sentence, subjects: [...sentence.subjects, subject] };
+		typed = "";
+		open = null;
+		apply();
 	}
 
 	function reset() {
@@ -574,5 +591,5 @@ export function createSearch(
 	window.addEventListener("scroll", place, { passive: true });
 
 	apply();
-	return { reset, showDay, refresh };
+	return { focusOn, reset, showDay, refresh };
 }

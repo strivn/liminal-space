@@ -23,6 +23,10 @@ export type FakeSite = {
 };
 
 type Entry = Record<string, unknown> & { id: string; type: string };
+type OpenAlex = {
+	topics?: { name: string; field: string }[];
+	keywords?: string[];
+};
 
 export function paperEntry(id: string, title: string, extra = {}): Entry {
 	return { id: `arxiv:${id}`, type: "paper", title: title, ...extra };
@@ -60,14 +64,18 @@ export function siteOf(lines: { date: string; entries: Entry[] }[]): FakeSite {
 	// The search file, from the entries' own fields.
 	files["data/search.json"] = {
 		entries: lines.flatMap((line) =>
-			line.entries.map((entry) => ({
-				id: entry.id,
-				date: line.date,
-				type: entry.type,
-				topic: null,
-				keywords: [],
-				venue: typeof entry.venue === "string" ? entry.venue : null,
-			})),
+			line.entries.map((entry) => {
+				const openalex = entry.openalex as OpenAlex | undefined;
+				const main = openalex?.topics?.[0];
+				return {
+					id: entry.id,
+					date: line.date,
+					type: entry.type,
+					topic: main ? { name: main.name, field: main.field } : null,
+					keywords: openalex?.keywords ?? [],
+					venue: typeof entry.venue === "string" ? entry.venue : null,
+				};
+			}),
 		),
 	};
 	const index: SiteIndex = { days: days, months: months };

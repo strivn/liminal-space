@@ -85,6 +85,7 @@ test("a paper shows its journal reference and comments, between the date and the
 		"Journal reference: NeurIPS 2026",
 		"Comments: 27 pages, 10 figures. Code: https://github.com/example/repo",
 		"Abstract.",
+		"Topics (OpenAlex): none yet",
 	]);
 	expect(
 		hrefs(article.querySelectorAll(".entry__venue")[1] ?? article),
@@ -333,6 +334,7 @@ test("a paper's Figure 1 shows after the abstract and before the links row, link
 	).toEqual([
 		"entry__title",
 		"entry__abstract",
+		"entry__about",
 		"entry__figure",
 		"entry__links",
 	]);

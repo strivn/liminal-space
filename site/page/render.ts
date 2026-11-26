@@ -22,7 +22,7 @@ import {
 	siteFile,
 } from "./data.ts";
 import { dayLabel, headerDay, jakartaToday, mergeDays } from "./days.ts";
-import { el, startStatusRegion, status } from "./dom.ts";
+import { el, startStatusRegion, status, targetElement } from "./dom.ts";
 import {
 	drawHeatmap,
 	drawHeatStrip,
@@ -36,6 +36,7 @@ import { createFeedbackBoard } from "./feedback-board.ts";
 import { refreshIcon } from "./icons.ts";
 import { createMonths, skippedWarning } from "./months.ts";
 import { notificationButton, showBadge, unreadToday } from "./notifications.ts";
+import { showSubjects } from "./openalex-lines.ts";
 import {
 	createSender,
 	createStateRefresh,
@@ -357,12 +358,15 @@ function render(
 	const publicMarks = new Set(marked.papers.map((paper) => paper.entry.id));
 	// Ad hoc ids among entries drawn.
 	const adHocIds = new Set<string>();
+	// The topics and keywords the sentence's subject holds, which the links under each paper show.
+	let subjectsNow: readonly string[] = [];
 	const dayEntries = (day: Day, typesetting: Typesetting) =>
 		contentsGroups(day.entries)
 			.flatMap((group) => group.entries)
 			.map((entry) => {
 				if (entry.ad_hoc === true) adHocIds.add(entry.id);
 				const article = renderEntry(entry, controls, typesetting);
+				showSubjects(article, subjectsNow);
 				if (owner === null && publicMarks.has(entry.id)) markKicker(article);
 				return article;
 			});
@@ -508,10 +512,27 @@ function render(
 						adHoc: adHocIds.has(id),
 					}),
 		loadMonths: loadMonths,
-		onChange: (shown, narrowed) => {
+		onChange: (shown, narrowed, subjects) => {
 			shownNow = shown;
+			subjectsNow = subjects;
+			showSubjects(main, subjects);
 			feedFilter.show(shown, narrowed);
 		},
+	});
+
+	// A link under a paper adds its subject.
+	main.addEventListener("click", (event) => {
+		const button = targetElement(event).closest<HTMLElement>("[data-subject]");
+		const article = button?.closest("article.entry");
+		const subject = button?.dataset.subject;
+		if (article === null || article === undefined || subject === undefined)
+			return;
+		const before = article.getBoundingClientRect().top;
+		search?.focusOn(subject);
+		if (article.closest("[hidden]") !== null) return;
+		// Keep the paper where it was.
+		const moved = article.getBoundingClientRect().top - before;
+		if (moved !== 0) window.scrollBy(0, moved);
 	});
 
 	// Bring the sentence to the day's month.

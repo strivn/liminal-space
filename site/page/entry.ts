@@ -25,6 +25,7 @@ import {
 	railToggles,
 	showRailIcon,
 } from "./icons.ts";
+import { openAlexLines } from "./openalex-lines.ts";
 import type { StandoutBoard } from "./standout-board.ts";
 import { readCounts } from "./state.ts";
 import type { TagBoard } from "./tag-board.ts";
@@ -383,6 +384,7 @@ export function renderEntry(
 		comment,
 		description,
 		abstract,
+		openAlexLines(entry),
 		figureNode(entry),
 		linksRow,
 	);
