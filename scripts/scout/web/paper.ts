@@ -2,6 +2,8 @@
 // agrees with it.
 // Usage: node scripts/scout/web/paper.ts --append <digests file> [--date YYYY-MM-DD]
 //        [--pick surprise --pick-source <url>] <paper json file>
+// --ad-hoc (add.yml) marks the paper "ad_hoc": true, after its other fields; status leaves such papers out of "papers
+// today". The usage line leaves it out, as add.yml's own option.
 // The file holds one PaperClaim as JSON. A claim with a DOI is checked against Crossref's record for the DOI (the same
 // title and first author's surname), and its page is not opened; a claim without one is checked against its page,
 // which must load and hold the title and the first author's surname. The address must be https and public either way,
@@ -10,9 +12,13 @@
 // tests only.
 import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
-import { normalizeId } from "../../../shared/arxiv-id.ts";
 import { entryProblems } from "../../../shared/entry-checks.ts";
-import { errorCode, isJsonObject } from "../../../shared/narrow.ts";
+import { errorCode } from "../../../shared/narrow.ts";
+import {
+	arxivPaperOf,
+	type PaperClaim,
+	paperClaimOf,
+} from "../../../shared/paper-claim.ts";
 import {
 	appendDigestLine,
 	idsInText,
@@ -42,32 +48,7 @@ const USAGE =
 	"usage: node scripts/scout/web/paper.ts --append <digests file> [--date YYYY-MM-DD] " +
 	"[--pick surprise --pick-source <url>] <paper json file>";
 
-// What the scout or the connector gives for one paper.
-export type PaperClaim = {
-	title: string;
-	authors: string[];
-	venue: string;
-	url: string;
-	doi?: string;
-	abstract?: string;
-};
-
-// The arXiv paper a claim's address or DOI names ("an arXiv id 2507.11473", or the arXiv address), or null for none.
-function arxivPaperOf(claim: PaperClaim): string | null {
-	const fromDoi = claim.doi?.match(/^10\.48550\/arxiv\.(.+)$/i);
-	if (fromDoi?.[1] !== undefined) {
-		return `the arXiv id ${normalizeId(fromDoi[1])}`;
-	}
-	const page = URL.parse(claim.url);
-	if (page === null || !/(^|\.)arxiv\.org$/i.test(page.hostname)) {
-		return null;
-	}
-	const fromPath = page.pathname.match(/^\/(?:abs|pdf|html)\/(.+?)(?:\.pdf)?$/);
-	if (fromPath?.[1] !== undefined) {
-		return `the arXiv id ${normalizeId(fromPath[1])}`;
-	}
-	return `the arXiv address ${claim.url}`;
-}
+export type { PaperClaim };
 
 // A name's words as the surname check compares them: accents and case dropped, split at anything but a letter.
 function nameWords(name: string): string[] {
@@ -208,34 +189,9 @@ function claimFrom(text: string): PaperClaim | string {
 	} catch {
 		return "doesn't hold JSON";
 	}
-	if (!isJsonObject(value)) {
-		return "doesn't hold a JSON object";
-	}
-	const { title, authors, venue, url, doi, abstract, ...rest } = value;
-	const extra = Object.keys(rest);
-	if (extra.length > 0) {
-		return `holds fields a paper doesn't take: ${extra.join(", ")}`;
-	}
-	const isText = (field: unknown): field is string =>
-		typeof field === "string" && field !== "";
-	if (
-		!isText(title) ||
-		!isText(venue) ||
-		!isText(url) ||
-		!Array.isArray(authors) ||
-		authors.length === 0 ||
-		!authors.every(isText) ||
-		(doi !== undefined && !isText(doi)) ||
-		(abstract !== undefined && typeof abstract !== "string")
-	) {
-		return "needs a title, authors, a venue and a url, each as text, and a doi or an abstract only as text";
-	}
-	const claim: PaperClaim = { title, authors, venue, url };
-	if (doi !== undefined) {
-		claim.doi = doi;
-	}
-	if (abstract !== undefined) {
-		claim.abstract = abstract;
+	const claim = paperClaimOf(value);
+	if (Array.isArray(claim)) {
+		return claim.join("; ");
 	}
 	return claim;
 }
@@ -249,6 +205,7 @@ function readOptions(args: string[]) {
 			options: {
 				pick: { type: "string" },
 				"pick-source": { type: "string" },
+				"ad-hoc": { type: "boolean" },
 			},
 			allowPositionals: true,
 			strict: true,
@@ -343,6 +300,9 @@ async function main(args: string[]): Promise<void> {
 	}
 	if (pickSource !== undefined) {
 		entry.pick_source = pickSource;
+	}
+	if (options.values["ad-hoc"] === true) {
+		entry.ad_hoc = true;
 	}
 	const entryIssues = entryProblems(entry, "check");
 	if (entryIssues.length > 0) {
