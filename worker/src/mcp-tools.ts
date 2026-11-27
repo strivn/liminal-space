@@ -283,8 +283,9 @@ const addPapersTool: Tool = {
 		'as "doi:" and the DOI itself, such as doi:10.1145/3442188.3445922, never a doi.org link. Give a paper that ' +
 		"has neither an arXiv id nor a DOI Crossref knows (an SSRN preprint, say) as metadata: fetch its page first and " +
 		"copy the title, authors and venue from the page itself, never from memory, with the page's https address as " +
-		"url and its DOI when the page shows one. A paper's metadata is added only when its page holds the title and " +
-		"the first author's surname and its DOI opens that page. At most 10 papers a call in all. For ids the add run " +
+		"url and its DOI when the page shows one. A paper's metadata is added only when it checks out: with a DOI, " +
+		"Crossref's record for the DOI must have the title and the first author's surname; without one, its page " +
+		"must. At most 10 papers a call in all. For ids the add run " +
 		"copies title, authors and abstract from arXiv or Crossref itself. The tool queues the request; the papers " +
 		"are on the page a few minutes later.",
 	inputSchema: {
