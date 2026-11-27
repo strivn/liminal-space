@@ -19,6 +19,7 @@ import {
 import { announce, el } from "./dom.ts";
 import type { FeedbackBoard } from "./feedback-board.ts";
 import {
+	conferenceIcon,
 	crownIcon,
 	type RailIcon,
 	railButton,
@@ -33,6 +34,7 @@ import type { TakeawayBoard } from "./takeaway-board.ts";
 import {
 	discussLink,
 	metaLine,
+	publishedLine,
 	referenceText,
 	safeUrl,
 	talkLink,
@@ -223,6 +225,20 @@ function sourceIcon(url: string) {
 	});
 }
 
+// The conference mark: a presentation icon with no text, so the title's own text stays the same.
+function conferenceMark() {
+	return el(
+		"span",
+		{
+			class: "entry__conference",
+			role: "img",
+			"aria-label": "Published at a conference",
+			title: "Published at a conference",
+		},
+		conferenceIcon(),
+	);
+}
+
 function arxivLogomark(url: string) {
 	const mark = el("img", {
 		class: "entry__arxiv-mark",
@@ -346,6 +362,9 @@ export function renderEntry(
 		titleContent = el("a", { href: titleUrl, draggable: "false" }, entry.title);
 	const title = el("h3", { class: "entry__title" }, titleContent);
 	// No space is added before the logomark (CSS spaces it): the title's text, which comments anchor to, stays the same.
+	// A paper with a published version gets the conference mark, before the arXiv logo.
+	const publishedHeader = publishedLine(entry);
+	if (publishedHeader !== null) title.append(conferenceMark());
 	// A paper from a conference's proceedings links its own site's page, which gets no arXiv mark.
 	if ((pdfUrl || publishedUrl) && url?.startsWith("https://arxiv.org/")) {
 		title.append(arxivLogomark(url));
@@ -379,7 +398,7 @@ export function renderEntry(
 		title,
 		byline,
 		published,
-		acceptedLine(entry),
+		publishedHeader === null ? acceptedLine(entry) : null,
 		journalRef,
 		comment,
 		description,
@@ -388,7 +407,11 @@ export function renderEntry(
 		figureNode(entry),
 		linksRow,
 	);
-	const meta = el("p", { class: "entry__meta" }, metaLine(entry));
+	const meta = el(
+		"p",
+		{ class: "entry__meta" },
+		publishedHeader ?? metaLine(entry),
+	);
 	if (entry.ad_hoc === true)
 		meta.append(el("span", { class: "entry__origin" }, "Ad hoc"));
 	// The public page: the text alone, across the rail's room too.
