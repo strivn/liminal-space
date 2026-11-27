@@ -142,7 +142,7 @@ test("a paper with a DOI is appended when Crossref's record for the DOI has its 
 		readFileSync(file, "utf8").split("\n")[0] ?? "",
 	);
 	assert.equal(entry?.title, claim.title);
-	assert.equal(entry?.url, claim.url);
+	assert.equal(entry?.url, `https://doi.org/${DOI}`);
 	assert.equal(
 		stand.hits.some((path) => path === "/paper"),
 		false,
@@ -344,6 +344,11 @@ test("the appended line has a doi: id when a DOI is given, else a url: id, and p
 		assert.equal(entry?.type, "paper");
 		assert.equal(entry?.venue, "Journal of Privacy Studies 2026");
 		assert.equal(entry?.venue_source, claim.url);
+		// A DOI paper links to the DOI's address; one without a DOI, to its page.
+		assert.equal(
+			entry?.url,
+			name === "with-doi" ? `https://doi.org/${DOI}` : claim.url,
+		);
 		ids.push(entry?.id);
 	}
 	assert.deepEqual(ids, [`doi:${DOI}`, `url:${stand.base}/paper`]);

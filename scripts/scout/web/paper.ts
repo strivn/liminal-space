@@ -1,4 +1,5 @@
-// Append a paper that has no arXiv id from its own metadata, once its page and DOI agree with it.
+// Append a paper that has no arXiv id from its own metadata, once Crossref's record (with a DOI) or its page (without)
+// agrees with it.
 // Usage: node scripts/scout/web/paper.ts --append <digests file> [--date YYYY-MM-DD]
 //        [--pick surprise --pick-source <url>] <paper json file>
 // The file holds one PaperClaim as JSON. A claim with a DOI is checked against Crossref's record for the DOI (the same
@@ -18,6 +19,7 @@ import {
 	readDigestsText,
 } from "../../digests/digests-file.ts";
 import { type Fail, failer } from "../../lib/cli.ts";
+import CONSTANTS from "../../lib/constants.json" with { type: "json" };
 import { htmlToText } from "../../lib/html.ts";
 import { request } from "../../lib/http.ts";
 import { FetchRefused, publicAddress } from "../../lib/public-address.ts";
@@ -166,7 +168,7 @@ export function evidenceOf(claim: PaperClaim): string {
 	return `the page ${claim.url}`;
 }
 
-// Each check the claim failed, as a phrase; [] when its page and DOI agree with it.
+// Each check the claim failed, as a phrase; [] when Crossref's record (with a DOI) or its page (without) agrees with it.
 export async function claimProblems(claim: PaperClaim): Promise<string[]> {
 	const arxiv = arxivPaperOf(claim);
 	if (arxiv !== null) {
@@ -319,13 +321,18 @@ async function main(args: string[]): Promise<void> {
 	if (problems.length > 0) {
 		fail(`refused ${id}: ${problems.join("; ")}`);
 	}
+	// A paper with a DOI links to the address Crossref vouched for, not to the claim's.
+	let url = claim.url;
+	if (claim.doi !== undefined) {
+		url = `${CONSTANTS.doiBase}/${claim.doi.toLowerCase()}`;
+	}
 	const entry: Record<string, unknown> = proceedingsEntry({
 		id: id,
 		title: claim.title,
 		authors: claim.authors,
 		published: "",
 		abstract: claim.abstract ?? "",
-		url: claim.url,
+		url: url,
 		pdf: null,
 		source: siteOf(claim.url) ?? "",
 		note: claim.venue,
