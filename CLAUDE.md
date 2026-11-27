@@ -7,7 +7,7 @@ This file guides coding agents and people working in this repository. `AGENTS.md
 Liminal space is a personal research feed for one reader, served at ivan.wiryadi.com/liminal-space/. Each morning
 a Claude Agent SDK session, the scout, finds papers, news and reports and appends them to `site/digests.js` through
 the scripts in `scripts/`. Its instructions are `scripts/scout/scout.md`, not this file. An entry's
-metadata is copied from, or checked against, the publisher's page. A Cloudflare Worker stores the entries in D1,
+metadata is copied from, or checked against, the publisher's page or Crossref's record. A Cloudflare Worker stores the entries in D1,
 and a static page draws them. The owner's copy of the page, behind Cloudflare Access, also saves read marks, tags,
 likes, comments, highlights and takeaways through the Worker.
 
@@ -78,8 +78,8 @@ pnpm exec bddgen && pnpm exec playwright test --grep "<scenario name>"
     candidates. One folder per source: `arxiv/` (`arxiv.ts` appends papers, `figure.ts` and `first-page.ts` read their
     HTML), `proceedings/`, `openalex/` (`topics.ts` adds a paper's OpenAlex topics and keywords), `newsfeed/`, `news/`
     (Google News), `hugging-face/`, and `web/` (`describe.ts` copies a
-    publisher's description, `paper.ts` appends a paper without an arXiv id once its page and DOI agree with its
-    metadata, `fulltext.sh` fetches an item's full text, checked by `fetch-guard.ts`).
+    publisher's description, `paper.ts` appends a paper without an arXiv id once Crossref's record (with a DOI) or
+    its page (without) agrees with its metadata, `fulltext.sh` fetches an item's full text, checked by `fetch-guard.ts`).
   - `digests/`: `digests.ts` answers questions about the digests file, adds items to it and checks every line.
   - `deploy/`: building the site (`build-site.ts`), syncing with D1 (`sync.ts`) and the connector's add requests
     (`add-requests.ts`).
