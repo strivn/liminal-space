@@ -7,6 +7,8 @@
 // An id is "doi:<doi>", or "url:<paper page>" for a paper whose page names no DOI, as search.ts prints it; with
 // --crossref, only "doi:<doi>".
 // --date D fills in a day the scout missed: the line is dated D (rule in scripts/lib/run-date.ts).
+// --ad-hoc (add.yml) marks every appended paper "ad_hoc": true, after its other fields; status leaves such papers out of
+// "papers today". The usage line leaves it out, as add.yml's own option.
 // Environment: POPETS_BASE, ACL_ANTHOLOGY_BASE, AAAI_OJS_BASE, CROSSREF_API (stand-ins for tests), LIMINAL_CACHE
 // (the cache folder); LIMINAL_TODAY (YYYY-MM-DD) is taken as today in Asia/Jakarta, tests only.
 import { existsSync, readFileSync } from "node:fs";
@@ -72,6 +74,7 @@ function readOptions(args: string[]) {
 				crossref: { type: "boolean" },
 				pick: { type: "string" },
 				"pick-source": { type: "string" },
+				"ad-hoc": { type: "boolean" },
 			},
 			allowPositionals: true,
 			strict: true,
@@ -186,6 +189,7 @@ function readRequest(args: string[]) {
 		crossref: crossref,
 		pick: pick,
 		pickSource: pickSource,
+		adHoc: options.values["ad-hoc"] === true,
 		ids: ids,
 	};
 }
@@ -230,14 +234,17 @@ async function entriesToAppend(request: Request) {
 
 // Append the entries to the digests file, with the surprise mark when there is one, and name each paper that landed.
 function appendEntries(request: Request, entries: Record<string, unknown>[]) {
-	const { file, day, pick, pickSource } = request;
-	// The surprise mark and where it was found go after the paper's own fields.
+	const { file, day, pick, pickSource, adHoc } = request;
+	// The surprise mark, where it was found and the ad hoc mark go after the paper's own fields.
 	for (const entry of entries) {
 		if (pick !== undefined) {
 			entry.pick = pick;
 		}
 		if (pickSource !== undefined) {
 			entry.pick_source = pickSource;
+		}
+		if (adHoc) {
+			entry.ad_hoc = true;
 		}
 	}
 

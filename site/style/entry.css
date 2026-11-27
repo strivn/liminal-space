@@ -244,6 +244,24 @@ details.day:nth-last-child(1 of details.day:not([hidden])) {
 	height: 0.9em;
 	width: auto;
 }
+/* The conference mark between the title and the arXiv logo: the logomark's height, in the secondary text colour so it
+   follows the theme. */
+.entry__conference {
+	display: inline-block;
+	margin-left: 6px;
+	line-height: 0;
+	vertical-align: -0.1em;
+	color: var(--text-secondary);
+}
+.entry__conference svg {
+	height: 0.9em;
+	width: 0.9em;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
 
 /* Display math scrolls inside its own box rather than widening the page. */
 .katex-display {

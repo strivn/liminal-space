@@ -12,6 +12,15 @@ export function crownIcon(className?: string): SVGSVGElement {
 	return crown;
 }
 
+// The conference mark after a published paper's title: Lucide 1.64.0's presentation (ISC licence), with the path data as
+// lucide-static ships it.
+export function conferenceIcon(): SVGSVGElement {
+	return svgIcon(
+		"presentation",
+		'<path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/>',
+	);
+}
+
 // The phone bar's Contents icon: Lucide 1.64.0's menu (ISC licence), with the path data as lucide-static ships it.
 export function menuIcon(className: string): SVGSVGElement {
 	const menu = svgIcon(

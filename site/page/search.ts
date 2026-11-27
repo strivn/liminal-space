@@ -13,6 +13,7 @@ import {
 	timeWord,
 	venuePanel,
 } from "./search-choices.ts";
+import type { Thread } from "./types.ts";
 
 // What the sentence says. `subjects` holds "t:<topic>", "f:<field>", "k:<keyword>" or "none"; `time` is "today",
 // "week", "m:YYYY-MM" or "any"; `marks` is the owner's only.
@@ -26,6 +27,8 @@ export type Sentence = {
 		read: "unread" | "abstract" | "paper" | null;
 		tags: string[];
 		adHoc: boolean;
+		commented: boolean;
+		highlighted: boolean;
 	};
 };
 
@@ -34,7 +37,7 @@ export type EntryMarks = {
 	read: "unread" | "abstract" | "paper";
 	tags: string[];
 	adHoc: boolean;
-};
+} & EntryNotes;
 
 const DAY_MS = 86400000;
 
@@ -45,7 +48,13 @@ export function startingSentence(today: string): Sentence {
 		join: "or",
 		venue: "",
 		time: `m:${today.slice(0, 7)}`,
-		marks: { read: null, tags: [], adHoc: false },
+		marks: {
+			read: null,
+			tags: [],
+			adHoc: false,
+			commented: false,
+			highlighted: false,
+		},
 	};
 }
 
@@ -123,6 +132,8 @@ function matchesMarks(
 		if (entry.type !== "paper" || marks.read !== wanted.read) return false;
 	}
 	if (!wanted.tags.every((tag) => marks.tags.includes(tag))) return false;
+	if (wanted.commented && !marks.commented) return false;
+	if (wanted.highlighted && !marks.highlighted) return false;
 	return !wanted.adHoc || marks.adHoc;
 }
 
@@ -134,6 +145,8 @@ export function isNarrowed(sentence: Sentence): boolean {
 		sentence.venue !== "" ||
 		sentence.marks.read !== null ||
 		sentence.marks.tags.length > 0 ||
+		sentence.marks.commented ||
+		sentence.marks.highlighted ||
 		sentence.marks.adHoc
 	);
 }
@@ -214,6 +227,8 @@ function readPhrase(marks: Sentence["marks"]): string {
 	const parts: string[] = [];
 	if (marks.read !== null) parts.push(READ_WORDS[marks.read]);
 	for (const tag of marks.tags) parts.push(`tagged ${tag}`);
+	if (marks.commented) parts.push("commented");
+	if (marks.highlighted) parts.push("highlighted");
 	if (marks.adHoc) parts.push("added ad hoc");
 	return parts.length > 0 ? parts.join(" and ") : "read or not";
 }
@@ -304,7 +319,11 @@ export function createSearch(
 						blank(
 							"read",
 							readPhrase(marks),
-							marks.read !== null || marks.tags.length > 0 || marks.adHoc,
+							marks.read !== null ||
+								marks.tags.length > 0 ||
+								marks.commented ||
+								marks.highlighted ||
+								marks.adHoc,
 							".",
 						),
 					]
@@ -592,4 +611,14 @@ export function createSearch(
 
 	apply();
 	return { focusOn, reset, showDay, refresh };
+}
+
+// Whether an entry holds a comment and a highlight, for the marks blank.
+export type EntryNotes = { commented: boolean; highlighted: boolean };
+
+export function notesOfThreads(threads: Thread[]): EntryNotes {
+	return {
+		commented: threads.some((thread) => thread.comments.length > 0),
+		highlighted: threads.some((thread) => thread.highlight === true),
+	};
 }

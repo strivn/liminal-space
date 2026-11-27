@@ -12,6 +12,7 @@
 			"Bash(node scripts/scout/arxiv/figure.ts site/digests.js *)",
 			"Bash(node scripts/scout/arxiv/first-page.ts *)",
 			"Bash(node scripts/scout/proceedings/proceedings.ts --append site/digests.js *)",
+			"Bash(node scripts/scout/web/paper.ts --append site/digests.js *)",
 			"Bash(node scripts/scout/search.ts site/digests.js)",
 			"Bash(node scripts/scout/search.ts site/digests.js --cached)",
 			"Bash(node scripts/scout/search.ts site/digests.js --date *)",

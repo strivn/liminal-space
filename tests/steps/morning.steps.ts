@@ -97,44 +97,51 @@ export function arxivStandIn(world: object): { url: string; id: string } {
 	return arxiv;
 }
 
-When("the morning scripts add it and push the day", async ({ world }) => {
-	const arxiv = arxivStandIn(world);
-	await startWorker(world.cloud);
-	const written = path.join(world.dir, "digests.js");
-	const pulled = path.join(world.dir, "pulled", "digests.js");
-	fs.mkdirSync(path.dirname(pulled));
-	const proceedings = proceedingsStandIns.get(world);
-	const venue = proceedings
-		? ["--venue", "NeurIPS 2017", "--venue-source", NEURIPS_2017]
-		: [];
-	await runScript(
-		world,
-		"scout/arxiv/arxiv.ts",
-		["--append", written, ...venue, arxiv.id],
-		{
-			ARXIV_API: arxiv.url,
-			ARXIV_OAI: arxiv.url,
-			ARXIV_PAUSE_MS: "1",
-			TMPDIR: world.dir,
-			LIMINAL_ALLOW_LOCAL: new URL(arxiv.url).host,
-		},
-	);
-	await runScript(
-		world,
-		"scout/proceedings/camera-ready.ts",
-		[written],
-		proceedings
-			? {
-					INTERESTS_FILE: proceedings.interests,
-					PROCEEDINGS_BASE: proceedings.base,
-					LIMINAL_ALLOW_LOCAL: new URL(proceedings.base).host,
-				}
-			: {},
-	);
-	await runScript(world, "deploy/sync.ts", ["push", written]);
-	await runScript(world, "deploy/sync.ts", ["pull", "--database", pulled]);
-	world.digestsFile = pulled;
-});
+When(
+	"the morning scripts add it(, without a venue,) and push the day",
+	async ({ world }) => {
+		const arxiv = arxivStandIn(world);
+		await startWorker(world.cloud);
+		const written = path.join(world.dir, "digests.js");
+		const pulled = path.join(world.dir, "pulled", "digests.js");
+		fs.mkdirSync(path.dirname(pulled));
+		const proceedings = proceedingsStandIns.get(world);
+		await runScript(
+			world,
+			"scout/arxiv/arxiv.ts",
+			["--append", written, arxiv.id],
+			{
+				ARXIV_API: arxiv.url,
+				ARXIV_OAI: arxiv.url,
+				ARXIV_PAUSE_MS: "1",
+				TMPDIR: world.dir,
+				LIMINAL_ALLOW_LOCAL: new URL(arxiv.url).host,
+			},
+		);
+		await runScript(
+			world,
+			"scout/proceedings/camera-ready.ts",
+			[written],
+			proceedings
+				? {
+						INTERESTS_FILE: proceedings.interests,
+						PROCEEDINGS_BASE: proceedings.base,
+						LIMINAL_ALLOW_LOCAL: new URL(proceedings.base).host,
+					}
+				: { INTERESTS_FILE: noProceedings(world) },
+		);
+		await runScript(world, "deploy/sync.ts", ["push", written]);
+		await runScript(world, "deploy/sync.ts", ["pull", "--database", pulled]);
+		world.digestsFile = pulled;
+	},
+);
+
+// An interests.md that lists no proceedings, so no site is asked.
+function noProceedings(world: World) {
+	const interests = path.join(world.dir, "no-proceedings.md");
+	fs.writeFileSync(interests, "## Proceedings\n");
+	return interests;
+}
 
 Then(
 	/^the (public|owner's) page shows "(.*)" under today$/,
@@ -247,28 +254,25 @@ Then("the diagram opens the post", async ({ world }) => {
 	);
 });
 
-Given(
-	"NeurIPS 2017 accepted it and its proceedings list it",
-	async ({ world }) => {
-		const listing = `<ul><li class="conference" data-track="conference"><div class="paper-content">
+Given("NeurIPS 2017's proceedings list it", async ({ world }) => {
+	const listing = `<ul><li class="conference" data-track="conference"><div class="paper-content">
 <a title="paper title" href="${new URL(ATTENTION_2017).pathname}">Attention is All you Need</a>
 <span class="paper-authors">Ashish Vaswani, Noam Shazeer, Niki Parmar</span></div></li></ul>`;
-		const server = http.createServer((request, response) => {
-			const found = new URL(request.url ?? "/", "http://x").pathname;
-			response.writeHead(found === new URL(NEURIPS_2017).pathname ? 200 : 404);
-			response.end(listing);
-		});
-		const interests = path.join(world.dir, "interests.md");
-		fs.writeFileSync(
-			interests,
-			`## Proceedings\n- NeurIPS 2017: ${NEURIPS_2017}\n`,
-		);
-		proceedingsStandIns.set(world, {
-			base: await listen(world, server),
-			interests,
-		});
-	},
-);
+	const server = http.createServer((request, response) => {
+		const found = new URL(request.url ?? "/", "http://x").pathname;
+		response.writeHead(found === new URL(NEURIPS_2017).pathname ? 200 : 404);
+		response.end(listing);
+	});
+	const interests = path.join(world.dir, "interests.md");
+	fs.writeFileSync(
+		interests,
+		`## Proceedings\n- NeurIPS 2017: ${NEURIPS_2017}\n`,
+	);
+	proceedingsStandIns.set(world, {
+		base: await listen(world, server),
+		interests,
+	});
+});
 
 // The public page's entry for a title.
 async function titleLink(world: World, browser: Browser, title: string) {
@@ -277,22 +281,39 @@ async function titleLink(world: World, browser: Browser, title: string) {
 }
 
 Then(
-	"its title opens its NeurIPS 2017 proceedings page, with arXiv still linked",
+	"the public page shows {string} above its title",
+	async ({ world, browser }, line: string) => {
+		const entry = await titleLink(world, browser, "Attention Is All You Need");
+		await expect(entry.locator(".entry__meta")).toHaveText(line);
+		const meta = await entry.locator(".entry__meta").boundingBox();
+		const title = await entry.locator(".entry__title").boundingBox();
+		expect(meta?.y).toBeLessThan(title?.y ?? 0);
+	},
+);
+
+Then(
+	"its title opens its NeurIPS 2017 proceedings page, followed by the conference mark, then the arXiv logo",
 	async ({ world, browser }) => {
 		const entry = await titleLink(world, browser, "Attention Is All You Need");
 		await expect(
 			entry.locator(".entry__title > a:not(.entry__arxiv)"),
 		).toHaveAttribute("href", ATTENTION_2017);
-		await expect(entry.locator(".entry__arxiv")).toHaveAttribute(
-			"href",
-			"https://arxiv.org/abs/1706.03762",
-		);
+		await expect(
+			entry.locator(
+				".entry__title > a:not(.entry__arxiv) + .entry__conference + a.entry__arxiv",
+			),
+		).toHaveAttribute("href", "https://arxiv.org/abs/1706.03762");
+		await expect(entry.locator(".entry__conference")).toBeVisible();
 	},
 );
 
-Then("its title opens its arXiv page", async ({ world, browser }) => {
-	const entry = await titleLink(world, browser, "Chain of Thought");
-	await expect(
-		entry.locator(".entry__title > a:not(.entry__arxiv)"),
-	).toHaveAttribute("href", /^https:\/\/arxiv\.org\//);
-});
+Then(
+	"its title opens its arXiv page, with no conference mark",
+	async ({ world, browser }) => {
+		const entry = await titleLink(world, browser, "Chain of Thought");
+		await expect(
+			entry.locator(".entry__title > a:not(.entry__arxiv)"),
+		).toHaveAttribute("href", /^https:\/\/arxiv\.org\//);
+		await expect(entry.locator(".entry__conference")).toHaveCount(0);
+	},
+);

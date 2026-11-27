@@ -59,6 +59,12 @@ function redirectTarget(response: Response, from: string): string | null {
 	return new URL(location, from).href;
 }
 
+// The size limit of a conference's list or proceedings file, given its name with or without the year ("NeurIPS 2026").
+export function sourceLimit(venue: string): number {
+	const limits: Record<string, number> = CONSTANTS.sourceBytes;
+	return limits[venue.replace(/\s+\d{4}$/, "")] ?? CONSTANTS.maxBodyBytes;
+}
+
 // The body, or null over the cap.
 async function readBody(
 	response: Response,

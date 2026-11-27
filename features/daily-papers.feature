@@ -11,14 +11,15 @@ Feature: The morning's papers arrive
 
     Scenario: A paper added this morning shows on both pages and opens its published version
       Given arXiv has the paper "Attention Is All You Need"
-      And NeurIPS 2017 accepted it and its proceedings list it
-      When the morning scripts add it and push the day
+      And NeurIPS 2017's proceedings list it
+      When the morning scripts add it, without a venue, and push the day
       Then the public page shows "Attention Is All You Need" under today
       And the owner's page shows "Attention Is All You Need" under today
-      And its title opens its NeurIPS 2017 proceedings page, with arXiv still linked
+      And the public page shows "paper · NeurIPS 2017 · proceedings.neurips.cc · arXiv 1706.03762" above its title
+      And its title opens its NeurIPS 2017 proceedings page, followed by the conference mark, then the arXiv logo
 
     Scenario: A paper only on arXiv opens its arXiv page
       Given arXiv has the paper "Chain of Thought Monitorability: A New and Fragile Opportunity for AI Safety"
       When the morning scripts add it and push the day
       Then the public page shows "Chain of Thought Monitorability: A New and Fragile Opportunity for AI Safety" under today
-      And its title opens its arXiv page
+      And its title opens its arXiv page, with no conference mark

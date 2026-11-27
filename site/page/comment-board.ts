@@ -91,6 +91,8 @@ export type CommentBoard = {
 	placeAll: () => void;
 	drawIn: (container: Element) => void;
 	replace: (fresh: AllComments) => void;
+	// An entry's threads as the page holds them now.
+	threadsOf: (entryId: string) => Thread[];
 	// The side panel's dialog, the handle along its top on a phone, and closing it as its close button does.
 	sheet: HTMLDialogElement;
 	sheetHandle: HTMLElement;
@@ -904,6 +906,7 @@ export function createCommentBoard(
 		placeAll: placeAll,
 		drawIn: drawIn,
 		replace: replace,
+		threadsOf: (entryId) => usableThreads(store.memory[entryId]),
 		sheet: panel.dialog,
 		sheetHandle: panel.handle,
 		dismissSheet: dismissSheet,

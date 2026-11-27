@@ -91,6 +91,7 @@ venue links to its published version once the file lists it.
 - ACL 2026: https://aclanthology.org/volumes/2026.acl-short.bib
 - ACL Findings 2026: https://aclanthology.org/volumes/2026.findings-acl.bib
 - ICLR 2026: https://proceedings.iclr.cc/paper_files/paper/2026
+- EMNLP 2026: https://aclanthology.org/volumes/2026.emnlp-main.bib
 - COLM 2026: https://proceedings.colm.cc/paper_files/paper/2026
 - NeurIPS 2026: https://proceedings.neurips.cc/paper_files/paper/2026
 - PETS 2026: https://petsymposium.org/popets/2026/

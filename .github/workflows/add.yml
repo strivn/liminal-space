@@ -62,8 +62,9 @@ jobs:
           D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
 
       # Reads the queue (with any request a run that died left running), marks each request running, and runs arxiv.ts
-      # --ad-hoc and figure.ts, or digests.ts add --ad-hoc and describe.ts, with each id as an argument of its own and
-      # links in a file: no request text reaches a shell, and the scripts get neither token. Each request's result goes
+      # --ad-hoc and figure.ts, proceedings.ts --crossref --ad-hoc for DOIs, paper.ts --ad-hoc for a paper's metadata, or
+      # digests.ts add --ad-hoc and describe.ts, with each id as an argument of its own and metadata and links in a
+      # file: no request text reaches a shell, and the scripts get neither token. Each request's result goes
       # to the results file as it is known; handled and added go to the outputs.
       - name: Handle the queued requests
         id: handle
@@ -71,6 +72,16 @@ jobs:
         env:
           ACCESS_SYNC_ID: ${{ secrets.ACCESS_SYNC_ID }}
           ACCESS_SYNC_SECRET: ${{ secrets.ACCESS_SYNC_SECRET }}
+
+      # Crossref has no abstract for Elsevier's and Springer Nature's papers, so the DOI papers just added get Semantic
+      # Scholar's, as scout.yml does for the scout's. The key is this job's own (production's); one that fails is a
+      # warning, and the push still runs.
+      - name: Fill in the DOI papers' abstracts
+        if: always() && steps.pull.outcome == 'success' && steps.handle.outputs.handled != '0'
+        continue-on-error: true
+        run: node scripts/scout/proceedings/abstracts.ts site/digests.js
+        env:
+          SEMANTIC_SCHOLAR_API_KEY: ${{ secrets.SEMANTIC_SCHOLAR_API_KEY }}
 
       # Also after a handle step that failed halfway: every line it appended loads (the scripts write by rename or a
       # whole line), and the site only adds and fills. Nothing to push when no request was queued. What push prints

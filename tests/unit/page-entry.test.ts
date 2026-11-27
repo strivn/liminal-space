@@ -990,3 +990,146 @@ test("security: a published version that is not https is never linked", () => {
 		expect(titleHref(article)).toBe("https://arxiv.org/pdf/1706.03762");
 	}
 });
+
+describe("a paper's published version", () => {
+	const published = (extra: Record<string, unknown> = {}) =>
+		paper({
+			id: "arxiv:1706.03762",
+			source: "arXiv Machine Learning",
+			...ARXIV_PAPER,
+			camera_ready: PUBLISHED,
+			...extra,
+		});
+	const meta = (article: Element) => text(article, ".entry__meta");
+	const markOf = (article: Element) =>
+		article.querySelector(".entry__conference");
+
+	test("an arXiv paper whose published version has a DOI names its venue, the DOI and its arXiv id above its title", () => {
+		const article = drawn(
+			published({ camera_ready: { ...PUBLISHED, doi: "10.5555/3295222" } }),
+		);
+		expect(meta(article)).toBe(
+			"paper · NeurIPS 2017 · doi:10.5555/3295222 · arXiv 1706.03762",
+		);
+	});
+
+	test("an arXiv paper whose published version has no DOI names its venue, the page's site without www and its arXiv id", () => {
+		expect(meta(drawn(published()))).toBe(
+			"paper · NeurIPS 2017 · proceedings.neurips.cc · arXiv 1706.03762",
+		);
+		const withWww = drawn(
+			published({
+				camera_ready: { ...PUBLISHED, url: "https://www.example.org/a.html" },
+			}),
+		);
+		expect(meta(withWww)).toBe(
+			"paper · NeurIPS 2017 · example.org · arXiv 1706.03762",
+		);
+	});
+
+	test("a paper with a doi: id and no arXiv id names its venue and its DOI, with the conference mark and no arXiv logo", () => {
+		const article = drawn(
+			paper({
+				id: "doi:10.56553/popets-2026-0002",
+				source: "PoPETs",
+				venue: "PETS 2026",
+				url: "https://petsymposium.org/popets/2026/popets-2026-0002.php",
+			}),
+		);
+		expect(meta(article)).toBe(
+			"paper · PETS 2026 · doi:10.56553/popets-2026-0002",
+		);
+		expect(markOf(article)).not.toBeNull();
+		expect(article.querySelector(".entry__arxiv")).toBeNull();
+	});
+
+	test("a paper with a url: id names its venue and its page's site, with the conference mark and no arXiv logo", () => {
+		const article = drawn(
+			paper({
+				id: "url:https://www.aies-conference.com/2026/paper-sessions/12",
+				source: "AIES",
+				venue: "AIES 2026",
+				url: "https://www.aies-conference.com/2026/paper-sessions/12",
+			}),
+		);
+		expect(meta(article)).toBe("paper · AIES 2026 · aies-conference.com");
+		expect(markOf(article)).not.toBeNull();
+		expect(article.querySelector(".entry__arxiv")).toBeNull();
+	});
+
+	test("a paper with a venue whose proceedings aren't out keeps its type, source and id, and its Accepted at line", () => {
+		const article = drawn(
+			paper({
+				...ARXIV_PAPER,
+				source: "arXiv Machine Learning",
+				venue: "NeurIPS 2026",
+				venue_source: "https://neurips.cc/accepted",
+			}),
+		);
+		expect(meta(article)).toBe(
+			"paper · arXiv Machine Learning · arxiv:2601.00001",
+		);
+		expect(text(article, ".entry__venue--accepted")).toBe(
+			"Accepted at NeurIPS 2026 · neurips.cc",
+		);
+		expect(markOf(article)).toBeNull();
+	});
+
+	test("an arXiv-only paper keeps its type, source and id above its title, its title opening the PDF", () => {
+		const article = drawn(
+			paper({ ...ARXIV_PAPER, source: "arXiv Machine Learning" }),
+		);
+		expect(meta(article)).toBe(
+			"paper · arXiv Machine Learning · arxiv:2601.00001",
+		);
+		expect(titleHref(article)).toBe("https://arxiv.org/pdf/1706.03762");
+		expect(markOf(article)).toBeNull();
+	});
+
+	test("the conference mark sits between the title and the arXiv logo, and the title's text stays the same for comments", () => {
+		const article = drawn(published());
+		const title = article.querySelector(".entry__title");
+		expect([...(title?.children ?? [])].map((part) => part.className)).toEqual([
+			"",
+			"entry__conference",
+			"entry__arxiv",
+		]);
+		expect(title?.textContent).toBe("A paper");
+	});
+
+	test("the Accepted at line is left out when the venue is named above the title", () => {
+		const article = drawn(
+			published({
+				venue: "NeurIPS 2017",
+				venue_source: "https://neurips.cc/accepted",
+			}),
+		);
+		expect(article.querySelector(".entry__venue--accepted")).toBeNull();
+		expect(meta(article)).toContain("NeurIPS 2017");
+	});
+
+	test("a published address that isn't https gets neither the venue line nor the conference mark", () => {
+		for (const article of [
+			drawn(
+				published({
+					camera_ready: {
+						...PUBLISHED,
+						url: "http://proceedings.neurips.cc/p",
+					},
+				}),
+			),
+			drawn(
+				paper({
+					id: "doi:10.56553/popets-2026-0003",
+					source: "PoPETs",
+					venue: "PETS 2026",
+					url: "http://petsymposium.org/popets/2026/popets-2026-0003.php",
+				}),
+			),
+		]) {
+			expect(meta(article)).not.toContain("PETS 2026 ·");
+			expect(meta(article)).not.toContain("NeurIPS 2017");
+			expect(markOf(article)).toBeNull();
+		}
+	});
+});

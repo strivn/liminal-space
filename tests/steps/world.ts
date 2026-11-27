@@ -46,6 +46,8 @@ export type Paper = {
 	url: string;
 	abstract: string;
 	venue?: string;
+	venue_source?: string;
+	camera_ready?: { url: string; venue: string; from: string; doi?: string };
 	openalex: {
 		topics: { name: string; field: string; score: number }[];
 		keywords: string[];
@@ -124,6 +126,17 @@ export function paperOn(date: string, day: number, n: number): Paper {
 			keywords: [],
 		},
 	};
+}
+
+// The `n`th paper as a proceedings or journal paper known by its DOI, with no arXiv id: `fields` replace the paper's
+// id, source, page and venue.
+export function paperByDoi(
+	date: string,
+	day: number,
+	n: number,
+	fields: Pick<Paper, "id" | "source" | "url" | "venue">,
+): Paper {
+	return { ...paperOn(date, day, n), ...fields };
 }
 
 // The date two months before `date`, on the same day of the month or the last day of a shorter month.
