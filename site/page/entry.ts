@@ -232,8 +232,8 @@ function conferenceMark() {
 		{
 			class: "entry__conference",
 			role: "img",
-			"aria-label": "Published at a conference",
-			title: "Published at a conference",
+			"aria-label": "Published version",
+			title: "Published version",
 		},
 		conferenceIcon(),
 	);
