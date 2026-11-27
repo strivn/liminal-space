@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, afterEach, describe, expect, test } from "vitest";
+import { sourceLimit } from "../../scripts/lib/http.ts";
 import { proceedingsLines } from "../../scripts/scout/plan/interests.ts";
 import {
 	matchPublished,
@@ -535,9 +536,30 @@ describe("every new paper, venue or not", () => {
 		"camera_ready holds the DOI the proceedings record gives, from the ACL Anthology, PoPETs or Crossref",
 	);
 	test.todo("a PMLR record with no DOI leaves camera_ready without one");
-	test.todo(
-		"a proceedings file above 20 MiB is read up to the limit its source is given",
-	);
+	test("a proceedings file above 20 MiB is read up to the limit its source is given", async () => {
+		const shapira = paperEntry(
+			2,
+			"How RLHF Amplifies Sycophancy",
+			"Itai Shapira",
+			"ICML 2026",
+		);
+		const bibOf = (bytes: number) => `${"x".repeat(bytes)}\n${ICML_BIB}`;
+		const asFile = (bytes: number) => ({
+			"/v306/assets/bib/bibliography.bib": {
+				status: 200,
+				body: bibOf(bytes),
+			},
+		});
+		const within = await fill([[], [shapira]], asFile(21 * 1024 * 1024));
+		expect(within.written[1]?.[0]?.camera_ready).toMatchObject({
+			url: "https://proceedings.mlr.press/v306/shapira26a.html",
+		});
+		const over = await fill([[], [shapira]], asFile(sourceLimit("ICML 2026")));
+		expect(over.written[1]?.[0]?.camera_ready).toBeUndefined();
+		expect(over.ran.stderr).toContain(
+			`not read: sent more than ${sourceLimit("ICML 2026")} bytes`,
+		);
+	});
 	test.todo(
 		"the run names the venue papers older than 8 weeks that still have no published version",
 	);

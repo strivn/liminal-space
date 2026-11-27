@@ -14,7 +14,7 @@ import {
 } from "../../digests/digests-file.ts";
 import { type Fail, failer, REPO } from "../../lib/cli.ts";
 import { htmlToText } from "../../lib/html.ts";
-import { request } from "../../lib/http.ts";
+import { request, sourceLimit } from "../../lib/http.ts";
 import { jakartaToday } from "../../lib/run-date.ts";
 import { type ProceedingsLine, proceedingsLines } from "../plan/interests.ts";
 import { normaliseTitle, titlesMatch } from "../plan/title-match.ts";
@@ -292,13 +292,16 @@ function targetsIn(read: DigestsFile, all: boolean) {
 	return targets;
 }
 
-async function fetchText(url: string) {
+async function fetchText(url: string, venue: string) {
 	const base = process.env.PROCEEDINGS_BASE;
 	const address = new URL(url);
 	const from = base
 		? new URL(address.pathname + address.search, base)
 		: address;
-	const answer = await request(from.href, { timeoutMs: FETCH_TIMEOUT_MS });
+	const answer = await request(from.href, {
+		timeoutMs: FETCH_TIMEOUT_MS,
+		maxBytes: sourceLimit(venue),
+	});
 	if ("problem" in answer) return { problem: answer.problem };
 	if (!answer.ok) return { problem: `answered HTTP ${answer.status}` };
 	return { text: answer.text() };
@@ -322,8 +325,8 @@ async function main(args: string[]) {
 	const listed = new Map<string, Promise<PublishedPaper[] | null>>();
 	let crossrefTurn: Promise<unknown> = Promise.resolve();
 	const fetchInTurn = (url: string, line: ProceedingsLine) => {
-		if (formatOf(line.url) !== "crossref") return fetchText(url);
-		const answer = crossrefTurn.then(() => fetchText(url));
+		if (formatOf(line.url) !== "crossref") return fetchText(url, line.venue);
+		const answer = crossrefTurn.then(() => fetchText(url, line.venue));
 		crossrefTurn = answer.then(() => pause(CROSSREF_GAP_MS));
 		return answer;
 	};
