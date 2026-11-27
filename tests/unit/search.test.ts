@@ -1218,3 +1218,10 @@ test("limit: A refused search waits 1, 2, 4 and 8 minutes and asks arXiv five ti
 		await new Promise((resolve) => server.close(resolve));
 	}
 });
+
+test.todo(
+	"NeurIPS's accepted list is read whole at 22 MB, above the 20 MiB every other download is held to",
+);
+test.todo(
+	"a conference list above its own larger limit is still refused and named",
+);

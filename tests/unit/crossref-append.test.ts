@@ -172,3 +172,7 @@ test("limit: Two DOIs are asked for one after the other, with the shared browser
 		assert.equal(/liminal|@/i.test(String(request.agent)), false);
 	}
 });
+
+test.todo(
+	"a Crossref record with no journal, such as an SSRN paper, takes its source from the site its DOI opens",
+);

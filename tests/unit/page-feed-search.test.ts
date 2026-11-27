@@ -499,3 +499,21 @@ test("the ad hoc choice finds an ad hoc entry in a month not drawn yet, once the
 	pick("read", "ad hoc");
 	await vi.waitFor(() => expect(shownTitles()).toEqual(["Old ad hoc"]));
 });
+
+test.todo(
+	"commented shows the entries with a comment, on a passage, a highlight or the whole entry",
+);
+test.todo(
+	"highlighted shows the entries with a highlight, with or without a comment",
+);
+test.todo("commented and highlighted together show the entries that have both");
+test.todo(
+	"a thread whose last comment was deleted no longer counts as commented",
+);
+test.todo(
+	"the sentence reads commented and highlighted in the marks blank, after the read and tag words",
+);
+test.todo("the public page offers neither commented nor highlighted");
+test.todo(
+	"a comment or highlight made while Search shows commented or highlighted keeps the Feed as it was until the next pick",
+);

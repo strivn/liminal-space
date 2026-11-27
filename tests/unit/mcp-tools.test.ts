@@ -1099,3 +1099,17 @@ test("a digest whose Markdown passes 60 KB is cut after a whole entry and says h
 	assert.ok(new TextEncoder().encode(text).length <= 60 * 1024);
 	assert.match(text, /\d+ (more )?entr(y|ies)[^\n]*left out/i);
 });
+
+test.todo(
+	'add_papers takes DOIs written "doi:10.1145/3442188.3445922" alongside arXiv ids',
+);
+test.todo(
+	"add_papers refuses a DOI with a space, a control character or no 10. prefix before anything is queued",
+);
+test.todo("add_papers refuses a doi.org link and asks for the DOI itself");
+test.todo(
+	"add_papers takes a paper's title, authors, venue, URL and optional DOI and abstract, checked before it is queued",
+);
+test.todo(
+	"add_papers refuses metadata with an arXiv id and asks for the arXiv id alone",
+);

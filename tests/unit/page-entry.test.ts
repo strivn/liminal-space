@@ -990,3 +990,33 @@ test("security: a published version that is not https is never linked", () => {
 		expect(titleHref(article)).toBe("https://arxiv.org/pdf/1706.03762");
 	}
 });
+
+describe("a paper's published version", () => {
+	test.todo(
+		"an arXiv paper whose published version has a DOI names its venue, the DOI and its arXiv id above its title",
+	);
+	test.todo(
+		"an arXiv paper whose published version has no DOI names its venue, the page's site without www and its arXiv id",
+	);
+	test.todo(
+		"a paper with a doi: id and no arXiv id names its venue and its DOI, with the conference mark and no arXiv logo",
+	);
+	test.todo(
+		"a paper with a url: id names its venue and its page's site, with the conference mark and no arXiv logo",
+	);
+	test.todo(
+		"a paper with a venue whose proceedings aren't out keeps its type, source and id, and its Accepted at line",
+	);
+	test.todo(
+		"an arXiv-only paper keeps its type, source and id above its title, its title opening the PDF",
+	);
+	test.todo(
+		"the conference mark sits between the title and the arXiv logo, and the title's text stays the same for comments",
+	);
+	test.todo(
+		"the Accepted at line is left out when the venue is named above the title",
+	);
+	test.todo(
+		"a published address that isn't https gets neither the venue line nor the conference mark",
+	);
+});

@@ -2,7 +2,7 @@
 // to them, and filling each paper's camera_ready field.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterAll, afterEach, expect, test } from "vitest";
+import { afterAll, afterEach, describe, expect, test } from "vitest";
 import { proceedingsLines } from "../../scripts/scout/plan/interests.ts";
 import {
 	matchPublished,
@@ -519,4 +519,26 @@ test("security: a published version is recorded only as an https page on its pro
 		ICML_FILE,
 	);
 	expect(written[1]?.[0]?.camera_ready).toBeUndefined();
+});
+
+describe("every new paper, venue or not", () => {
+	test.todo(
+		"a paper with no venue is matched against every proceedings file interests.md lists",
+	);
+	test.todo(
+		"a match needs the same normalised title and the same first author's surname",
+	);
+	test.todo(
+		"a paper whose title matches but whose first author differs is not linked",
+	);
+	test.todo(
+		"camera_ready holds the DOI the proceedings record gives, from the ACL Anthology, PoPETs or Crossref",
+	);
+	test.todo("a PMLR record with no DOI leaves camera_ready without one");
+	test.todo(
+		"a proceedings file above 20 MiB is read up to the limit its source is given",
+	);
+	test.todo(
+		"the run names the venue papers older than 8 weeks that still have no published version",
+	);
 });

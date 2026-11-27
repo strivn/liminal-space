@@ -575,3 +575,25 @@ describe("the command line", () => {
 		}
 	});
 });
+
+describe("papers added by DOI", () => {
+	test.todo(
+		"a doi: id runs proceedings.ts --crossref with the id as an argument of its own",
+	);
+	test.todo(
+		"arXiv ids and DOIs in one request each go to their own script, and each is reported",
+	);
+	test.todo(
+		"a DOI Crossref doesn't know is reported failed, not found on Crossref",
+	);
+	test.todo("a DOI already in the digests is reported already there");
+	test.todo(
+		"a paper given by its metadata runs paper.ts with the metadata in a file of its own",
+	);
+	test.todo(
+		"a paper paper.ts refuses is reported failed with each check that failed",
+	);
+	test.todo(
+		"a DOI paper Crossref gave no abstract gets Semantic Scholar's before the push",
+	);
+});

@@ -13,6 +13,7 @@ import {
 	timeWord,
 	venuePanel,
 } from "./search-choices.ts";
+import type { Thread } from "./types.ts";
 
 // What the sentence says. `subjects` holds "t:<topic>", "f:<field>", "k:<keyword>" or "none"; `time` is "today",
 // "week", "m:YYYY-MM" or "any"; `marks` is the owner's only.
@@ -592,4 +593,11 @@ export function createSearch(
 
 	apply();
 	return { focusOn, reset, showDay, refresh };
+}
+
+// Whether an entry holds a comment and a highlight, for the marks blank.
+export type EntryNotes = { commented: boolean; highlighted: boolean };
+
+export function notesOfThreads(threads: Thread[]): EntryNotes {
+	throw new Error(`not implemented: ${threads.length}`);
 }

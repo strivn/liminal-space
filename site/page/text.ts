@@ -365,3 +365,9 @@ export function discussLink(entry: Entry): string {
 export function talkLink(entry: Entry): string {
 	return `https://chatgpt.com/?q=${encodeURIComponent(discussText(entry))}`;
 }
+
+// A paper's line above its title once it has a published version: "paper · <venue> · <DOI or site> · arXiv <id>";
+// null without one.
+export function publishedLine(entry: Entry): string | null {
+	throw new Error(`not implemented: ${entry.id}`);
+}

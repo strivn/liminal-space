@@ -50,3 +50,8 @@ export const MAX_MCP_BODY_BYTES = 65_536;
 export const MAX_REQUEST_UPDATE_BYTES = 65_536;
 // The MCP protocol versions the hand-written handler speaks, newest first.
 export const PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26"];
+
+// True for a paper id add_papers takes as a DOI: "doi:10.<registrant>/<suffix>", no space or control character.
+export function isDoiId(id: string): boolean {
+	throw new Error(`not implemented: ${id}`);
+}
