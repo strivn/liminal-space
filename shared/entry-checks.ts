@@ -513,7 +513,10 @@ function cameraReadyProblems(value: unknown) {
 	if (!isHttpUrl(value.from)) {
 		problems.push("camera_ready.from must be http or https");
 	}
-	for (const field of ["url", "from"]) {
+	if (value.doi !== undefined && !isDoi(value.doi)) {
+		problems.push("camera_ready.doi must be a DOI, 10.<registrant>/<suffix>");
+	}
+	for (const field of ["url", "from", "doi"]) {
 		if (isOver(value[field], FIELD_CAPS.url)) {
 			problems.push(
 				`camera_ready.${field} is over ${FIELD_CAPS.url} characters`,
@@ -521,6 +524,12 @@ function cameraReadyProblems(value: unknown) {
 		}
 	}
 	return problems;
+}
+
+function isDoi(value: unknown) {
+	return (
+		typeof value === "string" && /^10\.[^\s\p{Cc}]+\/[^\s\p{Cc}]+$/u.test(value)
+	);
 }
 
 // Only post-figure.ts writes figures.
