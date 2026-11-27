@@ -34,7 +34,10 @@ const fixture = (name: string) =>
 // records by DOI (in lower case, as Crossref keeps it) under /crossref. It keeps the path of each request.
 type Site = {
 	pages: Record<string, { status?: number; body: string }>;
-	crossref?: Record<string, { title: string; authors: string[] }>;
+	crossref?: Record<
+		string,
+		{ title: string; subtitle?: string; authors: string[] }
+	>;
 };
 
 // "Given Family" as Crossref's author object.
@@ -61,6 +64,7 @@ async function serveSite(site: Site) {
 				JSON.stringify({
 					message: {
 						title: [record.title],
+						subtitle: record.subtitle === undefined ? [] : [record.subtitle],
 						author: record.authors.map(crossrefAuthor),
 						"container-title": ["Journal of Privacy Studies"],
 					},
@@ -143,6 +147,29 @@ test("a paper with a DOI is appended when Crossref's record for the DOI has its 
 		stand.hits.some((path) => path === "/paper"),
 		false,
 	);
+
+	// A record that keeps its subtitle in a field of its own matches the title alone, and the title with the subtitle.
+	const split = await serveSite({
+		pages: {},
+		crossref: {
+			[DOI]: {
+				title: "Measuring Privacy Harms",
+				subtitle: "In Everyday Software 🦜",
+				authors: RECORD.authors,
+			},
+		},
+	});
+	for (const title of [
+		"Measuring Privacy Harms",
+		"Measuring Privacy Harms: In Everyday Software",
+	]) {
+		const problems = await claimProblems({
+			...claimAt(split.base, "/paper"),
+			title: title,
+			doi: DOI,
+		});
+		assert.deepEqual(problems, [], title);
+	}
 });
 
 test("a paper without a DOI is appended when its page holds its title and first author's surname", async () => {

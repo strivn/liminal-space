@@ -132,9 +132,19 @@ async function crossrefProblems(
 	}
 	const problems: string[] = [];
 	const recordTitle = String(answer.entry.title);
-	if (normaliseTitle(recordTitle) !== normaliseTitle(claim.title)) {
+	// The title alone, or followed by the subtitle Crossref keeps in a field of its own.
+	const recordTitles = [recordTitle, `${recordTitle} ${answer.subtitle}`];
+	if (
+		!recordTitles.some(
+			(title) => normaliseTitle(title) === normaliseTitle(claim.title),
+		)
+	) {
+		let shown = recordTitle;
+		if (answer.subtitle !== "") {
+			shown = `${recordTitle}: ${answer.subtitle}`;
+		}
 		problems.push(
-			`Crossref check: the record's title is "${recordTitle}", the claim's is "${claim.title}"`,
+			`Crossref check: the record's title is "${shown}", the claim's is "${claim.title}"`,
 		);
 	}
 	const recordAuthor = Array.isArray(answer.entry.authors)

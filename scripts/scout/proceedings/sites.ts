@@ -439,10 +439,14 @@ export function publishedAfter(published: string, day: string): boolean {
 }
 
 // What one DOI's Crossref record gave: the entry with the record's date as precise as it is ("2026", "2026-10" or
-// "2026-10-29", null for none), or why there is none: "not found" (Crossref answered 404), "incomplete" (no title or
+// "2026-10-29", null for none) and the record's subtitle ("" for none), or why there is none: "not found" (Crossref answered 404), "incomplete" (no title or
 // no author), or a problem in words that finish "Crossref ...".
 export type CrossrefAnswer =
-	| { entry: Record<string, unknown>; published: string | null }
+	| {
+			entry: Record<string, unknown>;
+			published: string | null;
+			subtitle: string;
+	  }
 	| { missing: "not found" | "incomplete" }
 	| { problem: string };
 
@@ -502,5 +506,9 @@ export async function crossrefPaper(
 	if (entry === null) {
 		return { missing: "incomplete" };
 	}
-	return { entry: entry, published: crossrefDate(answer.message.published) };
+	return {
+		entry: entry,
+		published: crossrefDate(answer.message.published),
+		subtitle: firstText(answer.message.subtitle),
+	};
 }
