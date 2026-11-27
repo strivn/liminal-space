@@ -14,6 +14,11 @@ const AAAI_OJS_BASE = process.env.AAAI_OJS_BASE || "https://ojs.aaai.org";
 // Crossref's works API, which holds the record each publisher registered for a DOI.
 const CROSSREF_API = process.env.CROSSREF_API || "https://api.crossref.org";
 
+// The DOI resolver, read when it is asked so a test can point it at a stand-in.
+export function doiBase(): string {
+	return process.env.DOI_BASE || CONSTANTS.doiBase;
+}
+
 // How a proceedings site lists its papers: PoPETs' volume page, the Anthology's volume pages, or AAAI's journal
 // (Open Journal Systems), whose issue archive leads to each issue's page.
 export type IndexFormat = "popets" | "anthology" | "ojs";
@@ -378,10 +383,11 @@ function crossrefDate(published: unknown) {
 // A journal paper's digests entry from its Crossref record (the "message" of https://api.crossref.org/works/<doi>),
 // keys in the order they are written: id, type, title, authors, published (only a whole day), source (the journal),
 // url (the DOI's page), abstract (when the record has one, its JATS markup and "Abstract" heading left out). null when
-// the record names no title or no author.
+// the record names no title or no author. `site` is the host the DOI opens, the source of a record with no journal.
 export function crossrefEntry(
 	record: unknown,
 	doi: string,
+	site: string | null = null,
 ): Record<string, unknown> | null {
 	if (!isJsonObject(record)) {
 		return null;
@@ -408,6 +414,8 @@ export function crossrefEntry(
 	const journal = firstText(record["container-title"]);
 	if (journal !== "") {
 		entry.source = journal;
+	} else if (site !== null) {
+		entry.source = site;
 	}
 	entry.url = `${CONSTANTS.doiBase}/${doi}`;
 	if (typeof record.abstract === "string") {
@@ -435,6 +443,25 @@ export type CrossrefAnswer =
 	| { missing: "not found" | "incomplete" }
 	| { problem: string };
 
+// A page's site as an entry names its source: the host without "www.".
+export function siteOf(url: string): string | null {
+	const host = URL.parse(url)?.hostname;
+	if (host === undefined || host === "") {
+		return null;
+	}
+	return host.replace(/^www\./, "");
+}
+
+// The site a DOI opens, after the resolver's redirects; null when the resolver doesn't send the DOI anywhere.
+async function doiSite(doi: string): Promise<string | null> {
+	const resolver = `${doiBase()}/${doi.split("/").map(encodeURIComponent).join("/")}`;
+	const response = await request(resolver);
+	if ("problem" in response || new URL(response.finalUrl).href === resolver) {
+		return null;
+	}
+	return siteOf(response.finalUrl);
+}
+
 // One DOI's record from Crossref, read as an entry. The DOI's parts are escaped one by one, so its "/" stays a "/".
 export async function crossrefPaper(doi: string): Promise<CrossrefAnswer> {
 	const url = `${CROSSREF_API}/works/${doi.split("/").map(encodeURIComponent).join("/")}`;
@@ -457,8 +484,15 @@ export async function crossrefPaper(doi: string): Promise<CrossrefAnswer> {
 	if (!isJsonObject(answer)) {
 		return { missing: "incomplete" };
 	}
-	const entry = crossrefEntry(answer.message, doi);
-	if (entry === null || !isJsonObject(answer.message)) {
+	if (!isJsonObject(answer.message)) {
+		return { missing: "incomplete" };
+	}
+	let site: string | null = null;
+	if (firstText(answer.message["container-title"]) === "") {
+		site = await doiSite(doi);
+	}
+	const entry = crossrefEntry(answer.message, doi, site);
+	if (entry === null) {
 		return { missing: "incomplete" };
 	}
 	return { entry: entry, published: crossrefDate(answer.message.published) };
