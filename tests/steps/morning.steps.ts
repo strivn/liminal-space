@@ -281,22 +281,39 @@ async function titleLink(world: World, browser: Browser, title: string) {
 }
 
 Then(
-	"its title opens its NeurIPS 2017 proceedings page, with arXiv still linked",
+	"the public page shows {string} above its title",
+	async ({ world, browser }, line: string) => {
+		const entry = await titleLink(world, browser, "Attention Is All You Need");
+		await expect(entry.locator(".entry__meta")).toHaveText(line);
+		const meta = await entry.locator(".entry__meta").boundingBox();
+		const title = await entry.locator(".entry__title").boundingBox();
+		expect(meta?.y).toBeLessThan(title?.y ?? 0);
+	},
+);
+
+Then(
+	"its title opens its NeurIPS 2017 proceedings page, followed by the conference mark, then the arXiv logo",
 	async ({ world, browser }) => {
 		const entry = await titleLink(world, browser, "Attention Is All You Need");
 		await expect(
 			entry.locator(".entry__title > a:not(.entry__arxiv)"),
 		).toHaveAttribute("href", ATTENTION_2017);
-		await expect(entry.locator(".entry__arxiv")).toHaveAttribute(
-			"href",
-			"https://arxiv.org/abs/1706.03762",
-		);
+		await expect(
+			entry.locator(
+				".entry__title > a:not(.entry__arxiv) + .entry__conference + a.entry__arxiv",
+			),
+		).toHaveAttribute("href", "https://arxiv.org/abs/1706.03762");
+		await expect(entry.locator(".entry__conference")).toBeVisible();
 	},
 );
 
-Then("its title opens its arXiv page", async ({ world, browser }) => {
-	const entry = await titleLink(world, browser, "Chain of Thought");
-	await expect(
-		entry.locator(".entry__title > a:not(.entry__arxiv)"),
-	).toHaveAttribute("href", /^https:\/\/arxiv\.org\//);
-});
+Then(
+	"its title opens its arXiv page, with no conference mark",
+	async ({ world, browser }) => {
+		const entry = await titleLink(world, browser, "Chain of Thought");
+		await expect(
+			entry.locator(".entry__title > a:not(.entry__arxiv)"),
+		).toHaveAttribute("href", /^https:\/\/arxiv\.org\//);
+		await expect(entry.locator(".entry__conference")).toHaveCount(0);
+	},
+);
