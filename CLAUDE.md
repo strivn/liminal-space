@@ -6,8 +6,8 @@ This file guides coding agents and people working in this repository. `AGENTS.md
 
 Liminal space is a personal research feed for one reader, served at ivan.wiryadi.com/liminal-space/. Each morning
 a Claude Agent SDK session, the scout, finds papers, news and reports and appends them to `site/digests.js` through
-the scripts in `scripts/`. Its instructions are `scripts/scout/scout.md`, not this file. The scripts copy every entry's
-metadata from arXiv and publishers' pages; nothing is typed by hand. A Cloudflare Worker stores the entries in D1,
+the scripts in `scripts/`. Its instructions are `scripts/scout/scout.md`, not this file. An entry's
+metadata is copied from, or checked against, the publisher's page. A Cloudflare Worker stores the entries in D1,
 and a static page draws them. The owner's copy of the page, behind Cloudflare Access, also saves read marks, tags,
 likes, comments, highlights and takeaways through the Worker.
 
@@ -31,8 +31,8 @@ The daily run, in the order `scout.yml` runs it:
 3. `newsfeed.ts` reads `feeds.json`, `digests.ts add` appends its items and `describe.ts` copies the descriptions of
    items that came without one, while `search.ts` fills the candidate pool.
 4. `score.ts` scores the pool.
-5. `scout.ts` runs the scout, which adds papers and items through `arxiv.ts`, `proceedings.ts`, `surprise.ts` and
-   `digests.ts`, and enriches them with `first-page.ts`, `figure.ts`, `describe.ts` and `fulltext.sh`.
+5. `scout.ts` runs the scout, which adds papers and items through `arxiv.ts`, `proceedings.ts`, `paper.ts`, `surprise.ts`
+   and `digests.ts`, and enriches them with `first-page.ts`, `figure.ts`, `describe.ts` and `fulltext.sh`.
 6. `abstracts.ts` adds Semantic Scholar's abstract to the day's DOI papers that came without one, and `camera-ready.ts`
    links today's conference papers to their published versions, read from the proceedings files in `interests.md`
    (every paper on Mondays). `topics.ts` adds OpenAlex's topics and keywords to the papers of the last 30 days (every
@@ -78,7 +78,8 @@ pnpm exec bddgen && pnpm exec playwright test --grep "<scenario name>"
     candidates. One folder per source: `arxiv/` (`arxiv.ts` appends papers, `figure.ts` and `first-page.ts` read their
     HTML), `proceedings/`, `openalex/` (`topics.ts` adds a paper's OpenAlex topics and keywords), `newsfeed/`, `news/`
     (Google News), `hugging-face/`, and `web/` (`describe.ts` copies a
-    publisher's description, `fulltext.sh` fetches an item's full text, checked by `fetch-guard.ts`).
+    publisher's description, `paper.ts` appends a paper without an arXiv id once its page and DOI agree with its
+    metadata, `fulltext.sh` fetches an item's full text, checked by `fetch-guard.ts`).
   - `digests/`: `digests.ts` answers questions about the digests file, adds items to it and checks every line.
   - `deploy/`: building the site (`build-site.ts`), syncing with D1 (`sync.ts`) and the connector's add requests
     (`add-requests.ts`).
