@@ -58,6 +58,13 @@ const PARROTS_RECORD = {
 	"container-title": ["Proceedings of the 2021 ACM Conference"],
 	published: { "date-parts": [[2021, 3, 1]] },
 };
+// The record Crossref keeps for the DOI of a paper added by its metadata: it has no journal, as an SSRN paper's has not.
+const SSRN_RECORD_DOI = "10.2139/ssrn.4685553";
+const SSRN_RECORD = {
+	title: ["Measuring Privacy Harms in Everyday Software"],
+	author: [{ given: "Yann", family: "LeCun" }],
+	published: { "date-parts": [[2026, 3, 1]] },
+};
 const SEMANTIC_ABSTRACT = "Language models grew, and so did the questions.";
 
 type Queued = { id: string; kind: "papers" | "links"; payload: unknown };
@@ -94,17 +101,15 @@ async function standIn(queue: (base: string) => Queued[], hang: string[] = []) {
 			out.end(feedFor((url.searchParams.get("id_list") as string).split(",")));
 			return;
 		}
-		const doiPaper = url.pathname.match(/^\/doi\/(.+)$/);
-		if (doiPaper !== null && doiPaper[1] === "10.2139/ssrn.4685553") {
-			out.writeHead(302, { location: `${address}/page/paper` });
-			out.end();
-			return;
-		}
 		const crossref = url.pathname.match(/^\/crossref\/works\/(.+)$/);
 		if (crossref !== null && crossref[1] !== undefined) {
 			const doi = decodeURIComponent(crossref[1]);
 			if (doi === PARROTS_DOI) {
 				out.end(JSON.stringify({ message: PARROTS_RECORD }));
+				return;
+			}
+			if (doi === SSRN_RECORD_DOI) {
+				out.end(JSON.stringify({ message: SSRN_RECORD }));
 				return;
 			}
 		}
@@ -171,7 +176,6 @@ async function addRequests(
 				ARXIV_HTML_BASE: `${base}/html`,
 				ARXIV_HTML_STORE: join(dir, "html-store"),
 				CROSSREF_API: `${base}/crossref`,
-				DOI_BASE: `${base}/doi`,
 				SEMANTIC_SCHOLAR_API: `${base}/s2`,
 				SEMANTIC_SCHOLAR_API_KEY: "test-key",
 				SEMANTIC_SCHOLAR_PAUSE_MS: "0",
