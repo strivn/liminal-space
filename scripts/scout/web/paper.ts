@@ -1,9 +1,11 @@
 // Append a paper that has no arXiv id from its own metadata, once its page and DOI agree with it.
 // Usage: node scripts/scout/web/paper.ts --append <digests file> [--date YYYY-MM-DD]
 //        [--pick surprise --pick-source <url>] <paper json file>
-// The file holds one PaperClaim as JSON. The paper is appended only when its page loads from a public address and
-// holds its title and its first author's surname, and a DOI, when the claim gives one, resolves to that same page.
-// Environment: DOI_BASE (stand-in for doi.org, tests only); LIMINAL_TODAY (YYYY-MM-DD) is taken as today in Asia/Jakarta,
+// The file holds one PaperClaim as JSON. A claim with a DOI is checked against Crossref's record for the DOI (the same
+// title and first author's surname), and its page is not opened; a claim without one is checked against its page,
+// which must load and hold the title and the first author's surname. The address must be https and public either way,
+// and the run prints which evidence it used.
+// Environment: CROSSREF_API (stand-in for Crossref, tests only); LIMINAL_TODAY (YYYY-MM-DD) is taken as today in Asia/Jakarta,
 // tests only.
 import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
@@ -26,7 +28,7 @@ import {
 } from "../../lib/run-date.ts";
 import { normaliseTitle } from "../plan/title-match.ts";
 import {
-	doiBase,
+	crossrefPaper,
 	pagePaper,
 	proceedingsEntry,
 	siteOf,
@@ -80,18 +82,6 @@ function surnameOf(name: string): string | undefined {
 	return nameWords(name.split(",")[0] || "").at(-1);
 }
 
-// The two addresses name one page: the same host without "www.", path without a closing "/", and query.
-function samePage(a: string, b: string): boolean {
-	const first = URL.parse(a);
-	const second = URL.parse(b);
-	if (first === null || second === null) {
-		return false;
-	}
-	const key = (page: URL) =>
-		`${page.hostname.replace(/^www\./, "")}${page.pathname.replace(/\/$/, "")}${page.search}`;
-	return key(first) === key(second);
-}
-
 // What is wrong with the page: it answered an error status, or it lacks the title or the first author's surname,
 // in its text or in its citation_title and citation_author tags.
 async function pageProblems(claim: PaperClaim): Promise<string[]> {
@@ -126,20 +116,44 @@ async function pageProblems(claim: PaperClaim): Promise<string[]> {
 	return problems;
 }
 
-// What is wrong with the DOI: doi.org doesn't send it anywhere, or sends it to another page than the claim's.
-async function doiProblems(doi: string, pageUrl: string): Promise<string[]> {
-	const resolver = `${doiBase()}/${doi.split("/").map(encodeURIComponent).join("/")}`;
-	const answer = await request(resolver);
+// What is wrong with the claim against Crossref's record for its DOI: the record is missing, or its title or first
+// author is another. The paper's page is not opened.
+async function crossrefProblems(
+	claim: PaperClaim,
+	doi: string,
+): Promise<string[]> {
+	// A DOI is the same in any case; Crossref keeps it in lower case.
+	const answer = await crossrefPaper(doi.toLowerCase(), false);
 	if ("problem" in answer) {
-		return [`DOI check: ${resolver} ${answer.problem}`];
+		return [`Crossref check: Crossref ${answer.problem}`];
 	}
-	if (answer.finalUrl === resolver) {
-		return [`DOI check: ${doi} doesn't resolve (HTTP ${answer.status})`];
+	if ("missing" in answer) {
+		return [`Crossref check: the record for ${doi} is ${answer.missing}`];
 	}
-	if (!samePage(answer.finalUrl, pageUrl)) {
-		return [`DOI check: ${doi} resolves to ${answer.finalUrl}, not ${pageUrl}`];
+	const problems: string[] = [];
+	const recordTitle = String(answer.entry.title);
+	if (normaliseTitle(recordTitle) !== normaliseTitle(claim.title)) {
+		problems.push(
+			`Crossref check: the record's title is "${recordTitle}", the claim's is "${claim.title}"`,
+		);
 	}
-	return [];
+	const recordAuthor = Array.isArray(answer.entry.authors)
+		? String(answer.entry.authors[0])
+		: "";
+	if (surnameOf(recordAuthor) !== surnameOf(claim.authors[0] || "")) {
+		problems.push(
+			`Crossref check: the record's first author is "${recordAuthor}", the claim's is "${claim.authors[0]}"`,
+		);
+	}
+	return problems;
+}
+
+// The evidence claimProblems checks a claim against: Crossref's record for its DOI, else its page.
+export function evidenceOf(claim: PaperClaim): string {
+	if (claim.doi !== undefined) {
+		return `Crossref's record for doi:${claim.doi} (the page was not opened)`;
+	}
+	return `the page ${claim.url}`;
 }
 
 // Each check the claim failed, as a phrase; [] when its page and DOI agree with it.
@@ -168,11 +182,10 @@ export async function claimProblems(claim: PaperClaim): Promise<string[]> {
 	if (page.protocol !== "https:" && !standIn) {
 		return [`address check: ${claim.url} is not an https address`];
 	}
-	const [onPage, onDoi] = await Promise.all([
-		pageProblems(claim),
-		claim.doi === undefined ? [] : doiProblems(claim.doi, claim.url),
-	]);
-	return [...onPage, ...onDoi];
+	if (claim.doi !== undefined) {
+		return crossrefProblems(claim, claim.doi);
+	}
+	return pageProblems(claim);
 }
 
 // The paper file as a claim, or why it isn't one.
@@ -324,6 +337,7 @@ async function main(args: string[]): Promise<void> {
 		fail(`can't append to ${file} (${errorCode(error)})`);
 	}
 	console.log(`appended ${id} ${claim.title}`);
+	console.log(`checked against ${evidenceOf(claim)}`);
 	console.log(`appended 1 paper to ${file}`);
 }
 

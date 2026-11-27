@@ -140,11 +140,13 @@ page, with the page's https address as `url` and its DOI as `doi` when it shows 
     {"title":"","authors":[""],"venue":"","url":"","doi":""}
 Then run
     node scripts/scout/web/paper.ts --append site/digests.js <scratchpad>/paper.json
-It appends the paper only when the page loads, holds the title and the first author's
-surname, and the DOI opens that page, and prints "appended <id> <title>"; otherwise it
+With a `doi`, it checks the paper against Crossref's record for the DOI, which must have
+the same title and first author's surname, and never opens the page. Without one, it
+opens the page, which must load and hold the title and the first author's surname. It
+prints "appended <id> <title>" and which of the two it checked against; otherwise it
 names each check that failed and appends nothing. A page that refuses the request
-(HTTP 403) is a failed check: name the paper in your final message and move on. An
-arXiv paper is refused there: append it with arxiv.ts.
+(HTTP 403) fails a paper without a DOI: name the paper in your final message and move
+on. An arXiv paper is refused there: append it with arxiv.ts.
 Then copy each new paper's Figure 1:
     node scripts/scout/arxiv/figure.ts site/digests.js <id> <id> ...
 It takes up to 10 papers a run, 15 seconds apart; give it a 10-minute timeout. A paper

@@ -11,8 +11,11 @@ const POPETS_BASE = process.env.POPETS_BASE || "https://petsymposium.org";
 const ACL_ANTHOLOGY_BASE =
 	process.env.ACL_ANTHOLOGY_BASE || "https://aclanthology.org";
 const AAAI_OJS_BASE = process.env.AAAI_OJS_BASE || "https://ojs.aaai.org";
-// Crossref's works API, which holds the record each publisher registered for a DOI.
-const CROSSREF_API = process.env.CROSSREF_API || "https://api.crossref.org";
+// Crossref's works API, which holds the record each publisher registered for a DOI; read when it is asked so a test
+// can point it at a stand-in.
+function crossrefApi(): string {
+	return process.env.CROSSREF_API || "https://api.crossref.org";
+}
 
 // The DOI resolver, read when it is asked so a test can point it at a stand-in.
 export function doiBase(): string {
@@ -463,8 +466,12 @@ async function doiSite(doi: string): Promise<string | null> {
 }
 
 // One DOI's record from Crossref, read as an entry. The DOI's parts are escaped one by one, so its "/" stays a "/".
-export async function crossrefPaper(doi: string): Promise<CrossrefAnswer> {
-	const url = `${CROSSREF_API}/works/${doi.split("/").map(encodeURIComponent).join("/")}`;
+// A record with no journal gets its source from the site its DOI opens, unless `withSite` is false.
+export async function crossrefPaper(
+	doi: string,
+	withSite = true,
+): Promise<CrossrefAnswer> {
+	const url = `${crossrefApi()}/works/${doi.split("/").map(encodeURIComponent).join("/")}`;
 	const response = await request(url);
 	if ("problem" in response) {
 		return { problem: `${response.problem} (${url})` };
@@ -488,7 +495,7 @@ export async function crossrefPaper(doi: string): Promise<CrossrefAnswer> {
 		return { missing: "incomplete" };
 	}
 	let site: string | null = null;
-	if (firstText(answer.message["container-title"]) === "") {
+	if (withSite && firstText(answer.message["container-title"]) === "") {
 		site = await doiSite(doi);
 	}
 	const entry = crossrefEntry(answer.message, doi, site);
