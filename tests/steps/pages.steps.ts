@@ -130,6 +130,58 @@ Then(
 	},
 );
 
+// A paper's entry on a page, its line above the title (checked to sit above it), and its title row.
+async function headerOf(page: Page, id: string) {
+	const entry = page.locator(`article.entry[id="${id}"]`);
+	const meta = await entry.locator(".entry__meta").boundingBox();
+	const title = await entry.locator(".entry__title").boundingBox();
+	expect(meta?.y, "the line sits above the title").toBeLessThan(title?.y ?? 0);
+	return entry;
+}
+
+Then(
+	/^today's (\d+)(?:st|nd|rd|th) paper names NeurIPS (\d+), its DOI and its arXiv id above its title, which opens its published version$/,
+	async ({ world, browser }, position: string, year: string) => {
+		const paper = nthPaper(world, world.today, Number(position));
+		const published = paper.camera_ready;
+		expect(published, "the paper has a published version").toBeDefined();
+		for (const reader of ["visitor", "owner"] as const) {
+			const entry = await headerOf(
+				await pageOf(world, browser, reader),
+				paper.id,
+			);
+			await expect
+				.soft(entry.locator(".entry__meta"))
+				.toHaveText(
+					`paper · NeurIPS ${year} · doi:${published?.doi} · arXiv ${paper.id.replace("arxiv:", "")}`,
+				);
+			await expect
+				.soft(entry.locator(".entry__title > a").first())
+				.toHaveAttribute("href", published?.url ?? "");
+		}
+	},
+);
+
+Then(
+	/^today's (\d+)(?:st|nd|rd|th) paper names PETS (\d+) and its DOI above its title, with the conference mark and no arXiv logo$/,
+	async ({ world, browser }, position: string, year: string) => {
+		const paper = nthPaper(world, world.today, Number(position));
+		for (const reader of ["visitor", "owner"] as const) {
+			const entry = await headerOf(
+				await pageOf(world, browser, reader),
+				paper.id,
+			);
+			await expect
+				.soft(entry.locator(".entry__meta"))
+				.toHaveText(
+					`paper · PETS ${year} · doi:${paper.id.replace("doi:", "")}`,
+				);
+			await expect.soft(entry.locator(".entry__conference")).toBeVisible();
+			await expect.soft(entry.locator(".entry__arxiv")).toHaveCount(0);
+		}
+	},
+);
+
 Then(
 	"only the owner's page has Abstract, Paper, OK, Like, Dislike and Comment buttons",
 	async ({ world, browser }) => {

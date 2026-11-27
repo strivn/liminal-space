@@ -1712,6 +1712,36 @@ test("A paper's camera_ready holds an https url, its venue and where it was read
 	}
 });
 
+test("A paper's camera_ready may hold the DOI of its published version, and refuses a value that is not one", async () => {
+	const { entryProblems }: typeof EntryChecks = await import(CHECKS.href);
+	const cameraReady = {
+		url: "https://aclanthology.org/2026.acl-long.1/",
+		venue: "ACL 2026",
+		from: "https://aclanthology.org/volumes/2026.acl-long.bib",
+	};
+	const withDoi = { ...cameraReady, doi: "10.18653/v1/2026.acl-long.1" };
+	assert.deepEqual(
+		entryProblems(paper(1, { camera_ready: withDoi }), "check"),
+		[],
+	);
+	for (const doi of [
+		"https://doi.org/10.18653/v1/2026.acl-long.1",
+		"10.18653",
+		"10.18653/v1 2026",
+		"10.18653/v1/\u0000",
+		42,
+	]) {
+		assertHasReason(
+			entryProblems(
+				paper(1, { camera_ready: { ...cameraReady, doi: doi } }),
+				"check",
+			),
+			"camera_ready.doi must be a DOI",
+			JSON.stringify(doi),
+		);
+	}
+});
+
 test("A paper's openalex holds its topics with field and score, and its keywords, within their caps", async () => {
 	const { entryProblems }: typeof EntryChecks = await import(CHECKS.href);
 	const topic = {

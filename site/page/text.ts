@@ -1,5 +1,6 @@
 // Text the page builds from an entry: the Copy reference, Discuss's text and link, the contents groups and links in text.
 import { ADDED_TYPES } from "../../shared/entry-checks.ts";
+import { isJsonObject } from "../../shared/narrow.ts";
 import type { Entry } from "./types.ts";
 
 export { contentsGroups, entryGroup } from "../../shared/entry-groups.ts";
@@ -369,5 +370,27 @@ export function talkLink(entry: Entry): string {
 // A paper's line above its title once it has a published version: "paper · <venue> · <DOI or site> · arXiv <id>";
 // null without one.
 export function publishedLine(entry: Entry): string | null {
-	throw new Error(`not implemented: ${entry.id}`);
+	if (entry.type !== "paper") return null;
+	const cameraReady = isJsonObject(entry.camera_ready)
+		? entry.camera_ready
+		: null;
+	const ownPage = entry.id.startsWith("doi:") || entry.id.startsWith("url:");
+	const address = [cameraReady?.url, ownPage ? entry.url : null].find(
+		(url) => typeof url === "string" && url.startsWith("https://"),
+	);
+	if (typeof address !== "string" || !URL.canParse(address)) return null;
+	const venue = [cameraReady?.venue, entry.venue, entry.source].find(
+		(name) => typeof name === "string" && name !== "",
+	);
+	let doi: unknown = cameraReady?.doi;
+	if (typeof doi !== "string" && entry.id.startsWith("doi:"))
+		doi = entry.id.slice("doi:".length);
+	const where =
+		typeof doi === "string"
+			? `doi:${doi}`
+			: new URL(address).hostname.replace(/^www\./, "");
+	const arxiv = entry.id.startsWith("arxiv:")
+		? `arXiv ${entry.id.slice("arxiv:".length)}`
+		: null;
+	return [entry.type, venue, where, arxiv].filter(Boolean).join(" · ");
 }

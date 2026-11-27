@@ -10,6 +10,7 @@ import http from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, test } from "vitest";
+import { sourceLimit } from "../../scripts/lib/http.ts";
 import type { Paper } from "../../scripts/scout/arxiv/api.ts";
 import type * as ArxivSearch from "../../scripts/scout/arxiv/search.ts";
 import type * as Interests from "../../scripts/scout/plan/interests.ts";
@@ -17,7 +18,7 @@ import type * as PoolModule from "../../scripts/scout/plan/pool.ts";
 import type * as TitleMatch from "../../scripts/scout/plan/title-match.ts";
 import type * as VenueLists from "../../scripts/scout/proceedings/venue-lists.ts";
 import type * as Search from "../../scripts/scout/search.ts";
-import { allowLocal } from "./local-server.ts";
+import { allowLocal, closeServers, serve } from "./local-server.ts";
 
 const SCRIPT = new URL("../../scripts/scout/search.ts", import.meta.url);
 const ARXIV_SEARCH = new URL(
@@ -1219,9 +1220,53 @@ test("limit: A refused search waits 1, 2, 4 and 8 minutes and asks arXiv five ti
 	}
 });
 
-test.todo(
-	"NeurIPS's accepted list is read whole at 22 MB, above the 20 MiB every other download is held to",
-);
-test.todo(
-	"a conference list above its own larger limit is still refused and named",
-);
+// A NeurIPS-shaped list of one paper, padded to `bytes`.
+function neuripsListOf(bytes: number) {
+	const row = {
+		name: "Sparse Autoencoder Circuits",
+		paper_url: "https://openreview.net/forum?id=abc123",
+		abstract: "",
+	};
+	row.abstract = "x".repeat(bytes - JSON.stringify({ results: [row] }).length);
+	return JSON.stringify({ results: [row] });
+}
+
+// What readLists gives for one NeurIPS list that a local server answers with `body`.
+async function readNeuripsList(body: string) {
+	const base = await serve((_in, out) => {
+		out.writeHead(200, { "content-type": "application/json" });
+		out.end(body);
+	});
+	const run = { failed: false, arxivStopped: false };
+	const { readLists }: typeof VenueLists = await import(VENUE_LISTS.href);
+	const [list] = await readLists(
+		[{ venue: "NeurIPS", url: `${base}/neurips.json`, published: null }],
+		{},
+		"2026-11-27",
+		run,
+	);
+	return { list: list, run: run };
+}
+
+test("NeurIPS's accepted list is read whole at 22 MB, above the 20 MiB every other download is held to", async () => {
+	try {
+		const { list, run } = await readNeuripsList(neuripsListOf(22_000_000));
+		assert.deepEqual(list?.titles, ["Sparse Autoencoder Circuits"]);
+		assert.equal(list?.problem, null);
+		assert.equal(run.failed, false);
+	} finally {
+		await closeServers();
+	}
+});
+
+test("a conference list above its own larger limit is still refused and named", async () => {
+	try {
+		const limit = sourceLimit("NeurIPS");
+		const { list, run } = await readNeuripsList(neuripsListOf(limit + 1));
+		assert.deepEqual(list?.titles, []);
+		assert.equal(list?.problem, `sent more than ${limit} bytes`);
+		assert.equal(run.failed, true);
+	} finally {
+		await closeServers();
+	}
+});

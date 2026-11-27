@@ -34,8 +34,9 @@ The daily run, in the order `scout.yml` runs it:
 5. `scout.ts` runs the scout, which adds papers and items through `arxiv.ts`, `proceedings.ts`, `surprise.ts` and
    `digests.ts`, and enriches them with `first-page.ts`, `figure.ts`, `describe.ts` and `fulltext.sh`.
 6. `abstracts.ts` adds Semantic Scholar's abstract to the day's DOI papers that came without one, and `camera-ready.ts`
-   links today's conference papers to their published versions, read from the proceedings files in `interests.md`
-   (every paper on Mondays). `topics.ts` adds OpenAlex's topics and keywords to the papers of the last 30 days (every
+   links each of today's papers, venue or not, to its published version in the proceedings files of `interests.md`
+   (a match needs the normalised title and the first author's surname; on Mondays every paper with a venue and none
+   yet is checked too). `topics.ts` adds OpenAlex's topics and keywords to the papers of the last 30 days (every
    paper on Mondays). Then `sync.ts push` sends the new lines to D1, `.cache/` is saved without `feedback.json`, and
    `sync.ts log` sends the scout's log.
 7. A last job calls `deploy.yml`, which applies the D1 migrations (before the pull, so a table a migration adds can be

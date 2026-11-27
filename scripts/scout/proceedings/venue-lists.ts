@@ -1,7 +1,8 @@
 // Downloading the conference lists of interests.md and reading their titles in each list format.
 import { decodeHTML } from "entities";
+import CONSTANTS from "../../lib/constants.json" with { type: "json" };
 import { htmlToText } from "../../lib/html.ts";
-import { request } from "../../lib/http.ts";
+import { request, sourceLimit } from "../../lib/http.ts";
 import type { ListTitle, ReadList, Run } from "../arxiv/search.ts";
 import type { ConferenceList, Topic } from "../plan/interests.ts";
 import { normaliseTitle, phraseMatches } from "../plan/title-match.ts";
@@ -365,8 +366,9 @@ function unionTitles(keptTitles: ListTitle[], freshTitles: ListTitle[]) {
 export async function download(
 	url: string,
 	headers: Record<string, string>,
+	maxBytes: number = CONSTANTS.maxBodyBytes,
 ): Promise<Download> {
-	const answer = await request(url, { headers: headers });
+	const answer = await request(url, { headers: headers, maxBytes: maxBytes });
 	if ("problem" in answer) {
 		return { problem: answer.problem };
 	}
@@ -437,7 +439,7 @@ export async function readLists(
 		}
 
 		// biome-ignore lint/performance/noAwaitInLoops: one list at a time, so only one request to a conference site is open
-		const answer = await download(list.url, headers);
+		const answer = await download(list.url, headers, sourceLimit(list.venue));
 		if (answer.status === 304 && kept !== null) {
 			result.titles = kept.titles;
 		} else if (answer.ok) {
