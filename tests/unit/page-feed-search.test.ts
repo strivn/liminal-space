@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // The Search sentence over the owner's whole page.
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { notesOfThreads } from "../../site/page/search.ts";
 import {
 	type FakeSite,
 	listedTitles,
@@ -35,6 +36,7 @@ const THREE_DAYS_AGO = "2026-09-24";
 type Saved = {
 	read?: Record<string, unknown>;
 	tags?: Record<string, unknown>;
+	comments?: Record<string, unknown>;
 };
 
 const papers = (count: number, prefix = "2609") =>
@@ -49,7 +51,7 @@ async function owner(site: FakeSite, saved: Saved = {}) {
 	site.owner = {
 		read: saved.read ?? {},
 		tags: saved.tags ?? {},
-		comments: {},
+		comments: saved.comments ?? {},
 		feedback: {},
 		takeaways: {},
 	};
@@ -500,20 +502,159 @@ test("the ad hoc choice finds an ad hoc entry in a month not drawn yet, once the
 	await vi.waitFor(() => expect(shownTitles()).toEqual(["Old ad hoc"]));
 });
 
-test.todo(
-	"commented shows the entries with a comment, on a passage, a highlight or the whole entry",
-);
-test.todo(
-	"highlighted shows the entries with a highlight, with or without a comment",
-);
-test.todo("commented and highlighted together show the entries that have both");
-test.todo(
-	"a thread whose last comment was deleted no longer counts as commented",
-);
-test.todo(
-	"the sentence reads commented and highlighted in the marks blank, after the read and tag words",
-);
-test.todo("the public page offers neither commented nor highlighted");
-test.todo(
-	"a comment or highlight made while Search shows commented or highlighted keeps the Feed as it was until the next pick",
-);
+// ---- Commented and highlighted ----
+
+const SAVED_AT = "2026-09-27T01:00:00.000Z";
+const ABSTRACT = "Some abstract words here.";
+const notedPapers = (count: number) =>
+	Array.from({ length: count }, (_, i) =>
+		paperEntry(`2609.0000${i + 1}`, `P${i + 1}`, { abstract: ABSTRACT }),
+	);
+const said = (id: string) => ({
+	id: id,
+	text: "Check this.",
+	created: SAVED_AT,
+	edited: null,
+});
+const onPassage = (id: string, extra: Record<string, unknown> = {}) => ({
+	id: id,
+	field: "abstract",
+	passage: "abstract words",
+	occurrence: 1,
+	comments: [],
+	...extra,
+});
+
+test("commented shows the entries with a comment, on a passage, a highlight or the whole entry", async () => {
+	const site = siteOf([{ date: TODAY, entries: notedPapers(5) }]);
+	await owner(site, {
+		comments: {
+			"arxiv:2609.00001": [onPassage("t1", { comments: [said("c1")] })],
+			"arxiv:2609.00002": [
+				onPassage("t2", { highlight: true, comments: [said("c2")] }),
+			],
+			"arxiv:2609.00003": [{ id: "t3", comments: [said("c3")] }],
+			"arxiv:2609.00004": [onPassage("t4", { highlight: true })],
+		},
+	});
+	pick("read", "commented");
+	expect(shownTitles()).toEqual(["P1", "P2", "P3"]);
+});
+
+test("highlighted shows the entries with a highlight, with or without a comment", async () => {
+	const site = siteOf([{ date: TODAY, entries: notedPapers(4) }]);
+	await owner(site, {
+		comments: {
+			"arxiv:2609.00001": [onPassage("t1", { comments: [said("c1")] })],
+			"arxiv:2609.00002": [
+				onPassage("t2", { highlight: true, comments: [said("c2")] }),
+			],
+			"arxiv:2609.00003": [onPassage("t3", { highlight: true })],
+		},
+	});
+	pick("read", "highlighted");
+	expect(shownTitles()).toEqual(["P2", "P3"]);
+});
+
+test("commented and highlighted together show the entries that have both", async () => {
+	const site = siteOf([{ date: TODAY, entries: notedPapers(4) }]);
+	await owner(site, {
+		comments: {
+			"arxiv:2609.00001": [
+				{ id: "t1", comments: [said("c1")] },
+				onPassage("t1b", { highlight: true }),
+			],
+			"arxiv:2609.00002": [
+				onPassage("t2", { highlight: true, comments: [said("c2")] }),
+			],
+			"arxiv:2609.00003": [{ id: "t3", comments: [said("c3")] }],
+			"arxiv:2609.00004": [onPassage("t4", { highlight: true })],
+		},
+	});
+	pick("read", "commented");
+	pick("read", "highlighted");
+	expect(shownTitles()).toEqual(["P1", "P2"]);
+});
+
+test("a thread whose last comment was deleted no longer counts as commented", async () => {
+	const site = siteOf([{ date: TODAY, entries: notedPapers(3) }]);
+	await owner(site, {
+		comments: {
+			// A highlight keeps its thread when its comments are all deleted.
+			"arxiv:2609.00001": [onPassage("t1", { highlight: true })],
+			"arxiv:2609.00002": [onPassage("t2", { comments: [said("c2")] })],
+		},
+	});
+	pick("read", "commented");
+	expect(shownTitles()).toEqual(["P2"]);
+	pick("read", "commented");
+	pick("read", "highlighted");
+	expect(shownTitles()).toEqual(["P1"]);
+	expect(notesOfThreads([{ id: "t", highlight: true, comments: [] }])).toEqual({
+		commented: false,
+		highlighted: true,
+	});
+});
+
+test("the sentence reads commented and highlighted in the marks blank, after the read and tag words", async () => {
+	const site = siteOf([{ date: TODAY, entries: notedPapers(2) }]);
+	await owner(site, {
+		read: { "arxiv:2609.00001": { depth: "abstract", date: TODAY } },
+		tags: { "arxiv:2609.00001": { toRead: true } },
+		comments: {
+			"arxiv:2609.00001": [
+				onPassage("t1", { highlight: true, comments: [said("c1")] }),
+			],
+		},
+	});
+	pick("read", "abstract read");
+	pick("read", "To read");
+	pick("read", "highlighted");
+	pick("read", "commented");
+	pick("read", "ad hoc");
+	expect(sentence()).toContain(
+		"abstract read and tagged To read and commented and highlighted and added ad hoc.",
+	);
+	for (const label of ["commented", "highlighted"]) {
+		expect(word(label).getAttribute("aria-pressed")).toBe("true");
+	}
+});
+
+test("the public page offers neither commented nor highlighted", async () => {
+	const site = siteOf([{ date: TODAY, entries: notedPapers(2) }]);
+	await openPage(site);
+	expect(document.querySelector('[data-blank="read"]')).toBeNull();
+	for (const name of ["kind", "subject", "venue", "time"]) {
+		blank(name).click();
+		const labels = words().map((one) => one.getAttribute("aria-label"));
+		expect(labels).not.toContain("commented");
+		expect(labels).not.toContain("highlighted");
+	}
+	expect(sentence()).not.toMatch(/commented|highlighted/);
+});
+
+test("a comment or highlight made while Search shows commented or highlighted keeps the Feed as it was until the next pick", async () => {
+	const site = siteOf([{ date: TODAY, entries: notedPapers(2) }]);
+	await owner(site, {
+		comments: {
+			"arxiv:2609.00001": [onPassage("t1", { highlight: true })],
+		},
+	});
+	pick("read", "highlighted");
+	expect(shownTitles()).toEqual(["P1"]);
+	// jsdom lays nothing out: the highlight gets one empty box to place its menu by.
+	const box = { top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 };
+	vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([
+		box,
+	] as unknown as DOMRectList);
+	document.querySelector<HTMLElement>("mark.comment-mark")?.click();
+	const remove = [
+		...document.querySelectorAll<HTMLButtonElement>(".highlight-menu button"),
+	].find((button) => button.textContent?.trim() === "Remove highlight");
+	if (remove === undefined) throw new Error("no Remove highlight button");
+	remove.click();
+	expect(document.querySelector("mark.comment-mark")).toBeNull();
+	expect(shownTitles()).toEqual(["P1"]);
+	pick("read", "highlighted");
+	expect(shownTitles()).toEqual(["P1", "P2"]);
+});
