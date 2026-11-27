@@ -8,6 +8,7 @@ import { isArxivId, normalizeId } from "../../shared/arxiv-id.ts";
 import {
 	type AddKind,
 	type AddPayload,
+	isDoiId,
 	MAX_LINKS_PER_CALL,
 	MAX_PAPERS_PER_CALL,
 } from "../../shared/connector-protocol.ts";
@@ -21,6 +22,12 @@ import { digestMarkdown, entryMarkdown } from "../../shared/entry-markdown.ts";
 import { isLocalHost } from "../../shared/local-address.ts";
 import { isJsonObject, type JsonObject } from "../../shared/narrow.ts";
 import { OWNER_TEXT_CHARS } from "../../shared/owner-protocol.ts";
+import {
+	arxivPaperOf,
+	doiOfLink,
+	type PaperClaim,
+	paperClaimOf,
+} from "../../shared/paper-claim.ts";
 import { countOne, type QueryCost, runBatch } from "./d1.ts";
 import type { Env, RequestLog } from "./env.ts";
 import { notesFor } from "./owner/notes.ts";
@@ -95,7 +102,7 @@ function counted(count: number, kind: AddKind) {
 // How many ids or links a payload holds.
 function payloadSize(payload: AddPayload) {
 	if ("papers" in payload) {
-		return payload.papers.length;
+		return payload.papers.length + (payload.metadata?.length ?? 0);
 	}
 	return payload.links.length;
 }
@@ -135,24 +142,77 @@ async function queueAndStart(
 	};
 }
 
-// The arguments' ids as given, a list of text. Throws BadParams when ids isn't one.
+// The arguments' ids as given, a list of text; none when the call gives only metadata. Throws BadParams when ids is
+// given and isn't one.
 function idsOf(args: JsonObject): string[] {
 	const ids = args.ids;
+	if (ids === undefined && args.metadata !== undefined) {
+		return [];
+	}
 	if (!Array.isArray(ids) || !ids.every((id) => typeof id === "string")) {
 		throw new BadParams("ids must be a list of arXiv ids");
 	}
 	return ids;
 }
 
-// add_papers: arXiv ids, at most MAX_PAPERS_PER_CALL as given, each "2507.11473" or "arxiv:2507.11473" (the prefix in
-// any case), read as arxiv.ts reads them (shared/arxiv-id.ts). Each is queued once, as first given.
+// The arguments' metadata, a list. Throws BadParams when metadata is given and isn't one.
+function metadataOf(args: JsonObject): unknown[] {
+	const metadata = args.metadata;
+	if (metadata === undefined) {
+		return [];
+	}
+	if (!Array.isArray(metadata)) {
+		throw new BadParams("metadata must be a list of papers");
+	}
+	return metadata;
+}
+
+// Why an id isn't one add_papers takes, as the sentence that names it: an arXiv id or a "doi:" id passes. A link to
+// doi.org gets its DOI back.
+function idProblem(id: string): string | null {
+	if (isArxivId(normalizeId(id)) || isDoiId(id)) {
+		return null;
+	}
+	const doi = doiOfLink(id);
+	if (doi !== null) {
+		return `${JSON.stringify(id)} is a link: give the DOI itself, doi:${doi}`;
+	}
+	return JSON.stringify(id);
+}
+
+// Why a paper's metadata is refused: its shape (shared/paper-claim.ts), an address that isn't https or names this
+// machine or a private network (add.yml's paper.ts fetches the page), or an arXiv paper, which goes in by its id.
+function metadataProblems(claim: PaperClaim): string[] {
+	const problems: string[] = [];
+	const arxiv = arxivPaperOf(claim);
+	if (arxiv !== null) {
+		problems.push(`it names ${arxiv}: give the arXiv id alone, in ids`);
+	}
+	const page = URL.parse(claim.url);
+	if (page === null || page.protocol !== "https:") {
+		problems.push("the url must be an https address");
+	} else if (isLocalHost(page.hostname)) {
+		problems.push(
+			`the url's address ${page.hostname} is local, not on the public internet`,
+		);
+	}
+	return problems;
+}
+
+// add_papers: arXiv ids, each "2507.11473" or "arxiv:2507.11473" (the prefix in any case), read as arxiv.ts reads them
+// (shared/arxiv-id.ts); DOIs, each "doi:10.<registrant>/<suffix>", queued in lower case; and the metadata of papers
+// without an arXiv id. At most MAX_PAPERS_PER_CALL in all. Each id is queued once, as first given.
 async function addPapers(
 	args: JsonObject,
 	context: ToolContext,
 ): Promise<ToolAnswer> {
 	const given = idsOf(args);
-	if (given.length === 0) {
-		return { text: "Give at least one arXiv id.", isError: true };
+	const metadata = metadataOf(args);
+	if (given.length === 0 && metadata.length === 0) {
+		return {
+			text: "Give at least one arXiv id, DOI or paper's metadata.",
+			isError: true,
+		};
 	}
 	if (given.length > MAX_PAPERS_PER_CALL) {
 		return {
@@ -160,43 +220,117 @@ async function addPapers(
 			isError: true,
 		};
 	}
-	const ids = Array.from(new Set(given));
+	if (given.length + metadata.length > MAX_PAPERS_PER_CALL) {
+		return {
+			text: `There are more than ${MAX_PAPERS_PER_CALL} papers in one call; send at most ${MAX_PAPERS_PER_CALL} at a time.`,
+			isError: true,
+		};
+	}
 	const bad: string[] = [];
-	for (const id of ids) {
-		if (!isArxivId(normalizeId(id))) {
-			bad.push(JSON.stringify(id));
+	for (const id of new Set(given)) {
+		const problem = idProblem(id);
+		if (problem !== null) {
+			bad.push(problem);
 		}
 	}
 	if (bad.length > 0) {
 		return {
 			text:
-				`Not an arXiv id: ${bad.join(", ")}. Give ids such as 2507.11473 or arxiv:2507.11473, not links. ` +
-				"Nothing was queued.",
+				`Not an arXiv id: ${bad.join(", ")}. Give ids such as 2507.11473 or arxiv:2507.11473, or a DOI written ` +
+				"doi:10.1145/3442188.3445922, not links. Nothing was queued.",
 			isError: true,
 		};
 	}
-	return queueAndStart(context, "papers", { papers: ids });
+	const refused: string[] = [];
+	const claims: PaperClaim[] = [];
+	for (let k = 0; k < metadata.length; k++) {
+		const item = metadata[k];
+		const claim = paperClaimOf(item);
+		const problems = Array.isArray(claim) ? claim : metadataProblems(claim);
+		if (problems.length > 0) {
+			let label = `paper ${k + 1}`;
+			if (isJsonObject(item) && typeof item.title === "string") {
+				label = item.title;
+			}
+			refused.push(`refused ${JSON.stringify(label)}: ${problems.join("; ")}`);
+		} else if (!Array.isArray(claim)) {
+			claims.push(claim);
+		}
+	}
+	if (refused.length > 0) {
+		return {
+			text: `${refused.join("\n")}\nNothing was queued.`,
+			isError: true,
+		};
+	}
+	const ids = Array.from(
+		new Set(given.map((id) => (isDoiId(id) ? id.toLowerCase() : id))),
+	);
+	const payload: { papers: string[]; metadata?: PaperClaim[] } = {
+		papers: ids,
+	};
+	if (claims.length > 0) {
+		payload.metadata = claims;
+	}
+	return queueAndStart(context, "papers", payload);
 }
 
 const addPapersTool: Tool = {
 	name: "add_papers",
 	description:
-		"Add arXiv papers to the user's Liminal space digests. Give arXiv ids such as 2507.11473 or arxiv:2507.11473, " +
-		"never a link: for arxiv.org/abs/2507.11473 give 2507.11473. At most 10 ids a call. Give only the ids: the " +
-		"add run copies title, authors and abstract from arXiv itself. The tool queues the request; the papers are on " +
-		"the page a few minutes later.",
+		"Add papers to the user's Liminal space digests. Give an arXiv paper by its id, such as 2507.11473 or " +
+		"arxiv:2507.11473, never a link: for arxiv.org/abs/2507.11473 give 2507.11473. Give a paper that has a DOI " +
+		'as "doi:" and the DOI itself, such as doi:10.1145/3442188.3445922, never a doi.org link. Give a paper that ' +
+		"has neither an arXiv id nor a DOI Crossref knows (an SSRN preprint, say) as metadata: fetch its page first and " +
+		"copy the title, authors and venue from the page itself, never from memory, with the page's https address as " +
+		"url and its DOI when the page shows one. A paper's metadata is added only when its page holds the title and " +
+		"the first author's surname and its DOI opens that page. At most 10 papers a call in all. For ids the add run " +
+		"copies title, authors and abstract from arXiv or Crossref itself. The tool queues the request; the papers " +
+		"are on the page a few minutes later.",
 	inputSchema: {
 		type: "object",
 		properties: {
 			ids: {
 				type: "array",
 				items: { type: "string" },
-				minItems: 1,
 				maxItems: MAX_PAPERS_PER_CALL,
-				description: 'arXiv ids, "2507.11473" or "arxiv:2507.11473"',
+				description:
+					'arXiv ids, "2507.11473" or "arxiv:2507.11473", and DOIs, "doi:10.1145/3442188.3445922"',
+			},
+			metadata: {
+				type: "array",
+				maxItems: MAX_PAPERS_PER_CALL,
+				description:
+					"papers without an arXiv id, each copied from the paper's own page",
+				items: {
+					type: "object",
+					properties: {
+						title: { type: "string", description: "as the page gives it" },
+						authors: {
+							type: "array",
+							items: { type: "string" },
+							description: "as the page gives them, first author first",
+						},
+						venue: {
+							type: "string",
+							description: 'where it appeared, such as "FAccT 2021"',
+						},
+						url: {
+							type: "string",
+							description: "the page's own https address",
+						},
+						doi: {
+							type: "string",
+							description:
+								"the DOI, 10.1145/3442188.3445922, when the page shows one",
+						},
+						abstract: { type: "string", description: "as the page gives it" },
+					},
+					required: ["title", "authors", "venue", "url"],
+					additionalProperties: false,
+				},
 			},
 		},
-		required: ["ids"],
 		additionalProperties: false,
 	},
 	run: addPapers,
