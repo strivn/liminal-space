@@ -782,6 +782,18 @@ describe("papers added by DOI", () => {
 		expect(
 			JSON.parse(readFileSync(join(WORK, claimFiles[0] ?? ""), "utf8")).title,
 		).toBe(PAPER_TITLE);
+		// The title with quotes and $() reached paper.ts as data in its own file, never in an argument.
+		const quotedFiles = files.filter((name) =>
+			name.endsWith("r10-paper-2.json"),
+		);
+		expect(quotedFiles).toHaveLength(1);
+		expect(
+			JSON.parse(readFileSync(join(WORK, quotedFiles[0] ?? ""), "utf8")).title,
+		).toBe(QUOTED_TITLE);
+		// A paper with a DOI links to the DOI's address.
+		expect(entries.find((one) => one.id === SSRN_DOI)?.url).toBe(
+			`https://doi.org/${SSRN_DOI.slice("doi:".length)}`,
+		);
 	});
 
 	test("a paper paper.ts refuses is reported failed with each check that failed", () => {
