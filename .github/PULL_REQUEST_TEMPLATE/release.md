@@ -3,6 +3,7 @@ Release pull request, develop into main. Title: "release: develop into main, <wh
 Merge with a merge commit, never a squash.
 
 Rules for this description:
+- **No theatrics, no drama, no slogan-style labels or sentences.** A bullet says what changed as an action.
 - One bullet per change the reader notices, tagged:
   Features: [Feature] a capability of the page or the owner's page, [UI] a look or layout change,
   [Scout] the scout, [Deployment] Cloudflare, the Worker's setup, integrations.

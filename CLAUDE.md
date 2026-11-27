@@ -173,6 +173,8 @@ bar and home indicator (`viewport-fit=cover`); phone rules keep clear of them wi
 `develop` is staging and `main` is production. Work reaches `develop` only through pull requests, and every push to
 `develop` deploys staging. Production changes only through the pull request
 from `develop` into `main`. Its description follows `.github/PULL_REQUEST_TEMPLATE/release.md`.
+Before Claude opens or edits any pull request, `agy` (Gemini 4 Hydrogen Medium) rewrites the description from the draft
+alone, and Claude accepts or rejects each change; if `agy` fails, the rewrite is skipped.
 Staging reads production's entries from its public files, and builds its Selected data from the papers marked in
 staging's own database (`sync.ts standouts --database`), so the owner's marks there stay on staging. `staging.yml` also
 runs by hand (`workflow_dispatch`), to publish a mark made on staging without a push to `develop`.

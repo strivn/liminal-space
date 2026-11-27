@@ -6,7 +6,7 @@ If it needs an "and", it is two PRs.
 
 Rules for this description:
 - First sentence of every section is the whole answer. Lines after it are optional depth.
-- Plain clauses. No em dashes. No semicolon fragment stacking. No drama, no cleverness.
+- Plain clauses. No em dashes. No semicolon fragment stacking. **No theatrics, no drama, no slogan-style labels or sentences.**
 - Say each thing once. If two sections would repeat, cut one.
 - Scale to the diff: a 3-line change gets a 3-line description. In a big PR, one
   sentence per specific thing, as bullet points.
