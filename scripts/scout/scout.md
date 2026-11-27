@@ -50,6 +50,7 @@ A day's run for an earlier date D is today's run done as if it were D:
       node scripts/scout/arxiv/arxiv.ts --append site/digests.js --date D <id> ...
       node scripts/scout/proceedings/proceedings.ts --append site/digests.js --date D <id> ...
       node scripts/scout/proceedings/proceedings.ts --append site/digests.js --date D --crossref ...
+      node scripts/scout/web/paper.ts --append site/digests.js --date D <scratchpad>/paper.json
       node scripts/digests/digests.ts add site/digests.js <scratchpad>/items.json --date D
 - Every "today", "last 60 days", "last 48 hours" and "last 7 days" in this part counts
   back from D, and a conference list is new for 7 days from its publication date as
@@ -99,7 +100,8 @@ cryptography, statistics...). Find them:
 - web search, for papers other sources are discussing.
 - A camera-ready paper's first page names its venue, and arXiv's comment field sometimes
   does. OpenReview blocks automated reading; don't use it. A paper without an arXiv id
-  can be added only when search.ts printed it with a "doi:" or "url:" id.
+  is appended with proceedings.ts when search.ts printed it with a "doi:" or "url:" id,
+  and with paper.ts when web search found it (see below).
 Before appending, read the authors' affiliations on the first page of each shortlisted
 paper, all in one call:
     node scripts/scout/arxiv/first-page.ts <id> <id> ...
@@ -129,6 +131,21 @@ first page, since its acceptance is what counts, and append it with
 It copies the paper as search.ts read it from the proceedings page, skips an id already
 in the file, and prints "appended <id> <title>" for each paper. figure.ts takes arXiv
 papers only.
+A paper without an arXiv id that web search found, such as a journal paper or an SSRN
+preprint, is appended with paper.ts, from its own page. Fetch the page, write the paper
+as JSON to `paper.json` in your scratchpad, copying title, authors and venue from the
+page, with the page's https address as `url` and its DOI as `doi` when it shows one
+(`abstract` is optional):
+    {"title":"","authors":[""],"venue":"","url":"","doi":""}
+Then run
+    node scripts/scout/web/paper.ts --append site/digests.js <scratchpad>/paper.json
+With a `doi`, it checks the paper against Crossref's record for the DOI, which must have
+the same title and first author's surname, and never opens the page. Without one, it
+opens the page, which must load and hold the title and the first author's surname. It
+prints "appended <id> <title>" and which of the two it checked against; otherwise it
+names each check that failed and appends nothing. A page that refuses the request
+(HTTP 403) fails a paper without a DOI: name the paper in your final message and move
+on. An arXiv paper is refused there: append it with arxiv.ts.
 Then copy each new paper's Figure 1:
     node scripts/scout/arxiv/figure.ts site/digests.js <id> <id> ...
 It takes up to 10 papers a run, 15 seconds apart; give it a 10-minute timeout. A paper

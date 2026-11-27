@@ -1,11 +1,15 @@
 // The connector's add requests: what the Worker queues from a Claude app, what add.yml reads and reports back, and
 // the limits on both. One place for the Worker, add.yml's scripts and the tests.
 import type { JsonObject } from "./narrow.ts";
+import { MAX_DOI_CHARS, type PaperClaim } from "./paper-claim.ts";
 
-// A tool call's payload. Papers: arXiv ids as given ("2507.11473" or "arxiv:2507.11473"). Links: items in the shape
-// digests.ts add takes (type, title, published, source, url; authors, links and description optional), checked with
-// entryProblems(item, "add") before anything is queued.
-export type AddPayload = { papers: string[] } | { links: JsonObject[] };
+// A tool call's payload. Papers: arXiv ids as given ("2507.11473" or "arxiv:2507.11473") and DOIs as "doi:<doi>" in
+// lower case, then the metadata of papers without an arXiv id, checked with paperClaimProblems before anything is
+// queued. Links: items in the shape digests.ts add takes (type, title, published, source, url; authors, links and
+// description optional), checked with entryProblems(item, "add") before anything is queued.
+export type AddPayload =
+	| { papers: string[]; metadata?: PaperClaim[] }
+	| { links: JsonObject[] };
 export type AddKind = "papers" | "links";
 export type AddStatus = "queued" | "running" | "done" | "failed";
 
@@ -51,7 +55,13 @@ export const MAX_REQUEST_UPDATE_BYTES = 65_536;
 // The MCP protocol versions the hand-written handler speaks, newest first.
 export const PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26"];
 
+// The longest "doi:<doi>" id a call may hold.
+const MAX_DOI_ID_CHARS = "doi:".length + MAX_DOI_CHARS;
+
 // True for a paper id add_papers takes as a DOI: "doi:10.<registrant>/<suffix>", no space or control character.
 export function isDoiId(id: string): boolean {
-	throw new Error(`not implemented: ${id}`);
+	return (
+		/^doi:10\.[^\s\p{Cc}]+\/[^\s\p{Cc}]+$/u.test(id) &&
+		id.length <= MAX_DOI_ID_CHARS
+	);
 }
