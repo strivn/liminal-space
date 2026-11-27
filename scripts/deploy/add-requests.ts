@@ -3,7 +3,9 @@
 //        node scripts/deploy/add-requests.ts report <results file> <push outcome> [<push output file>]
 // run reads the queued requests (and any a run that died left running) from <LIMINAL_URL>/api/sync/requests, marks
 // each one running, and appends what it asks for with the scout's scripts, which get no token in their environment:
-// papers with `arxiv.ts --append <digests file> --ad-hoc -- <ids>`, then figure.ts;
+// papers with `arxiv.ts --append <digests file> --ad-hoc -- <ids>`, then figure.ts; DOIs with `proceedings.ts --append
+// <digests file> --crossref --ad-hoc -- <ids>`; a paper's metadata with `paper.ts --append <digests file> --ad-hoc
+// <metadata file>`, a file for each paper;
 // links with `digests.ts add <digests file> <items file> --ad-hoc`, then describe.ts. It reads what each script printed
 // to tell, for every id or link, "added", "already there" or "failed" with the reason, and keeps each request's result
 // in the results file as it goes. A request is "failed" when nothing in it was added or already there, else "done".
@@ -31,17 +33,19 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isArxivId, normalizeId } from "../../shared/arxiv-id.ts";
-import type {
-	AddItemResult,
-	AddPayload,
-	QueuedAnswer,
-	RequestUpdate,
+import {
+	type AddItemResult,
+	type AddPayload,
+	isDoiId,
+	type QueuedAnswer,
+	type RequestUpdate,
 } from "../../shared/connector-protocol.ts";
 import {
 	errorCode,
 	isJsonObject,
 	type JsonObject,
 } from "../../shared/narrow.ts";
+import { type PaperClaim, paperClaimOf } from "../../shared/paper-claim.ts";
 import { requestWithRetry, SyncFailure, siteBase } from "./site-requests.ts";
 
 const USAGE =
@@ -225,16 +229,26 @@ function leftoverReason(script: string, run: ScriptRun, last: string | null) {
 //   arxiv.ts: <problem>: <id>, <id>                               failed, <problem> (not an arXiv id, not found on arXiv, ...)
 //   arxiv.ts: not fetched because OAI-PMH <what>: <id> (<url>), ...   failed
 // An id it named nowhere failed with the last other line it printed on stderr.
-function paperOutcomes(asked: string[], run: ScriptRun) {
+// proceedings.ts --crossref says the same about a DOI, "appended doi:<doi> <title>" and "proceedings.ts: ..." lines, and
+// names a DOI it can't give "<problem>: <id>" ("not found on Crossref", "Crossref answered HTTP 503 (<url>)").
+// `script` is the script's name, and `idOf` reads an id from the one "appended <id> <title>" prints: the key an id
+// was asked for under, or null when it isn't one of this script's.
+function paperOutcomes(
+	script: string,
+	asked: string[],
+	run: ScriptRun,
+	idOf: (printed: string) => string | null,
+) {
 	const outcomes = new Map<string, Outcome>();
 	for (const line of linesOf(run.stdout)) {
-		const appended = line.match(/^appended arxiv:(\S+) /);
-		if (appended !== null && appended[1] !== undefined) {
-			outcomes.set(appended[1], { outcome: "added" });
+		const appended = line.match(/^appended (\S+) /);
+		const id = idOf(appended?.[1] ?? "");
+		if (id !== null) {
+			outcomes.set(id, { outcome: "added" });
 		}
 	}
 	let last: string | null = null;
-	const prefix = "arxiv.ts: ";
+	const prefix = `${script}: `;
 	for (const line of linesOf(run.stderr)) {
 		if (!line.startsWith(prefix)) {
 			continue;
@@ -276,7 +290,7 @@ function paperOutcomes(asked: string[], run: ScriptRun) {
 	}
 	return {
 		outcomes: outcomes,
-		leftover: leftoverReason("arxiv.ts", run, last),
+		leftover: leftoverReason(script, run, last),
 	};
 }
 
@@ -296,19 +310,104 @@ function itemResult(
 	return { id: id, outcome: found.outcome };
 }
 
-// Append a request's papers, then record their Figure 1: each id's outcome, under the id as the request gave it.
+// The id paper.ts gives a paper's metadata in the digests: "doi:<doi>" in lower case, else "url:<its page>".
+function claimEntryId(claim: PaperClaim) {
+	if (claim.doi !== undefined) {
+		return `doi:${claim.doi.toLowerCase()}`;
+	}
+	return `url:${claim.url}`;
+}
+
+// How a paper's metadata is named in a request's result: its DOI id, else its page's address (as a link is).
+function claimId(claim: PaperClaim) {
+	if (claim.doi !== undefined) {
+		return claimEntryId(claim);
+	}
+	return claim.url;
+}
+
+// The paper metadata a request holds, each as a PaperClaim, or the reasons it isn't one; the Worker checked it before
+// queueing it, and it is checked again here because it came from a chat.
+function metadataOf(payload: AddPayload): (PaperClaim | string)[] {
+	if (!("metadata" in payload) || !Array.isArray(payload.metadata)) {
+		return [];
+	}
+	return payload.metadata.map((paper) => {
+		const claim = paperClaimOf(paper);
+		if (Array.isArray(claim)) {
+			return `not a paper's metadata: ${claim.join("; ")}`;
+		}
+		return claim;
+	});
+}
+
+// Append the papers a request gave by their metadata with paper.ts, one run each with the metadata in a file of its
+// own (never on the command line): each paper's outcome, under its DOI id or its address.
+function handleMetadata(
+	file: string,
+	metadata: (PaperClaim | string)[],
+	folder: string,
+	requestId: string,
+	timeoutMs: number,
+): AddItemResult[] {
+	const items: AddItemResult[] = [];
+	for (let k = 0; k < metadata.length; k++) {
+		const claim = metadata[k];
+		if (claim === undefined) {
+			continue;
+		}
+		if (typeof claim === "string") {
+			items.push({ id: `paper ${k + 1}`, outcome: "failed", reason: claim });
+			continue;
+		}
+		const claimFile = join(
+			folder,
+			`${requestId.replace(/[^A-Za-z0-9-]/g, "_")}-paper-${k + 1}.json`,
+		);
+		writeFileSync(claimFile, JSON.stringify(claim));
+		const run = runScript(
+			"../scout/web/paper.ts",
+			["--append", file, "--ad-hoc", claimFile],
+			timeoutMs,
+		);
+		const entryId = claimEntryId(claim);
+		const read = paperOutcomes("paper.ts", [entryId], run, (printed) =>
+			printed === entryId ? printed : null,
+		);
+		const item = itemResult(
+			claimId(claim),
+			read.outcomes.get(entryId),
+			read.leftover,
+		);
+		// paper.ts says "refused <id>: <each check that failed>"; the id is the item's already.
+		if (item.reason?.startsWith(`refused ${entryId}: `)) {
+			item.reason = item.reason.slice(`refused ${entryId}: `.length);
+		}
+		items.push(item);
+	}
+	return items;
+}
+
+// Append a request's papers: arXiv ids with arxiv.ts, then their Figure 1; DOIs with proceedings.ts --crossref; a
+// paper's metadata with paper.ts. Each id's outcome is under the id as the request gave it.
 function handlePapers(
 	file: string,
 	given: string[],
+	metadata: (PaperClaim | string)[],
+	folder: string,
+	requestId: string,
 	timeoutMs: number,
 ): AddItemResult[] {
-	// An id that isn't one never reaches the script's command line (it could read as an option).
+	// An id that is neither never reaches a script's command line (it could read as an option).
 	const items: AddItemResult[] = [];
 	const ids: string[] = [];
+	const dois: string[] = [];
 	for (const id of given) {
 		const normalized = normalizeId(id);
 		if (isArxivId(normalized)) {
 			ids.push(normalized);
+		} else if (isDoiId(id)) {
+			dois.push(id.toLowerCase());
 		}
 	}
 	let outcomes = new Map<string, Outcome>();
@@ -320,25 +419,47 @@ function handlePapers(
 			["--append", file, "--ad-hoc", "--"].concat(ids),
 			timeoutMs,
 		);
-		const read = paperOutcomes(ids, run);
+		const read = paperOutcomes("arxiv.ts", ids, run, (printed) =>
+			printed.startsWith("arxiv:") ? printed.slice("arxiv:".length) : null,
+		);
 		outcomes = read.outcomes;
 		leftover = read.leftover;
+	}
+	let doiOutcomes = new Map<string, Outcome>();
+	let doiLeftover = "";
+	if (dois.length > 0) {
+		const run = runScript(
+			"../scout/proceedings/proceedings.ts",
+			["--append", file, "--crossref", "--ad-hoc", "--"].concat(dois),
+			timeoutMs,
+		);
+		const read = paperOutcomes("proceedings.ts", dois, run, (printed) =>
+			printed.startsWith("doi:") ? printed : null,
+		);
+		doiOutcomes = read.outcomes;
+		doiLeftover = read.leftover;
 	}
 	const added: string[] = [];
 	for (const id of given) {
 		const normalized = normalizeId(id);
-		if (!isArxivId(normalized)) {
-			items.push({ id: id, outcome: "failed", reason: "not an arXiv id" });
-			continue;
-		}
-		const item = itemResult(id, outcomes.get(normalized), leftover);
-		items.push(item);
-		if (item.outcome === "added") {
-			added.push(normalized);
+		if (isArxivId(normalized)) {
+			const item = itemResult(id, outcomes.get(normalized), leftover);
+			items.push(item);
+			if (item.outcome === "added") {
+				added.push(normalized);
+			}
+		} else if (isDoiId(id)) {
+			items.push(
+				itemResult(id, doiOutcomes.get(id.toLowerCase()), doiLeftover),
+			);
+		} else {
+			const kind = id.startsWith("doi:") ? "a DOI" : "an arXiv id";
+			items.push({ id: id, outcome: "failed", reason: `not ${kind}` });
 		}
 	}
+	items.push(...handleMetadata(file, metadata, folder, requestId, timeoutMs));
 	// A paper without a Figure 1 is fine; figure.ts names what it couldn't find in the job's log. One it didn't reach
-	// before its time limit stays added, without a figure.
+	// before its time limit stays added, without a figure. figure.ts reads arXiv papers only.
 	if (added.length > 0) {
 		runScript("../scout/arxiv/figure.ts", [file].concat(added), timeoutMs);
 	}
@@ -471,7 +592,11 @@ function linkId(link: unknown, index: number) {
 function namesOf(request: Queued): string[] {
 	const payload = request.payload;
 	if ("papers" in payload && Array.isArray(payload.papers)) {
-		return payload.papers.map((id) => String(id));
+		const names = payload.papers.map((id) => String(id));
+		metadataOf(payload).forEach((claim, k) => {
+			names.push(typeof claim === "string" ? `paper ${k + 1}` : claimId(claim));
+		});
+		return names;
 	}
 	const names: string[] = [];
 	if ("links" in payload && Array.isArray(payload.links)) {
@@ -526,7 +651,19 @@ async function run(file: string, resultsFile: string) {
 		console.log(`request ${request.id}: ${request.kind}`);
 		let items: AddItemResult[];
 		if (request.kind === "papers") {
-			items = handlePapers(file, namesOf(request), timeoutMs);
+			const payload = request.payload;
+			let ids: string[] = [];
+			if ("papers" in payload && Array.isArray(payload.papers)) {
+				ids = payload.papers.map((id) => String(id));
+			}
+			items = handlePapers(
+				file,
+				ids,
+				metadataOf(payload),
+				folder,
+				request.id,
+				timeoutMs,
+			);
 		} else {
 			const payload = request.payload;
 			let links: JsonObject[] = [];
@@ -575,11 +712,15 @@ function pushRefusals(outputFile: string | null): Map<string, string> | null {
 	return refused;
 }
 
-// The id an item's entry has in the digests, as push names it: "arxiv:<id>" for a paper, "url:<url>" for a link.
+// The id an item's entry has in the digests, as push names it: "arxiv:<id>" for an arXiv paper, "doi:<doi>" in lower
+// case for a DOI, "url:<url>" for a link or a paper known by its page.
 function entryIdOf(item: AddItemResult) {
 	const normalized = normalizeId(item.id);
 	if (isArxivId(normalized)) {
 		return `arxiv:${normalized}`;
+	}
+	if (isDoiId(item.id)) {
+		return item.id.toLowerCase();
 	}
 	return `url:${item.id}`;
 }

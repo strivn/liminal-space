@@ -2,7 +2,8 @@
 // to them, and filling each paper's camera_ready field.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterAll, afterEach, expect, test } from "vitest";
+import { afterAll, afterEach, describe, expect, test } from "vitest";
+import { sourceLimit } from "../../scripts/lib/http.ts";
 import { proceedingsLines } from "../../scripts/scout/plan/interests.ts";
 import {
 	matchPublished,
@@ -93,6 +94,7 @@ async function fill(
 	lines: unknown[][],
 	answers: Record<string, { status: number; body: string }>,
 	args: string[] = [],
+	options: { extraProceedings?: string; dates?: string[] } = {},
 ) {
 	const folder = tempFolder("camera-ready-");
 	const interests = join(folder, "interests.md");
@@ -102,10 +104,10 @@ async function fill(
 - ICML 2026: ${PMLR}
 - FAccT 2026: https://api.crossref.org/works?filter=prefix:10.1145 (${FACCT_CONTAINER})
 - PETS 2026: https://petsymposium.org/popets/2026/
-`,
+${options.extraProceedings ?? ""}`,
 	);
 	const file = join(folder, "digests.js");
-	const dates = ["2026-11-01", TODAY];
+	const dates = options.dates ?? ["2026-11-01", TODAY];
 	writeFileSync(
 		file,
 		`${lines.map((entries, i) => digestText(dates[i] ?? TODAY, entries)).join("\n")}\n`,
@@ -281,6 +283,7 @@ test("A FAccT paper's published version is the Crossref record in the FAccT proc
 		url: "https://doi.org/10.1145/3805689.3806475",
 		venue: "FAccT 2026",
 		from: "https://api.crossref.org/works?filter=prefix:10.1145",
+		doi: "10.1145/3805689.3806475",
 	});
 	const elsewhere = await fill([[], [facct]], {
 		"/works": { status: 200, body: crossrefAnswer("Proceedings of CHI 2026") },
@@ -519,4 +522,198 @@ test("security: a published version is recorded only as an https page on its pro
 		ICML_FILE,
 	);
 	expect(written[1]?.[0]?.camera_ready).toBeUndefined();
+});
+
+describe("every new paper, venue or not", () => {
+	const solanki = (n: number) => ({
+		...paperEntry(
+			n,
+			"Crowding Out the Noise: Algorithmic Collective Action Under Differential Privacy",
+			"Rushabh Solanki",
+			"",
+		),
+		venue: undefined,
+	});
+	const shapira = (n: number, title = "How RLHF Amplifies Sycophancy") => ({
+		...paperEntry(n, title, "Itai Shapira", ""),
+		venue: undefined,
+	});
+	const FACCT_AND_ICML = {
+		...ICML_FILE,
+		"/works": { status: 200, body: crossrefAnswer(FACCT_CONTAINER) },
+	};
+
+	test("a paper with no venue is matched against every proceedings file interests.md lists", async () => {
+		const { written, requests } = await fill(
+			[[], [shapira(1), solanki(2)]],
+			FACCT_AND_ICML,
+		);
+		expect(written[1]?.[0]?.camera_ready).toMatchObject({
+			url: "https://proceedings.mlr.press/v306/shapira26a.html",
+			venue: "ICML 2026",
+			from: PMLR,
+		});
+		expect(written[1]?.[1]?.camera_ready).toMatchObject({
+			url: "https://doi.org/10.1145/3805689.3806475",
+			venue: "FAccT 2026",
+		});
+		expect(requests).toContain("/popets/2026/");
+	});
+
+	test("a match needs the same normalised title and the same first author's surname", async () => {
+		const { written } = await fill(
+			[[], [shapira(1, "how RLHF amplifies sycophancy!")]],
+			ICML_FILE,
+		);
+		expect(written[1]?.[0]?.camera_ready).toMatchObject({
+			url: "https://proceedings.mlr.press/v306/shapira26a.html",
+		});
+		const other = await fill(
+			[[], [shapira(1, "How RLHF Amplifies Flattery")]],
+			ICML_FILE,
+		);
+		expect(other.written[1]?.[0]?.camera_ready).toBeUndefined();
+	});
+
+	test("a paper whose title matches but whose first author differs is not linked", async () => {
+		const { written } = await fill(
+			[
+				[],
+				[
+					{
+						...shapira(1),
+						authors: ["Yann LeCun"],
+					},
+				],
+			],
+			ICML_FILE,
+		);
+		expect(written[1]?.[0]?.camera_ready).toBeUndefined();
+	});
+
+	test("camera_ready holds the DOI the proceedings record gives, from the ACL Anthology, PoPETs or Crossref", async () => {
+		const aclBib = `@inproceedings{han-etal-2026-deepsea,
+    title = "{D}eep{SEA}: A Multilingual Evaluation Benchmark",
+    author = "Han, Jiuzhou  and
+      Cohn, Trevor",
+    url = "https://aclanthology.org/2026.emnlp-main.1/",
+    doi = "10.18653/v1/2026.emnlp-main.1",
+}
+`;
+		const popetsIndex = `<li><b><a href="../2026/popets-2026-0002.php">Gaze3P: Gaze-Based Prediction of User-Perceived Privacy</a></b>
+    [<a href="popets-2026-0002.pdf">PDF</a>]<br />
+    <i>Mayar Elfares (University of Stuttgart, Germany)</i></li>`;
+		const popetsPage = `<html><head><meta name="citation_title" content="Gaze3P"></head><body>
+<p><b>DOI:</b> <a href="https://doi.org/10.56553/popets-2026-0002">https://doi.org/10.56553/popets-2026-0002</a></p></body></html>`;
+		const { written } = await fill(
+			[
+				[],
+				[
+					{
+						...paperEntry(
+							1,
+							"DeepSEA: A Multilingual Evaluation Benchmark",
+							"Jiuzhou Han",
+							"",
+						),
+						venue: undefined,
+					},
+					{
+						...paperEntry(
+							2,
+							"Gaze3P: Gaze-Based Prediction of User-Perceived Privacy",
+							"Mayar Elfares",
+							"",
+						),
+						venue: undefined,
+					},
+					solanki(3),
+				],
+			],
+			{
+				"/volumes/2026.emnlp-main.bib": { status: 200, body: aclBib },
+				"/popets/2026/": { status: 200, body: popetsIndex },
+				"/popets/2026/popets-2026-0002.php": {
+					status: 200,
+					body: popetsPage,
+				},
+				"/works": { status: 200, body: crossrefAnswer(FACCT_CONTAINER) },
+			},
+			[],
+			{
+				extraProceedings:
+					"- EMNLP 2026: https://aclanthology.org/volumes/2026.emnlp-main.bib\n",
+			},
+		);
+		expect(written[1]?.map((entry) => entry.camera_ready)).toMatchObject([
+			{ venue: "EMNLP 2026", doi: "10.18653/v1/2026.emnlp-main.1" },
+			{ venue: "PETS 2026", doi: "10.56553/popets-2026-0002" },
+			{ venue: "FAccT 2026", doi: "10.1145/3805689.3806475" },
+		]);
+	});
+
+	test("a PMLR record with no DOI leaves camera_ready without one", async () => {
+		const { written } = await fill([[], [shapira(1)]], ICML_FILE);
+		expect(written[1]?.[0]?.camera_ready).toBeDefined();
+		expect(written[1]?.[0]?.camera_ready).not.toHaveProperty("doi");
+	});
+	test("a proceedings file above 20 MiB is read up to the limit its source is given", async () => {
+		const shapira = paperEntry(
+			2,
+			"How RLHF Amplifies Sycophancy",
+			"Itai Shapira",
+			"ICML 2026",
+		);
+		const bibOf = (bytes: number) => `${"x".repeat(bytes)}\n${ICML_BIB}`;
+		const asFile = (bytes: number) => ({
+			"/v306/assets/bib/bibliography.bib": {
+				status: 200,
+				body: bibOf(bytes),
+			},
+		});
+		const within = await fill([[], [shapira]], asFile(21 * 1024 * 1024));
+		expect(within.written[1]?.[0]?.camera_ready).toMatchObject({
+			url: "https://proceedings.mlr.press/v306/shapira26a.html",
+		});
+		const over = await fill([[], [shapira]], asFile(sourceLimit("ICML 2026")));
+		expect(over.written[1]?.[0]?.camera_ready).toBeUndefined();
+		expect(over.ran.stderr).toContain(
+			`not read: sent more than ${sourceLimit("ICML 2026")} bytes`,
+		);
+	});
+	test("the run names the venue papers older than 8 weeks that still have no published version", async () => {
+		const { ran } = await fill(
+			[
+				[
+					paperEntry(1, "A Paper Not Yet Published", "Ada Older", "ICML 2026"),
+					paperEntry(
+						2,
+						"How RLHF Amplifies Sycophancy",
+						"Itai Shapira",
+						"ICML 2026",
+					),
+					{
+						...paperEntry(3, "An Unnamed Venue Paper", "Ada Older", ""),
+						venue: undefined,
+					},
+				],
+				[
+					paperEntry(4, "A Recent Paper", "Ada Older", "ICML 2026"),
+					{
+						...paperEntry(5, "A Paper Not Yet Published", "Ada Older", ""),
+						venue: undefined,
+					},
+				],
+			],
+			ICML_FILE,
+			["--all"],
+			{ dates: ["2026-09-28", TODAY] },
+		);
+		const named = ran.stdout
+			.split("\n")
+			.filter((line) => line.startsWith("no published version"));
+		expect(named).toEqual([
+			"no published version after 8 weeks: arxiv:2601.00001 (ICML 2026)",
+		]);
+	});
 });

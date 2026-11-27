@@ -5,8 +5,10 @@
 // Requests that never answer run apart.
 import { execFile } from "node:child_process";
 import {
+	existsSync,
 	mkdirSync,
 	mkdtempSync,
+	readdirSync,
 	readFileSync,
 	rmSync,
 	writeFileSync,
@@ -48,6 +50,23 @@ function feedFor(ids: string[]) {
 	return `${head}${entries.join("\n")}\n</feed>\n`;
 }
 
+// A paper Crossref knows, without an abstract, and the one Semantic Scholar's stand-in gives every DOI.
+const PARROTS_DOI = "10.1145/3442188.3445922";
+const PARROTS_RECORD = {
+	title: ["Why Language Models Are Too Big, a Fixture Title"],
+	author: [{ given: "Ada", family: "Example" }],
+	"container-title": ["Proceedings of the 2021 ACM Conference"],
+	published: { "date-parts": [[2021, 3, 1]] },
+};
+// The record Crossref keeps for the DOI of a paper added by its metadata: it has no journal, as an SSRN paper's has not.
+const SSRN_RECORD_DOI = "10.2139/ssrn.4685553";
+const SSRN_RECORD = {
+	title: ["Measuring Privacy Harms in Everyday Software"],
+	author: [{ given: "Yann", family: "LeCun" }],
+	published: { "date-parts": [[2026, 3, 1]] },
+};
+const SEMANTIC_ABSTRACT = "Language models grew, and so did the questions.";
+
 type Queued = { id: string; kind: "papers" | "links"; payload: unknown };
 type Item = { id: string; outcome: string; reason?: string };
 type Update = { id: string; status: string; result?: { items: Item[] } };
@@ -80,6 +99,33 @@ async function standIn(queue: (base: string) => Queued[], hang: string[] = []) {
 		}
 		if (url.pathname === "/api") {
 			out.end(feedFor((url.searchParams.get("id_list") as string).split(",")));
+			return;
+		}
+		const crossref = url.pathname.match(/^\/crossref\/works\/(.+)$/);
+		if (crossref !== null && crossref[1] !== undefined) {
+			const doi = decodeURIComponent(crossref[1]);
+			if (doi === PARROTS_DOI) {
+				out.end(JSON.stringify({ message: PARROTS_RECORD }));
+				return;
+			}
+			if (doi === SSRN_RECORD_DOI) {
+				out.end(JSON.stringify({ message: SSRN_RECORD }));
+				return;
+			}
+		}
+		const semantic = url.pathname.match(/^\/s2\/paper\/DOI:(.+)$/);
+		if (semantic !== null) {
+			out.end(JSON.stringify({ abstract: SEMANTIC_ABSTRACT }));
+			return;
+		}
+		const paperPage = url.pathname.match(/^\/page\/(paper|other|quoted)$/);
+		if (paperPage !== null && paperPage[1] !== undefined) {
+			out.setHeader("content-type", "text/html");
+			out.end(
+				fixture(
+					`paper-${paperPage[1] === "paper" ? "page" : paperPage[1]}.html`,
+				),
+			);
 			return;
 		}
 		if (url.pathname === "/page/ok") {
@@ -129,6 +175,11 @@ async function addRequests(
 				ARXIV_OAI: `${base}/oai`,
 				ARXIV_HTML_BASE: `${base}/html`,
 				ARXIV_HTML_STORE: join(dir, "html-store"),
+				CROSSREF_API: `${base}/crossref`,
+				SEMANTIC_SCHOLAR_API: `${base}/s2`,
+				SEMANTIC_SCHOLAR_API_KEY: "test-key",
+				SEMANTIC_SCHOLAR_PAUSE_MS: "0",
+				SEMANTIC_SCHOLAR_RETRY_MS: "0",
 				ARXIV_PAUSE_MS: "1",
 				FIGURE_DELAY_MS: "0",
 				SYNC_RETRY_SECOND_MS: "1",
@@ -573,5 +624,224 @@ describe("the command line", () => {
 				"usage: node scripts/deploy/add-requests.ts",
 			);
 		}
+	});
+});
+
+describe("papers added by DOI", () => {
+	// A DOI whose characters mean something to a shell, and that Crossref doesn't know.
+	const SHELL_DOI = "doi:10.1000/x;touch$IFS$9pwned&&id";
+	const ALREADY = "doi:10.1234/already";
+	const SSRN_DOI = "doi:10.2139/ssrn.4685553";
+	const PAPER_TITLE = "Measuring Privacy Harms in Everyday Software";
+	const QUOTED_TITLE = 'Say "hi" to $(touch pwned) and `id`';
+	const authors = ["Yann LeCun", "Geoffrey Hinton"];
+
+	let ran: {
+		dir: string;
+		digests: string;
+		base: string;
+		items: Item[];
+		status: string;
+		result: Result;
+	};
+
+	// One request holding two arXiv and DOI papers, a paper by its metadata whose DOI opens its page, one whose title
+	// has shell characters in it, and one whose page holds neither its title nor its author.
+	beforeAll(async () => {
+		const stand = await standIn((base) => [
+			{
+				id: "r10",
+				kind: "papers",
+				payload: {
+					papers: [
+						"1706.03762",
+						`doi:${PARROTS_DOI}`,
+						"doi:10.9999/unknown",
+						ALREADY,
+						SHELL_DOI,
+					],
+					metadata: [
+						{
+							title: PAPER_TITLE,
+							authors: authors,
+							venue: "Journal of Privacy Studies 2026",
+							url: `${base}/page/paper`,
+							doi: SSRN_DOI.slice("doi:".length),
+						},
+						{
+							title: QUOTED_TITLE,
+							authors: ["Yann LeCun"],
+							venue: "Journal of Privacy Studies 2026",
+							url: `${base}/page/quoted`,
+						},
+						{
+							title: PAPER_TITLE,
+							authors: ["Yann LeCun"],
+							venue: "Journal of Privacy Studies 2026",
+							url: `${base}/page/other`,
+						},
+					],
+				},
+			},
+		]);
+		const already = `digest(${JSON.stringify({
+			date: "2026-10-02",
+			entries: [
+				{
+					id: ALREADY,
+					type: "paper",
+					title: "Kept DOI",
+					authors: ["Ada Example"],
+				},
+			],
+		})});\n`;
+		const files = setup(OLD_LINE + already);
+		const result = await addRequests(
+			files.dir,
+			["run", files.digests, files.results],
+			stand.base,
+		);
+		const [request] = results(files.results);
+		ran = {
+			dir: files.dir,
+			digests: files.digests,
+			base: stand.base,
+			items: request?.result?.items ?? [],
+			status: request?.status ?? "",
+			result: result,
+		};
+	}, 120_000);
+
+	const item = (id: string) => ran.items.find((one) => one.id === id);
+	const appended = () =>
+		readFileSync(ran.digests, "utf8")
+			.trimEnd()
+			.split("\n")
+			.slice(2)
+			.flatMap(
+				(line) =>
+					JSON.parse(line.slice("digest(".length, -");".length)).entries,
+			);
+
+	test("a doi: id runs proceedings.ts --crossref with the id as an argument of its own", () => {
+		expect(ran.result.code, ran.result.stderr).toBe(0);
+		const entry = appended().find((one) => one.id === `doi:${PARROTS_DOI}`);
+		expect(entry?.title).toBe(PARROTS_RECORD.title[0]);
+		expect(entry?.ad_hoc).toBe(true);
+		// A DOI full of shell characters was asked of Crossref as one name and ran nothing.
+		expect(item(SHELL_DOI)?.outcome).toBe("failed");
+		expect(existsSync(join(ran.dir, "pwned"))).toBe(false);
+	});
+
+	test("arXiv ids and DOIs in one request each go to their own script, and each is reported", () => {
+		expect(ran.status).toBe("done");
+		expect(item("1706.03762")?.outcome).toBe("added");
+		expect(item(`doi:${PARROTS_DOI}`)?.outcome).toBe("added");
+		expect(appended().map((one) => one.id)).toEqual(
+			expect.arrayContaining(["arxiv:1706.03762", `doi:${PARROTS_DOI}`]),
+		);
+		expect(ran.items.map((one) => one.id)).toEqual([
+			"1706.03762",
+			`doi:${PARROTS_DOI}`,
+			"doi:10.9999/unknown",
+			ALREADY,
+			SHELL_DOI,
+			SSRN_DOI,
+			`${ran.base}/page/quoted`,
+			`${ran.base}/page/other`,
+		]);
+	});
+
+	test("a DOI Crossref doesn't know is reported failed, not found on Crossref", () => {
+		expect(item("doi:10.9999/unknown")).toEqual({
+			id: "doi:10.9999/unknown",
+			outcome: "failed",
+			reason: "not found on Crossref",
+		});
+	});
+
+	test("a DOI already in the digests is reported already there", () => {
+		expect(item(ALREADY)).toEqual({ id: ALREADY, outcome: "already there" });
+	});
+
+	test("a paper given by its metadata runs paper.ts with the metadata in a file of its own", () => {
+		expect(item(SSRN_DOI)?.outcome).toBe("added");
+		expect(item(`${ran.base}/page/quoted`)?.outcome).toBe("added");
+		const entries = appended();
+		expect(entries.find((one) => one.id === SSRN_DOI)?.ad_hoc).toBe(true);
+		// The title came through a file, as written, and ran nothing.
+		expect(entries.find((one) => one.title === QUOTED_TITLE)?.id).toBe(
+			`url:${ran.base}/page/quoted`,
+		);
+		expect(existsSync(join(ran.dir, "pwned"))).toBe(false);
+		const files = readdirSync(WORK, { recursive: true, encoding: "utf8" });
+		const claimFiles = files.filter((name) =>
+			name.endsWith("r10-paper-1.json"),
+		);
+		expect(claimFiles).toHaveLength(1);
+		expect(
+			JSON.parse(readFileSync(join(WORK, claimFiles[0] ?? ""), "utf8")).title,
+		).toBe(PAPER_TITLE);
+		// The title with quotes and $() reached paper.ts as data in its own file, never in an argument.
+		const quotedFiles = files.filter((name) =>
+			name.endsWith("r10-paper-2.json"),
+		);
+		expect(quotedFiles).toHaveLength(1);
+		expect(
+			JSON.parse(readFileSync(join(WORK, quotedFiles[0] ?? ""), "utf8")).title,
+		).toBe(QUOTED_TITLE);
+		// A paper with a DOI links to the DOI's address.
+		expect(entries.find((one) => one.id === SSRN_DOI)?.url).toBe(
+			`https://doi.org/${SSRN_DOI.slice("doi:".length)}`,
+		);
+	});
+
+	test("a paper paper.ts refuses is reported failed with each check that failed", () => {
+		const refused = item(`${ran.base}/page/other`);
+		expect(refused?.outcome).toBe("failed");
+		expect(refused?.reason).toContain("title check");
+		expect(refused?.reason).toContain("author check");
+		expect(appended().some((one) => one.url === `${ran.base}/page/other`)).toBe(
+			false,
+		);
+	});
+
+	test("a DOI paper Crossref gave no abstract gets Semantic Scholar's before the push", async () => {
+		const workflow = readFileSync(
+			new URL("../../.github/workflows/add.yml", import.meta.url),
+			"utf8",
+		);
+		const handle = workflow.indexOf("- name: Handle the queued requests");
+		const fill = workflow.indexOf("- name: Fill in the DOI papers' abstracts");
+		const push = workflow.indexOf("- name: Push the added entries");
+		expect(handle).toBeGreaterThan(-1);
+		expect(fill).toBeGreaterThan(handle);
+		expect(push).toBeGreaterThan(fill);
+		const step = workflow.slice(fill, push);
+		expect(step).toMatch(
+			/SEMANTIC_SCHOLAR_API_KEY: \$\{\{ secrets\.SEMANTIC_SCHOLAR_API_KEY \}\}/,
+		);
+		// The step's command, run on the file the handle step wrote.
+		const command = step.match(/run: (node \S+ site\/digests\.js)\n/)?.[1];
+		expect(command).toBeDefined();
+		const [, script] = (command ?? "").split(" ");
+		const filled = await run(
+			process.execPath,
+			[new URL(`../../${script}`, import.meta.url).pathname, ran.digests],
+			{
+				env: {
+					...process.env,
+					SEMANTIC_SCHOLAR_API: `${ran.base}/s2`,
+					SEMANTIC_SCHOLAR_API_KEY: "test-key",
+					SEMANTIC_SCHOLAR_PAUSE_MS: "0",
+					SEMANTIC_SCHOLAR_RETRY_MS: "0",
+					LIMINAL_TODAY: TODAY,
+					LIMINAL_ALLOW_LOCAL: new URL(ran.base).host,
+				},
+			},
+		).catch((error) => error as { stderr: string });
+		expect(filled).toBeDefined();
+		const entry = appended().find((one) => one.id === `doi:${PARROTS_DOI}`);
+		expect(entry?.abstract).toBe(SEMANTIC_ABSTRACT);
 	});
 });

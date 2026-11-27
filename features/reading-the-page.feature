@@ -4,6 +4,10 @@ Feature: Reading the page
   Background:
     Given yesterday has 10 papers
     And today has 15 papers
+    And today's 9th paper is on arXiv and accepted at NeurIPS 2026, whose proceedings aren't out yet
+    And today's 10th paper is on arXiv and has a published version in NeurIPS's proceedings
+    And today's 11th and 12th papers come from the ACL Anthology and PoPETs, with no arXiv id
+    And today's 13th paper is a journal paper known only by its DOI
     And 3 of today's papers are read to the Abstract
     And 1 of today's papers is read to the Paper
     And today has an entry in Chinese, "估值 410 亿美元，贝佐斯打造「物理世界的 OpenAI」", with its words prepared
@@ -11,6 +15,8 @@ Feature: Reading the page
   Scenario: Both pages show the same papers, only the owner's shows the reading, and Chinese words can be studied
     When a visitor opens the public page and the owner opens their page
     Then both show today's 15 papers in the same order
+    And today's 10th paper names NeurIPS 2026, its DOI and its arXiv id above its title, which opens its published version
+    And today's 12th paper names PETS 2026 and its DOI above its title, with the conference mark and no arXiv logo
     And only the owner's page has Abstract, Paper, OK, Like, Dislike and Comment buttons
     And only the owner's page says today's square has 4 of 15 read, with a crown
     And only the owner's page says yesterday's square has 0 of 10 read, with no crown
@@ -46,6 +52,8 @@ Feature: Reading the page
     And the paper shows the comment "Check the baseline."
     And the paper shows the comment "Is this the main claim?" quoting the second sentence of its abstract
     And the first sentence of its abstract shows highlighted
+    When the owner picks "any time", "commented" and "highlighted" in Search
+    Then the Feed shows yesterday's 2nd paper and nothing else
     And today's square still has 4 of 15 read
     And the public page shows none of it
 

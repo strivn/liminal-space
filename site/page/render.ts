@@ -57,7 +57,7 @@ import {
 	startSavingPlace,
 } from "./reading-place.ts";
 import { showScoutLogs } from "./scout-logs.ts";
-import { createSearch, type Search } from "./search.ts";
+import { createSearch, notesOfThreads, type Search } from "./search.ts";
 import type { View } from "./selected.ts";
 import { fetchMarkedPapers, ownerMarkedPapers } from "./selected-data.ts";
 import {
@@ -510,6 +510,7 @@ function render(
 									: "abstract",
 						tags: tagBoard.labelsOf(id),
 						adHoc: adHocIds.has(id),
+						...notesOfThreads(board.threadsOf(id)),
 					}),
 		loadMonths: loadMonths,
 		onChange: (shown, narrowed, subjects) => {

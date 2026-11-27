@@ -1099,3 +1099,175 @@ test("a digest whose Markdown passes 60 KB is cut after a whole entry and says h
 	assert.ok(new TextEncoder().encode(text).length <= 60 * 1024);
 	assert.match(text, /\d+ (more )?entr(y|ies)[^\n]*left out/i);
 });
+
+// ---- add_papers: DOIs and metadata ----
+
+// A paper's metadata as a chat gives it.
+const PARROTS: JsonObject = {
+	title:
+		"On the Dangers of Stochastic Parrots: Can Language Models Be Too Big?",
+	authors: ["Emily M. Bender", "Timnit Gebru"],
+	venue: "FAccT 2021",
+	url: "https://dl.acm.org/doi/10.1145/3442188.3445922",
+	doi: "10.1145/3442188.3445922",
+	abstract:
+		"The past 3 years of work in NLP have been characterized by the development and deployment of ever larger language models.",
+};
+
+test('add_papers takes DOIs written "doi:10.1145/3442188.3445922" alongside arXiv ids', async () => {
+	const { db, env } = siteWith();
+	const answer = await callTool(
+		"add_papers",
+		{
+			ids: [
+				"2507.11473",
+				"doi:10.1145/3442188.3445922",
+				"doi:10.1038/S41586-026-01234-5",
+			],
+		},
+		env,
+	);
+	assert.notEqual(answer.body.result?.isError, true, textOf(answer));
+	const rows = requestRows(db);
+	assert.equal(rows.length, 1);
+	assert.deepEqual(JSON.parse(String(rows[0]?.payload)), {
+		papers: [
+			"2507.11473",
+			"doi:10.1145/3442188.3445922",
+			"doi:10.1038/s41586-026-01234-5",
+		],
+	});
+	assert.equal(github.asked.length, 1);
+});
+
+test("add_papers refuses a DOI with a space, a control character or no 10. prefix before anything is queued", async () => {
+	const refused = [
+		"doi:10.1145/3442188 3445922",
+		"doi:10.1145/3442188\u00003445922",
+		"doi:10.1145/3442188\n3445922",
+		"doi:11.1145/3442188.3445922",
+		"doi:1145/3442188.3445922",
+		"doi:10.1145/",
+		"doi:",
+		"doi:10.1145/3442188.3445922 --append",
+		`doi:10.1145/${"x".repeat(300)}`,
+	];
+	for (const id of refused) {
+		const { db, env } = siteWith();
+		const answer = await callTool("add_papers", { ids: [id] }, env);
+		assert.equal(answer.body.result?.isError, true, JSON.stringify(id));
+		assert.ok(
+			textOf(answer).includes(JSON.stringify(id).slice(0, 40)),
+			textOf(answer),
+		);
+		assert.deepEqual(requestRows(db), [], JSON.stringify(id));
+	}
+	assert.deepEqual(github.asked, []);
+});
+
+test("add_papers refuses a doi.org link and asks for the DOI itself", async () => {
+	const { db, env } = siteWith();
+	const answer = await callTool(
+		"add_papers",
+		{ ids: ["https://doi.org/10.1145/3442188.3445922"] },
+		env,
+	);
+	assert.equal(answer.body.result?.isError, true);
+	assert.match(
+		textOf(answer),
+		/give the DOI itself, doi:10\.1145\/3442188\.3445922/,
+	);
+	assert.deepEqual(requestRows(db), []);
+	assert.deepEqual(github.asked, []);
+});
+
+test("add_papers takes a paper's title, authors, venue, URL and optional DOI and abstract, checked before it is queued", async () => {
+	const { db, env } = siteWith();
+	const answer = await callTool("add_papers", { metadata: [PARROTS] }, env);
+	assert.notEqual(answer.body.result?.isError, true, textOf(answer));
+	assert.deepEqual(JSON.parse(String(requestRows(db)[0]?.payload)), {
+		papers: [],
+		metadata: [PARROTS],
+	});
+	const bare: JsonObject = {
+		title: PARROTS.title,
+		authors: PARROTS.authors,
+		venue: PARROTS.venue,
+		url: PARROTS.url,
+	};
+	const bareEnv = siteWith();
+	await callTool("add_papers", { metadata: [bare] }, bareEnv.env);
+	assert.deepEqual(JSON.parse(String(requestRows(bareEnv.db)[0]?.payload)), {
+		papers: [],
+		metadata: [bare],
+	});
+
+	const refused: [string, JsonObject][] = [
+		["title must be text", { ...PARROTS, title: "" }],
+		["authors must be a list", { ...PARROTS, authors: [] }],
+		["authors must be a list", { ...PARROTS, authors: "Emily Bender" }],
+		["venue must be text", { ...PARROTS, venue: undefined }],
+		[
+			"the url must be an https address",
+			{ ...PARROTS, url: "http://dl.acm.org/x" },
+		],
+		[
+			"the url must be an https address",
+			{ ...PARROTS, url: "javascript:alert(1)" },
+		],
+		["is local", { ...PARROTS, url: "https://127.0.0.1/paper" }],
+		["is local", { ...PARROTS, url: "https://[::1]/paper" }],
+		["is local", { ...PARROTS, url: "https://169.254.169.254/latest" }],
+		["title holds a control character", { ...PARROTS, title: "A\nB" }],
+		[
+			"an author's name holds a control character",
+			{ ...PARROTS, authors: ["A\u0000B"] },
+		],
+		[
+			"not the DOI itself",
+			{ ...PARROTS, doi: "https://doi.org/10.1145/3442188.3445922" },
+		],
+		["doi must look like", { ...PARROTS, doi: "not a doi" }],
+		["a paper doesn't take: id", { ...PARROTS, id: "arxiv:2507.11473" }],
+		["title is over 500 characters", { ...PARROTS, title: "x".repeat(501) }],
+		[
+			"abstract is over 10000 characters",
+			{ ...PARROTS, abstract: "x".repeat(10_001) },
+		],
+	];
+	for (const [named, paper] of refused) {
+		const refusedEnv = siteWith();
+		const answer = await callTool(
+			"add_papers",
+			{ metadata: [paper] },
+			refusedEnv.env,
+		);
+		assert.equal(answer.body.result?.isError, true, named);
+		assert.ok(
+			textOf(answer).includes(
+				named.replace("not the DOI itself", "the DOI itself"),
+			),
+			`${named}: ${textOf(answer)}`,
+		);
+		assert.match(textOf(answer), /Nothing was queued\.$/);
+		assert.deepEqual(requestRows(refusedEnv.db), [], named);
+	}
+	assert.equal(github.asked.length, 2);
+});
+
+test("add_papers refuses metadata with an arXiv id and asks for the arXiv id alone", async () => {
+	const refused: JsonObject[] = [
+		{ ...PARROTS, url: "https://arxiv.org/abs/2507.11473", doi: undefined },
+		{ ...PARROTS, doi: "10.48550/arXiv.2507.11473" },
+	];
+	for (const paper of refused) {
+		const { db, env } = siteWith();
+		const answer = await callTool("add_papers", { metadata: [paper] }, env);
+		assert.equal(answer.body.result?.isError, true);
+		assert.match(
+			textOf(answer),
+			/arXiv id 2507\.11473: give the arXiv id alone/,
+		);
+		assert.deepEqual(requestRows(db), []);
+	}
+});

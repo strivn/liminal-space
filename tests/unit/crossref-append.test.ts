@@ -28,7 +28,7 @@ type Records = Record<string, string | number>;
 
 // A Crossref stand-in: records by DOI, anything else HTTP 404; it keeps each request's DOI and user agent, and the most
 // requests it had open at once.
-async function serveCrossref(records: Records) {
+async function serveCrossref(records: Records, journal: string[] = ["Nature"]) {
 	const asked: { doi: string; agent: string | undefined }[] = [];
 	const state = { open: 0, mostOpen: 0 };
 	const base = await serve((incoming, response) => {
@@ -60,7 +60,7 @@ async function serveCrossref(records: Records) {
 					DOI: doi,
 					title: ["Bone-derived proteins slow ageing in mice"],
 					author: [{ given: "Ada", family: "Example" }],
-					"container-title": ["Nature"],
+					"container-title": journal,
 					published: { "date-parts": [[year, month, day]] },
 				},
 			}),
@@ -171,4 +171,49 @@ test("limit: Two DOIs are asked for one after the other, with the shared browser
 		assert.equal(request.agent, CONSTANTS.userAgent);
 		assert.equal(/liminal|@/i.test(String(request.agent)), false);
 	}
+});
+
+test("a Crossref record with no journal, such as an SSRN paper, takes its source from the site its DOI opens", async () => {
+	const ssrn = "10.2139/ssrn.4685553";
+	const { base } = await serveCrossref({ [ssrn]: "2026-10-11" }, []);
+	const opened: string[] = [];
+	const resolver = await serve((incoming, response) => {
+		opened.push(String(incoming.url));
+		if (incoming.url === `/${ssrn}`) {
+			response.writeHead(302, { location: `${resolver}/sol3/papers.cfm` });
+		} else {
+			response.writeHead(200);
+		}
+		response.end();
+	});
+	const file = digestsWith([]);
+	const ran = await runScript(
+		PROCEEDINGS,
+		["--append", file, "--crossref", `doi:${ssrn}`],
+		{ CROSSREF_API: base, DOI_BASE: resolver, LIMINAL_TODAY: "2026-10-12" },
+	);
+	assert.equal(ran.code, 0, ran.stderr);
+	const [entry] = entriesOfLine(
+		readFileSync(file, "utf8").split("\n")[0] ?? "",
+	);
+	assert.equal(entry?.source, new URL(resolver).hostname);
+
+	// A record with a journal keeps it, and the DOI isn't opened.
+	const named = await serveCrossref({ [DOI]: "2026-10-11" });
+	const other = digestsWith([]);
+	const kept = await runScript(
+		PROCEEDINGS,
+		["--append", other, "--crossref", `doi:${DOI}`],
+		{
+			CROSSREF_API: named.base,
+			DOI_BASE: resolver,
+			LIMINAL_TODAY: "2026-10-12",
+		},
+	);
+	assert.equal(kept.code, 0, kept.stderr);
+	const [journalEntry] = entriesOfLine(
+		readFileSync(other, "utf8").split("\n")[0] ?? "",
+	);
+	assert.equal(journalEntry?.source, "Nature");
+	assert.deepEqual(opened, [`/${ssrn}`, "/sol3/papers.cfm"]);
 });

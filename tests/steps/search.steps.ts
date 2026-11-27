@@ -92,6 +92,22 @@ When(
 );
 
 When(
+	/^the owner picks ("[^"]*"(?:, "[^"]*")* and "[^"]*") in Search$/,
+	async ({ world }, quoted: string) => {
+		const [time = "", ...words] = [...quoted.matchAll(/"([^"]*)"/g)].map(
+			(match) => match[1] ?? "",
+		);
+		const page = openedPage(world);
+		let choices = await openBlank(page, "time");
+		await choices.getByRole("radio", { name: time, exact: true }).click();
+		choices = await openBlank(page, "read");
+		for (const word of words) {
+			await choices.locator(`.search__word[aria-label="${word}"]`).click();
+		}
+	},
+);
+
+When(
 	/^clicks the keyword "(.*)" under today's (\d+)(?:st|nd|rd|th) paper$/,
 	async ({ world }, keyword: string, position: string) => {
 		const paper = nthPaper(world, world.today, Number(position));
@@ -121,12 +137,18 @@ Then(
 );
 
 Then(
-	/^the Feed shows today's (\d+)(?:st|nd|rd|th)(?: and (\d+)(?:st|nd|rd|th))? papers? and nothing else$/,
-	async ({ world }, first: number, second: number | null | undefined) => {
+	/^the Feed shows (today|yesterday)'s (\d+)(?:st|nd|rd|th)(?: and (\d+)(?:st|nd|rd|th))? papers? and nothing else$/,
+	async (
+		{ world },
+		day: "today" | "yesterday",
+		first: number,
+		second: number | null | undefined,
+	) => {
 		// A number the regex captures arrives as a number; an unmatched "and 2nd" as undefined or null.
 		const positions = [first, second].filter((one) => typeof one === "number");
+		const date = day === "today" ? world.today : world.yesterday;
 		const wanted = positions.map(
-			(position) => nthPaper(world, world.today, Number(position)).title,
+			(position) => nthPaper(world, date, Number(position)).title,
 		);
 		await expect(shownTitles(openedPage(world))).toHaveText(wanted);
 	},

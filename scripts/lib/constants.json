@@ -12,6 +12,11 @@
 	"burstDelayMs": 1000,
 	"requestTimeoutMs": 30000,
 	"maxBodyBytes": 20971520,
+	"sourceBytes": {
+		"NeurIPS": 33554432,
+		"ICML": 25165824,
+		"ICLR": 25165824
+	},
 	"curlTimeoutSeconds": 90,
 	"converterTimeoutSeconds": 60
 }
