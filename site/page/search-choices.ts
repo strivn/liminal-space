@@ -46,6 +46,15 @@ const TAGS: { name: string; icon: RailIcon }[] = [
 	{ name: "Learn first", icon: "learnFirst" },
 ];
 
+const NOTES: {
+	id: "commented" | "highlighted";
+	word: string;
+	icon: RailIcon;
+}[] = [
+	{ id: "commented", word: "commented", icon: "comment" },
+	{ id: "highlighted", word: "highlighted", icon: "highlighter" },
+];
+
 // Entry months, newest first.
 export function monthsOf(entries: readonly SearchEntry[], today: string) {
 	const months = new Set(entries.map((entry) => entry.date.slice(0, 7)));
@@ -320,6 +329,20 @@ export function readPanel(ctx: PanelContext): Node[] {
 					marks.tags.includes(tag.name),
 					() => ctx.pick(patch({ tags: toggled(tag.name) }), false),
 					{ key: `tag:${tag.name}`, icon: tag.icon },
+				),
+			),
+		),
+		groupLabel("Notes"),
+		el(
+			"div",
+			{ class: "search__words", role: "group", "aria-label": "Notes" },
+			...NOTES.map((note) =>
+				word(
+					note.word,
+					ctx.count(marks[note.id] ? {} : patch({ [note.id]: true })),
+					marks[note.id],
+					() => ctx.pick(patch({ [note.id]: !marks[note.id] }), false),
+					{ key: `note:${note.id}`, icon: note.icon },
 				),
 			),
 		),

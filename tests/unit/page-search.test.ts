@@ -15,6 +15,14 @@ import { openPage, paperEntry, releasePage, siteOf } from "./page-site.ts";
 const TODAY = "2026-11-26";
 const WIDE_QUERY = "(min-width: 1080px)";
 
+const unmarked: EntryMarks = {
+	read: "unread",
+	tags: [],
+	adHoc: false,
+	commented: false,
+	highlighted: false,
+};
+
 afterEach(() => {
 	releasePage();
 	vi.useRealTimers();
@@ -116,10 +124,7 @@ function mount(entries: SearchEntry[], options: Mount = {}) {
 	const loaded: string[][] = [];
 	const search = createSearch(root, TODAY, {
 		entries: () => entries,
-		marksOf:
-			marks === null
-				? null
-				: (id) => marks[id] ?? { read: "unread", tags: [], adHoc: false },
+		marksOf: marks === null ? null : (id) => marks[id] ?? unmarked,
 		loadMonths: async (months) => {
 			loaded.push([...months].sort());
 		},
@@ -173,7 +178,7 @@ test("the sentence reads Show me [everything] about [any subject] from [any venu
 	expect(document.querySelector('[data-blank="read"]')).toBeNull();
 
 	mount(ENTRIES, {
-		marks: { e: { read: "unread", tags: ["To read"], adHoc: false } },
+		marks: { e: { ...unmarked, tags: ["To read"] } },
 	});
 	expect(sentenceText()).toBe(
 		"Show me everything about any subject from any venue, this month, read or not.",
@@ -315,9 +320,7 @@ test("the read blank shows unread, abstract read or paper read papers, those tag
 		entry({ id: "news", type: "news" }),
 	];
 	const mark = (fields: Partial<EntryMarks>): EntryMarks => ({
-		read: "unread",
-		tags: [],
-		adHoc: false,
+		...unmarked,
 		...fields,
 	});
 	const marks = {
@@ -330,7 +333,7 @@ test("the read blank shows unread, abstract read or paper read papers, those tag
 		news: mark({}),
 	};
 	const read = (fields: Partial<Sentence["marks"]>) => ({
-		marks: { read: null, tags: [], adHoc: false, ...fields },
+		marks: { ...startingSentence(TODAY).marks, ...fields },
 	});
 	expect(shown(read({ read: "unread" }), entries, marks)).toEqual([
 		"unread",
