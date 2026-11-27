@@ -115,9 +115,8 @@ first page can't be read, treat the paper as having no stated affiliation and sa
 your final message. Never guess an affiliation.
 Then append the picks in one step:
     node scripts/scout/arxiv/arxiv.ts --append site/digests.js <id> <id> ...
-A paper you picked because a conference's list or its first page says it was accepted,
-when arXiv's comment and journal reference don't say so, is appended in a call of its
-own per venue, with the venue and where you read it:
+A paper you picked because a conference's list or its first page says it was accepted
+is appended in a call of its own per venue, with the venue and where you read it:
     node scripts/scout/arxiv/arxiv.ts --append site/digests.js --venue "<Conference> <year>" --venue-source <list URL or the paper's PDF URL> <id> <id> ...
 The script copies exact metadata from arXiv (its API, or OAI-PMH when the API fails) and
 prints "appended arxiv:<id> <title>" for each paper. Compare those titles with your

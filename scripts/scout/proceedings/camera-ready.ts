@@ -1,5 +1,5 @@
 // Link papers to published versions.
-// Usage: node scripts/scout/proceedings/camera-ready.ts <digests file>         today's papers with a venue
+// Usage: node scripts/scout/proceedings/camera-ready.ts <digests file>         today's papers, venue or not
 //        node scripts/scout/proceedings/camera-ready.ts <digests file> --all   every paper with a venue and none yet
 // Tests set INTERESTS_FILE, PROCEEDINGS_BASE.
 import { existsSync, readFileSync } from "node:fs";
@@ -18,6 +18,7 @@ import { request, sourceLimit } from "../../lib/http.ts";
 import { jakartaToday } from "../../lib/run-date.ts";
 import { type ProceedingsLine, proceedingsLines } from "../plan/interests.ts";
 import { normaliseTitle, titlesMatch } from "../plan/title-match.ts";
+import { pagePaper } from "./sites.ts";
 
 const fail: Fail = failer("camera-ready.ts");
 const USAGE =
@@ -37,7 +38,12 @@ export type ProceedingsFormat =
 	| "crossref";
 
 // One listed proceedings paper.
-export type PublishedPaper = { title: string; authors: string[]; url: string };
+export type PublishedPaper = {
+	title: string;
+	authors: string[];
+	url: string;
+	doi?: string;
+};
 
 export function formatOf(fileUrl: string): ProceedingsFormat | null {
 	const address = URL.parse(fileUrl);
@@ -90,10 +96,12 @@ function readBib(body: string) {
 		const url = bibField(entry, "url");
 		const title = bibField(entry, "title");
 		if (!title || !url) continue;
+		const doi = bibField(entry, "doi");
 		papers.push({
 			title: title,
 			authors: bibAuthors(bibField(entry, "author")),
 			url: url,
+			...(doi && { doi }),
 		});
 	}
 	return papers;
@@ -181,6 +189,7 @@ function readCrossref(body: string) {
 				.filter(isJsonObject)
 				.map((author) => `${author.given ?? ""} ${author.family ?? ""}`.trim()),
 			url: `https://doi.org/${item.DOI}`,
+			doi: item.DOI,
 		});
 	}
 	return papers;
@@ -272,9 +281,10 @@ function inContainer(body: string, container: string) {
 	return JSON.stringify(answer);
 }
 
-type Target = { entry: JsonObject; index: number; edition: string };
+// A paper to link; its edition is null when it names no venue.
+type Target = { entry: JsonObject; index: number; edition: string | null };
 
-// Papers with a venue and none yet.
+// Today's papers, venue or not, and with --all every paper with a venue, none yet.
 function targetsIn(read: DigestsFile, all: boolean) {
 	const today = jakartaToday();
 	const targets: Target[] = [];
@@ -283,13 +293,42 @@ function targetsIn(read: DigestsFile, all: boolean) {
 		if (!all && digest.date !== today) continue;
 		for (const entry of digest.entries) {
 			if (!isJsonObject(entry) || entry.type !== "paper") continue;
-			if (typeof entry.venue !== "string" || entry.camera_ready !== undefined)
+			if (entry.camera_ready !== undefined) continue;
+			if (typeof entry.venue !== "string") {
+				if (!all) targets.push({ entry, index, edition: null });
 				continue;
+			}
 			const edition = editionOf(entry.venue);
 			if (edition !== null) targets.push({ entry, index, edition });
 		}
 	}
 	return targets;
+}
+
+const WAIT_DAYS = 8 * 7;
+
+// Venue papers added over 8 weeks ago that still have no published version.
+function overdueIn(read: DigestsFile) {
+	const limit = Date.parse(jakartaToday()) - WAIT_DAYS * 86_400_000;
+	const overdue: string[] = [];
+	for (const { digest } of read.digests) {
+		if (!isJsonObject(digest) || !Array.isArray(digest.entries)) continue;
+		if (Date.parse(String(digest.date)) >= limit) continue;
+		for (const entry of digest.entries) {
+			if (!isJsonObject(entry) || entry.type !== "paper") continue;
+			if (typeof entry.venue !== "string" || entry.camera_ready !== undefined)
+				continue;
+			overdue.push(`${entry.id} (${entry.venue})`);
+		}
+	}
+	return overdue;
+}
+
+// The DOI on a PoPETs paper's own page.
+async function popetsDoi(pageUrl: string) {
+	const page = await fetchText(pageUrl, "PETS");
+	if (page.text === undefined) return undefined;
+	return pagePaper(page.text, pageUrl)?.doi ?? undefined;
 }
 
 async function fetchText(url: string, venue: string) {
@@ -349,9 +388,12 @@ async function main(args: string[]) {
 	};
 	const matches = await Promise.all(
 		targets.map(async (target) => {
-			const own = lines.filter((line) => line.venue === target.edition);
+			const own =
+				target.edition === null
+					? lines
+					: lines.filter((line) => line.venue === target.edition);
 			if (own.length === 0) {
-				unnamed.add(target.edition);
+				if (target.edition !== null) unnamed.add(target.edition);
 				return null;
 			}
 			const title = String(target.entry.title);
@@ -373,19 +415,29 @@ async function main(args: string[]) {
 				if (papers === null || line === undefined) continue;
 				const found = matchPublished({ title, authors }, papers);
 				if (found !== null && isPublishedAddress(found.url, line.url)) {
-					return { target, found, from: line.url };
+					return { target, found, line };
 				}
 			}
 			return null;
 		}),
 	);
+	const dois = await Promise.all(
+		matches.map((match) => {
+			if (match === null) return undefined;
+			if (match.found.doi || formatOf(match.line.url) !== "popets-index")
+				return match.found.doi;
+			return popetsDoi(match.found.url);
+		}),
+	);
 	let filled = 0;
-	for (const match of matches) {
+	for (const [i, match] of matches.entries()) {
 		if (match === null) continue;
+		const doi = dois[i];
 		match.target.entry.camera_ready = {
 			url: match.found.url,
-			venue: match.target.edition,
-			from: match.from,
+			venue: match.line.venue,
+			from: match.line.url,
+			...(doi && { doi }),
 		};
 		changed.add(match.target.index);
 		filled += 1;
@@ -401,6 +453,9 @@ async function main(args: string[]) {
 	}
 	for (const problem of unread) {
 		console.error(`${problem}; its papers wait for the next check`);
+	}
+	for (const paper of overdueIn(read)) {
+		console.log(`no published version after 8 weeks: ${paper}`);
 	}
 	console.log(`published versions: ${filled} of ${targets.length} papers`);
 }
